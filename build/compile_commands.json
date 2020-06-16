@@ -1,0 +1,62 @@
+[
+{
+  "directory": "D:/Game Projects/C++/Total Editor 3/build",
+  "command": "C:\\PROGRA~2\\MINGW-~1\\I686-7~1.0-P\\mingw32\\bin\\G__~1.EXE  -DIMGUI_IMPL_OPENGL_LOADER_GLEW @CMakeFiles/TotalEditor3.dir/includes_CXX.rsp -g   -w -Wl,-subsystem,console -o CMakeFiles\\TotalEditor3.dir\\main.cpp.obj -c \"D:\\Game Projects\\C++\\Total Editor 3\\main.cpp\"",
+  "file": "D:/Game Projects/C++/Total Editor 3/main.cpp"
+},
+{
+  "directory": "D:/Game Projects/C++/Total Editor 3/build",
+  "command": "C:\\PROGRA~2\\MINGW-~1\\I686-7~1.0-P\\mingw32\\bin\\G__~1.EXE  -DIMGUI_IMPL_OPENGL_LOADER_GLEW @CMakeFiles/TotalEditor3.dir/includes_CXX.rsp -g   -w -Wl,-subsystem,console -o CMakeFiles\\TotalEditor3.dir\\app.cpp.obj -c \"D:\\Game Projects\\C++\\Total Editor 3\\app.cpp\"",
+  "file": "D:/Game Projects/C++/Total Editor 3/app.cpp"
+},
+{
+  "directory": "D:/Game Projects/C++/Total Editor 3/build",
+  "command": "C:\\PROGRA~2\\MINGW-~1\\I686-7~1.0-P\\mingw32\\bin\\G__~1.EXE  -DIMGUI_IMPL_OPENGL_LOADER_GLEW @CMakeFiles/TotalEditor3.dir/includes_CXX.rsp -g   -w -Wl,-subsystem,console -o CMakeFiles\\TotalEditor3.dir\\assets.cpp.obj -c \"D:\\Game Projects\\C++\\Total Editor 3\\assets.cpp\"",
+  "file": "D:/Game Projects/C++/Total Editor 3/assets.cpp"
+},
+{
+  "directory": "D:/Game Projects/C++/Total Editor 3/build",
+  "command": "C:\\PROGRA~2\\MINGW-~1\\I686-7~1.0-P\\mingw32\\bin\\G__~1.EXE  -DIMGUI_IMPL_OPENGL_LOADER_GLEW @CMakeFiles/TotalEditor3.dir/includes_CXX.rsp -g   -w -Wl,-subsystem,console -o CMakeFiles\\TotalEditor3.dir\\texture.cpp.obj -c \"D:\\Game Projects\\C++\\Total Editor 3\\texture.cpp\"",
+  "file": "D:/Game Projects/C++/Total Editor 3/texture.cpp"
+},
+{
+  "directory": "D:/Game Projects/C++/Total Editor 3/build",
+  "command": "C:\\PROGRA~2\\MINGW-~1\\I686-7~1.0-P\\mingw32\\bin\\G__~1.EXE  -DIMGUI_IMPL_OPENGL_LOADER_GLEW @CMakeFiles/TotalEditor3.dir/includes_CXX.rsp -g   -w -Wl,-subsystem,console -o CMakeFiles\\TotalEditor3.dir\\shader.cpp.obj -c \"D:\\Game Projects\\C++\\Total Editor 3\\shader.cpp\"",
+  "file": "D:/Game Projects/C++/Total Editor 3/shader.cpp"
+},
+{
+  "directory": "D:/Game Projects/C++/Total Editor 3/build",
+  "command": "C:\\PROGRA~2\\MINGW-~1\\I686-7~1.0-P\\mingw32\\bin\\G__~1.EXE  -DIMGUI_IMPL_OPENGL_LOADER_GLEW @CMakeFiles/TotalEditor3.dir/includes_CXX.rsp -g   -w -Wl,-subsystem,console -o CMakeFiles\\TotalEditor3.dir\\mesh.cpp.obj -c \"D:\\Game Projects\\C++\\Total Editor 3\\mesh.cpp\"",
+  "file": "D:/Game Projects/C++/Total Editor 3/mesh.cpp"
+},
+{
+  "directory": "D:/Game Projects/C++/Total Editor 3/build/imgui",
+  "command": "C:\\PROGRA~2\\MINGW-~1\\I686-7~1.0-P\\mingw32\\bin\\G__~1.EXE  -DIMGUI_IMPL_OPENGL_LOADER_GLEW @CMakeFiles/imgui.dir/includes_CXX.rsp -g   -o CMakeFiles\\imgui.dir\\src\\imgui_demo.cpp.obj -c \"D:\\Game Projects\\C++\\Total Editor 3\\imgui\\src\\imgui_demo.cpp\"",
+  "file": "D:/Game Projects/C++/Total Editor 3/imgui/src/imgui_demo.cpp"
+},
+{
+  "directory": "D:/Game Projects/C++/Total Editor 3/build/imgui",
+  "command": "C:\\PROGRA~2\\MINGW-~1\\I686-7~1.0-P\\mingw32\\bin\\G__~1.EXE  -DIMGUI_IMPL_OPENGL_LOADER_GLEW @CMakeFiles/imgui.dir/includes_CXX.rsp -g   -o CMakeFiles\\imgui.dir\\src\\imgui_draw.cpp.obj -c \"D:\\Game Projects\\C++\\Total Editor 3\\imgui\\src\\imgui_draw.cpp\"",
+  "file": "D:/Game Projects/C++/Total Editor 3/imgui/src/imgui_draw.cpp"
+},
+{
+  "directory": "D:/Game Projects/C++/Total Editor 3/build/imgui",
+  "command": "C:\\PROGRA~2\\MINGW-~1\\I686-7~1.0-P\\mingw32\\bin\\G__~1.EXE  -DIMGUI_IMPL_OPENGL_LOADER_GLEW @CMakeFiles/imgui.dir/includes_CXX.rsp -g   -o CMakeFiles\\imgui.dir\\src\\imgui_impl_opengl3.cpp.obj -c \"D:\\Game Projects\\C++\\Total Editor 3\\imgui\\src\\imgui_impl_opengl3.cpp\"",
+  "file": "D:/Game Projects/C++/Total Editor 3/imgui/src/imgui_impl_opengl3.cpp"
+},
+{
+  "directory": "D:/Game Projects/C++/Total Editor 3/build/imgui",
+  "command": "C:\\PROGRA~2\\MINGW-~1\\I686-7~1.0-P\\mingw32\\bin\\G__~1.EXE  -DIMGUI_IMPL_OPENGL_LOADER_GLEW @CMakeFiles/imgui.dir/includes_CXX.rsp -g   -o CMakeFiles\\imgui.dir\\src\\imgui_impl_sdl.cpp.obj -c \"D:\\Game Projects\\C++\\Total Editor 3\\imgui\\src\\imgui_impl_sdl.cpp\"",
+  "file": "D:/Game Projects/C++/Total Editor 3/imgui/src/imgui_impl_sdl.cpp"
+},
+{
+  "directory": "D:/Game Projects/C++/Total Editor 3/build/imgui",
+  "command": "C:\\PROGRA~2\\MINGW-~1\\I686-7~1.0-P\\mingw32\\bin\\G__~1.EXE  -DIMGUI_IMPL_OPENGL_LOADER_GLEW @CMakeFiles/imgui.dir/includes_CXX.rsp -g   -o CMakeFiles\\imgui.dir\\src\\imgui_widgets.cpp.obj -c \"D:\\Game Projects\\C++\\Total Editor 3\\imgui\\src\\imgui_widgets.cpp\"",
+  "file": "D:/Game Projects/C++/Total Editor 3/imgui/src/imgui_widgets.cpp"
+},
+{
+  "directory": "D:/Game Projects/C++/Total Editor 3/build/imgui",
+  "command": "C:\\PROGRA~2\\MINGW-~1\\I686-7~1.0-P\\mingw32\\bin\\G__~1.EXE  -DIMGUI_IMPL_OPENGL_LOADER_GLEW @CMakeFiles/imgui.dir/includes_CXX.rsp -g   -o CMakeFiles\\imgui.dir\\src\\imgui.cpp.obj -c \"D:\\Game Projects\\C++\\Total Editor 3\\imgui\\src\\imgui.cpp\"",
+  "file": "D:/Game Projects/C++/Total Editor 3/imgui/src/imgui.cpp"
+}
+]

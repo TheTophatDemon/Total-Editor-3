@@ -1,0 +1,8 @@
+*.vcxproj
+*.vcxproj.filters
+*.sln
+CMakeFiles/**
+build/CMakeFiles/**
+build/Testing
+build/*.cmake
+build/*.tcl

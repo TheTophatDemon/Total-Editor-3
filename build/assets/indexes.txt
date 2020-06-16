@@ -1,0 +1,32 @@
+TILE FLAG:
+1=Door(Horizontal)
+2=Door(Vertical)
+3=Switch
+4=Teleporter
+5=Secret Wall (ID = ORIENTATION, 0=RIGHT, 1=UP, 2=LEFT, 3=DOWN)
+6=Nothing
+7=Flat Wall (ID = ORIENTATION, 0 = HORIZONTAL, 1 = VERTICAL)
+8=Locked Door(Horizontal, ID = KEYCARD, 0 = BLUE, 1 = BROWN, 2 = YELLOW, 3 = GRAY)
+9=Locked Door(Vertical, ID = SEE ABOVE)
+10=Disappearing Wall
+11=Trigger (IF ID = 255 THEN IT MARKS A SECRET AREA)
+12=Exit (IF ID > 0, ID IS THE MAP IT TAKES YOU TO, OTHERWISE IT'S THE NEXT MAP)
+13=Conveyor Belt (ID = DIRECTION, SEE SECRET WALL)
+
+THING FLAG: 
+0=Player
+1=Prop
+2=Item (What item it is depends on the texture)
+3=Weapon Pickup (See item)
+4=Wraith
+5=Fire Wraith
+6=Dummkopf
+7=Caco Wraith
+8=Prisrak
+9=Providence (FIRST BOSS)
+10=Fundie
+11=Banshee
+12=Mutant Wraith
+13=Mecha (SECOND BOSS)
+14=Dummkopf (Disguised as a pawn)
+15=Me (FINAL BOSS)
