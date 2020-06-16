@@ -1,2 +1,0 @@
-C:\PROGRA~2\MINGW-~1\I686-7~1.0-P\mingw32\bin\ar.exe qc libimgui.a  CMakeFiles/imgui.dir/src/imgui_demo.cpp.obj CMakeFiles/imgui.dir/src/imgui_draw.cpp.obj CMakeFiles/imgui.dir/src/imgui_impl_opengl3.cpp.obj CMakeFiles/imgui.dir/src/imgui_impl_sdl.cpp.obj CMakeFiles/imgui.dir/src/imgui_widgets.cpp.obj CMakeFiles/imgui.dir/src/imgui.cpp.obj
-C:\PROGRA~2\MINGW-~1\I686-7~1.0-P\mingw32\bin\ranlib.exe libimgui.a
