@@ -6,3 +6,9 @@ build/CMakeFiles/**
 build/Testing
 build/*.cmake
 build/*.tcl
+build/glm
+build/glm/**
+build/imgui
+build/imgui/**
+build/CMakeCache.txt
+build/TotalEditor3.exe

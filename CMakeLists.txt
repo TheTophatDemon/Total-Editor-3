@@ -4,16 +4,18 @@ project(TotalEditor3 VERSION 0.1.0 LANGUAGES CXX)
 include_directories("${CMAKE_SOURCE_DIR}/glew/include" 
         "${CMAKE_SOURCE_DIR}/sdl2/include" 
         "${CMAKE_SOURCE_DIR}/sdl2_image/include"
-        "${CMAKE_SOURCE_DIR}/Eigen")
+        "${CMAKE_SOURCE_DIR}/glm")
 link_directories("${CMAKE_SOURCE_DIR}/glew/lib" 
         "${CMAKE_SOURCE_DIR}/sdl2/lib" 
         "${CMAKE_SOURCE_DIR}/sdl2_image/lib")
 
 add_subdirectory(imgui)
+add_subdirectory(glm)
+add_library(glm::glm ALIAS glm)
 
 add_executable(TotalEditor3 main.cpp app.cpp assets.cpp texture.cpp shader.cpp mesh.cpp)
 
-target_link_libraries(TotalEditor3 PRIVATE imgui 
+target_link_libraries(TotalEditor3 PRIVATE imgui glm
         "${CMAKE_SOURCE_DIR}/glew/lib/glew32.lib" 
         "${CMAKE_SOURCE_DIR}/sdl2/lib/SDL2.lib" 
         "${CMAKE_SOURCE_DIR}/sdl2_image/lib/SDL2_image.lib" 

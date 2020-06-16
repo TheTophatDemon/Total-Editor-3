@@ -4,7 +4,6 @@
 #include <GL/gl.h>
 #include <vector>
 #include <memory>
-#include <Eigen>
 
 class Mesh
 {
