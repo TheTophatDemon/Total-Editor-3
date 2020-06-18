@@ -23,6 +23,7 @@
 #include "shader.h"
 #include "mesh.h"
 #include "camera.h"
+#include "input.h"
 
 App::App() : gTimer(0.0f)
 {
@@ -32,6 +33,8 @@ App::App() : gTimer(0.0f)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+
+    Input::init();
 
     window = SDL_CreateWindow("Total Editor 3", 
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
@@ -139,25 +142,14 @@ void App::beginLoop()
     Uint32 lastTime = 0U;
 
     bool showDemoWindow = true;
-    bool exit = false;
-    SDL_Event event;
-    while (!exit)
+    while (Input::pollEvents())
     {
-        while (SDL_PollEvent(&event) != 0)
-        {
-            ImGui_ImplSDL2_ProcessEvent(&event);
-            switch (event.type)
-            {
-                case SDL_QUIT:
-                    exit = true;
-                    break;
-            }
-        }
-
         Uint32 now = SDL_GetTicks();
         float deltaTime = (now - lastTime) / 1000.0f;
         lastTime = now;
         gTimer += deltaTime;
+
+        camera->update(deltaTime);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame(window);
@@ -175,11 +167,6 @@ void App::beginLoop()
         glUniformMatrix4fv(testShader->getUniformLoc("uModelMat"), 1, GL_FALSE, &modelMat[0][0]);
         glUniformMatrix4fv(testShader->getUniformLoc("uViewProjMat"), 1, GL_FALSE, &camera->getViewProjectionMatrix()[0][0]);
 
-        if (GLenum ass = glGetError(); ass != GL_NO_ERROR)
-        {
-            std::cout << "Error! " << ass << std::endl;
-        }
-        
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, testTexture->getID());
         glUniform1i(testShader->getUniformLoc("uTexture"), 0);
