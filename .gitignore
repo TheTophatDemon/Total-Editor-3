@@ -12,3 +12,6 @@ build/imgui
 build/imgui/*
 build/CMakeCache.txt
 build/TotalEditor3.exe
+build/Makefile
+build/compile_commands.json
+build/imgui.ini
