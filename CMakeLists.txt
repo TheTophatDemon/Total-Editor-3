@@ -15,6 +15,7 @@ add_subdirectory(imgui)
 add_subdirectory(glm)
 add_library(glm::glm ALIAS glm)
 
+message(STATUS ${SRC_FILES})
 add_executable(TotalEditor3 ${SRC_FILES})
 
 target_link_libraries(TotalEditor3 PRIVATE imgui glm
