@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(TotalEditor3 VERSION 0.1.0 LANGUAGES CXX)
 
+file(GLOB SRC_FILES *.cpp)
+
 include_directories("${CMAKE_SOURCE_DIR}/glew/include" 
         "${CMAKE_SOURCE_DIR}/sdl2/include" 
         "${CMAKE_SOURCE_DIR}/sdl2_image/include"
@@ -13,7 +15,7 @@ add_subdirectory(imgui)
 add_subdirectory(glm)
 add_library(glm::glm ALIAS glm)
 
-add_executable(TotalEditor3 main.cpp app.cpp assets.cpp texture.cpp shader.cpp mesh.cpp)
+add_executable(TotalEditor3 ${SRC_FILES})
 
 target_link_libraries(TotalEditor3 PRIVATE imgui glm
         "${CMAKE_SOURCE_DIR}/glew/lib/glew32.lib" 
