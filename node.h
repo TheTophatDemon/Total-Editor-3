@@ -18,6 +18,8 @@ public:
     Node(glm::vec3 pos);
     Node(glm::vec3 pos, glm::quat rot);
 
+    virtual void update(const float deltaTime) = 0;
+
     //Returns a copy of the node's world transform
     const inline glm::mat4x4 getTransform()
     {
