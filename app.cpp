@@ -155,6 +155,13 @@ void App::beginLoop()
         ImGui_ImplSDL2_NewFrame(window);
         ImGui::NewFrame();
         ImGui::ShowDemoWindow(&showDemoWindow);
+        ImGui::Begin("Mouse Debug");
+        ImGui::Text("Mouse Position: (%f, %f)", Input::getMousePosition().x, Input::getMousePosition().y);
+        ImGui::Text("Mouse Movement: (%f, %f)", Input::getMouseMovement().x, Input::getMouseMovement().y);
+        ImGui::Text("Mouse Button 1: Pressed? %s Down? %s", Input::getMouseButtonPressed(1) ? "Y" : "N", Input::getMouseButtonDown(1) ? "Y" : "N");
+        ImGui::Text("Mouse Button 2: Pressed? %s Down? %s", Input::getMouseButtonPressed(2) ? "Y" : "N", Input::getMouseButtonDown(2) ? "Y" : "N");
+        ImGui::Text("Mouse Button 3: Pressed? %s Down? %s", Input::getMouseButtonPressed(3) ? "Y" : "N", Input::getMouseButtonDown(3) ? "Y" : "N");
+        ImGui::End();
         ImGui::Render();
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
