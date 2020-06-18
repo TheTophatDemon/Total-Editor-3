@@ -7,6 +7,9 @@
 #include <SDL.h>
 #include <SDL_opengl.h>
 
+#ifndef APP_H
+#define APP_H
+
 class App
 {
 public:
@@ -24,3 +27,5 @@ protected:
     std::unique_ptr<Assets> assets;
     float gTimer;
 };
+
+#endif

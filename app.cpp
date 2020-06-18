@@ -22,6 +22,7 @@
 #include "texture.h"
 #include "shader.h"
 #include "mesh.h"
+#include "camera.h"
 
 App::App() : gTimer(0.0f)
 {
@@ -67,6 +68,9 @@ App::~App()
 
 void App::beginLoop()
 {
+    //For some stupid reason, class constants cannot be passed into std::make_shared...
+    auto camera = std::shared_ptr<Camera>(new Camera(75.0f, WINDOW_ASPECT_RATIO, 0.1f, 100.0f));
+    
     auto testTexture = assets->getTexture("textures\\spacewall.png");
     auto testTexture2 = assets->getTexture("textures\\spacefloor.png");
 
@@ -167,12 +171,9 @@ void App::beginLoop()
         
         glm::mat4x4 modelMat = glm::translate(glm::vec3(0.0f, 0.0f, -4.0f))
              * glm::rotate(gTimer, glm::vec3(1.0f, 1.0f, 0.0f));
-        glm::mat4x4 viewMat = glm::mat4(1.0f);
-        glm::mat4x4 projMat = glm::perspectiveFov<float>(glm::pi<float>() / 2.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.1f, 100.0f);
-        glm::mat4x4 vpMat = projMat * viewMat;
         
         glUniformMatrix4fv(testShader->getUniformLoc("uModelMat"), 1, GL_FALSE, &modelMat[0][0]);
-        glUniformMatrix4fv(testShader->getUniformLoc("uViewProjMat"), 1, GL_FALSE, &vpMat[0][0]);
+        glUniformMatrix4fv(testShader->getUniformLoc("uViewProjMat"), 1, GL_FALSE, &camera->getViewProjectionMatrix()[0][0]);
 
         if (GLenum ass = glGetError(); ass != GL_NO_ERROR)
         {
