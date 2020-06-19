@@ -5,6 +5,12 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+enum class CameraMode
+{
+    ORBIT,
+    FIRST_PERSON
+};
+
 class Camera : Node
 {
 public:
@@ -21,10 +27,13 @@ public:
         return glm::mat4x4(viewProjMatrix);
     }
 
+    inline const CameraMode getCameraMode() { return mode; }
+
 protected:
     void updateTransform() override;
 
 private:
+    CameraMode mode;
     glm::mat4x4 projMatrix;
     glm::mat4x4 viewProjMatrix;
 };
