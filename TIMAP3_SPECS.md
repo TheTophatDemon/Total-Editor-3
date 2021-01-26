@@ -13,7 +13,7 @@ a list of texture names that the tile data refers back to with indices.
 
 Entities also have 3 dimensional coordinates as well as both yaw and pitch angles.
 
-Both tiles and entities have a type and a flag. The flag can be either used as a normal number of a bit-mask depending on the situation.
+Both tiles and entities have a type and a flag. The flag can be either used as a normal number or a bit-mask depending on the situation.
 This replaces the old system of using the link id to store additional data about the wall type, like which direction a secret wall moves.
 
 ## Order of data

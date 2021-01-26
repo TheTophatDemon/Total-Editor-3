@@ -15,3 +15,5 @@ build/TotalEditor3.exe
 build/Makefile
 build/compile_commands.json
 build/imgui.ini
+.vs/
+.vscode/**
