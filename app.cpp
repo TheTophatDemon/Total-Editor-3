@@ -10,12 +10,16 @@
 #include <gl/GLU.h>
 #include <SDL_image.h>
 
+#include <entt/entt.hpp>
+
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl.h>
 
 #include <glm/mat4x4.hpp>
 #include <glm/gtx/transform.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/ext/quaternion_trigonometric.hpp>
 
 #include <initializer_list>
 
@@ -70,7 +74,7 @@ App::~App()
 
 void App::beginLoop()
 {
-    
+
     auto testTexture = assets->getTexture("textures\\spacewall.png");
     auto testTexture2 = assets->getTexture("textures\\spacefloor.png");
 
@@ -136,6 +140,35 @@ void App::beginLoop()
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     glClearColor(0.1, 0.1, 0.3, 1.0);
 
+
+    entt::registry reg;
+
+    struct Cube {
+        glm::vec3 pos;
+        glm::quat rot;
+    };
+
+    struct Rotate {
+        glm::vec3 axis;
+        float angle;
+        float delta;
+    };
+
+    auto frand = [](float l, float u){
+        return (((float)rand() / RAND_MAX) * (u-l)) + l;
+    };
+
+    //Spawn random cubes
+    for (int i = 0; i < 20; ++i) {
+        const auto entity = reg.create();
+        const float angle = frand(0.0, glm::pi<float>() * 2.0);
+        const auto axis = glm::normalize(glm::vec3(frand(-1.0, 1.0), frand(-1.0, 1.0), frand(-1.0, 1.0)));
+        reg.emplace<Cube>(entity, 
+            glm::vec3(frand(-10.0, 10.0), frand(-5.0, 5.0), frand(-25.0, -10.0)), 
+            glm::angleAxis(angle, axis));
+        reg.emplace<Rotate>(entity, axis, angle, frand(-glm::pi<float>() / 32.0, glm::pi<float>() / 32.0));
+    }
+
     Uint32 lastTime = 0U;
 
     bool showDemoWindow = true;
@@ -146,6 +179,14 @@ void App::beginLoop()
         lastTime = now;
         gTimer += deltaTime;
 
+        auto rView = reg.view<Cube, Rotate>();
+        rView.each([](Cube &cu, Rotate &ro){
+            ro.angle += ro.delta;
+            cu.rot = glm::angleAxis(ro.angle, ro.axis);
+        });
+
+
+        //Render
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame(window);
         ImGui::NewFrame();
@@ -161,25 +202,26 @@ void App::beginLoop()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        testShader->bind();
-        
-        glm::mat4x4 modelMat = glm::translate(glm::vec3(0.0f, 0.0f, -4.0f))
-             * glm::rotate(gTimer, glm::vec3(1.0f, 1.0f, 0.0f));
-        
-        glUniformMatrix4fv(testShader->getUniformLoc("uModelMat"), 1, GL_FALSE, &modelMat[0][0]);
-
         glm::mat4x4 viewProjMat = glm::perspectiveFov<float>(70.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.1f, 100.0f);
         glUniformMatrix4fv(testShader->getUniformLoc("uViewProjMat"), 1, GL_FALSE, &viewProjMat[0][0]);
+        testShader->bind();
+        
+        auto view = reg.view<Cube>();
+        view.each([&](Cube &cube) {
+            glm::mat4x4 modelMat = glm::translate(cube.pos) * glm::mat4x4(cube.rot);
+        
+            glUniformMatrix4fv(testShader->getUniformLoc("uModelMat"), 1, GL_FALSE, &modelMat[0][0]);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, testTexture->getID());
-        glUniform1i(testShader->getUniformLoc("uTexture"), 0);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, testTexture->getID());
+            glUniform1i(testShader->getUniformLoc("uTexture"), 0);
 
-        testMesh->bind();
-        glDrawElements(GL_TRIANGLES, testMesh->getIndexCount(), GL_UNSIGNED_SHORT, 0);
-        testMesh2->bind();
-        glBindTexture(GL_TEXTURE_2D, testTexture2->getID());
-        glDrawElements(GL_TRIANGLES, testMesh2->getIndexCount(), GL_UNSIGNED_SHORT, 0);
+            testMesh->bind();
+            glDrawElements(GL_TRIANGLES, testMesh->getIndexCount(), GL_UNSIGNED_SHORT, 0);
+            testMesh2->bind();
+            glBindTexture(GL_TEXTURE_2D, testTexture2->getID());
+            glDrawElements(GL_TRIANGLES, testMesh2->getIndexCount(), GL_UNSIGNED_SHORT, 0);
+        });
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
