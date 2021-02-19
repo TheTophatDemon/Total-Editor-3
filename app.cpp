@@ -27,6 +27,7 @@
 #include "shader.h"
 #include "mesh.h"
 #include "input.h"
+#include "transform.h"
 
 App::App() : gTimer(0.0f)
 {
@@ -143,11 +144,6 @@ void App::beginLoop()
 
     entt::registry reg;
 
-    struct Cube {
-        glm::vec3 pos;
-        glm::quat rot;
-    };
-
     struct Rotate {
         glm::vec3 axis;
         float angle;
@@ -163,10 +159,10 @@ void App::beginLoop()
         const auto entity = reg.create();
         const float angle = frand(0.0, glm::pi<float>() * 2.0);
         const auto axis = glm::normalize(glm::vec3(frand(-1.0, 1.0), frand(-1.0, 1.0), frand(-1.0, 1.0)));
-        reg.emplace<Cube>(entity, 
+        reg.emplace<Transform>(entity, 
             glm::vec3(frand(-10.0, 10.0), frand(-5.0, 5.0), frand(-25.0, -10.0)), 
-            glm::angleAxis(angle, axis));
-        reg.emplace<Rotate>(entity, axis, angle, frand(-glm::pi<float>() / 32.0, glm::pi<float>() / 32.0));
+            glm::angleAxis(angle, axis), 1.0f);
+        reg.emplace<Rotate>(entity, axis, angle, frand(-glm::pi<float>(), glm::pi<float>()));
     }
 
     Uint32 lastTime = 0U;
@@ -179,25 +175,52 @@ void App::beginLoop()
         lastTime = now;
         gTimer += deltaTime;
 
-        auto rView = reg.view<Cube, Rotate>();
-        rView.each([](Cube &cu, Rotate &ro){
-            ro.angle += ro.delta;
-            cu.rot = glm::angleAxis(ro.angle, ro.axis);
+        auto rView = reg.view<Transform, Rotate>();
+        rView.each([&](Transform &trans, Rotate &ro){
+            ro.angle += ro.delta * deltaTime;
+            trans.SetRot(glm::angleAxis(ro.angle, ro.axis));
         });
-
 
         //Render
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame(window);
         ImGui::NewFrame();
         ImGui::ShowDemoWindow(&showDemoWindow);
-        ImGui::Begin("Mouse Debug");
-        ImGui::Text("Mouse Position: (%f, %f)", Input::getMousePosition().x, Input::getMousePosition().y);
-        ImGui::Text("Mouse Movement: (%f, %f)", Input::getMouseMovement().x, Input::getMouseMovement().y);
-        ImGui::Text("Mouse Button 1: Pressed? %s Down? %s", Input::getMouseButtonPressed(1) ? "Y" : "N", Input::getMouseButtonDown(1) ? "Y" : "N");
-        ImGui::Text("Mouse Button 2: Pressed? %s Down? %s", Input::getMouseButtonPressed(2) ? "Y" : "N", Input::getMouseButtonDown(2) ? "Y" : "N");
-        ImGui::Text("Mouse Button 3: Pressed? %s Down? %s", Input::getMouseButtonPressed(3) ? "Y" : "N", Input::getMouseButtonDown(3) ? "Y" : "N");
-        ImGui::End();
+
+        if (ImGui::BeginMainMenuBar()) {
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("New")) {}
+                if (ImGui::MenuItem("Open")) {}
+                if (ImGui::BeginMenu("Open Recent")) {
+                    ImGui::MenuItem("E1M1.ti");
+                    ImGui::MenuItem("E255M9.ti");
+                    ImGui::MenuItem("genlab.ti3");
+                    ImGui::EndMenu();
+                }
+                if (ImGui::MenuItem("Save", "Ctrl+S")) {}
+                if (ImGui::MenuItem("Save As", "Ctrl+Shift+S")) {}
+                if (ImGui::MenuItem("Info", "Ctrl+I")) {
+
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::Separator();
+            if (ImGui::BeginMenu("Debug")) {
+                if (ImGui::MenuItem("Mouse Info", "Ctrl+I")) {
+                    ImGui::Begin("Mouse Debug");
+                    ImGui::Text("Mouse Position: (%f, %f)", Input::getMousePosition().x, Input::getMousePosition().y);
+                    ImGui::Text("Mouse Movement: (%f, %f)", Input::getMouseMovement().x, Input::getMouseMovement().y);
+                    ImGui::Text("Mouse Button 1: Pressed? %s Down? %s", Input::getMouseButtonPressed(1) ? "Y" : "N", Input::getMouseButtonDown(1) ? "Y" : "N");
+                    ImGui::Text("Mouse Button 2: Pressed? %s Down? %s", Input::getMouseButtonPressed(2) ? "Y" : "N", Input::getMouseButtonDown(2) ? "Y" : "N");
+                    ImGui::Text("Mouse Button 3: Pressed? %s Down? %s", Input::getMouseButtonPressed(3) ? "Y" : "N", Input::getMouseButtonDown(3) ? "Y" : "N");
+                    ImGui::End();
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
+        }
+
+
         ImGui::Render();
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -206,9 +229,9 @@ void App::beginLoop()
         glUniformMatrix4fv(testShader->getUniformLoc("uViewProjMat"), 1, GL_FALSE, &viewProjMat[0][0]);
         testShader->bind();
         
-        auto view = reg.view<Cube>();
-        view.each([&](Cube &cube) {
-            glm::mat4x4 modelMat = glm::translate(cube.pos) * glm::mat4x4(cube.rot);
+        auto view = reg.view<Transform>();
+        view.each([&](Transform &trans) {
+            glm::mat4x4 modelMat = trans.GetMatrix();
         
             glUniformMatrix4fv(testShader->getUniformLoc("uModelMat"), 1, GL_FALSE, &modelMat[0][0]);
 

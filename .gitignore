@@ -17,3 +17,6 @@ build/compile_commands.json
 build/imgui.ini
 .vs/
 .vscode/**
+*.a
+*.dll.a
+build/*.a

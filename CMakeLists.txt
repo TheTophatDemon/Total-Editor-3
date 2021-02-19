@@ -9,7 +9,9 @@ include_directories("${CMAKE_SOURCE_DIR}/glew/include"
         "${CMAKE_SOURCE_DIR}/sdl2/include" 
         "${CMAKE_SOURCE_DIR}/sdl2_image/include"
         "${CMAKE_SOURCE_DIR}/glm"
-        "${CMAKE_SOURCE_DIR}/entt")
+        "${CMAKE_SOURCE_DIR}/glm/ext"
+        "${CMAKE_SOURCE_DIR}/entt"
+        "${CMAKE_SOURCE_DIR}")
 link_directories("${CMAKE_SOURCE_DIR}/glew/lib" 
         "${CMAKE_SOURCE_DIR}/sdl2/lib" 
         "${CMAKE_SOURCE_DIR}/sdl2_image/lib")
