@@ -74,3 +74,7 @@ glm::vec3& Transform::setScale() {
     m_dirty = true;
     return m_scale;
 }
+
+bool Transform::isDirty() const {
+    return m_dirty;
+}

@@ -160,6 +160,12 @@ void App::beginLoop()
         reg.emplace<MeshRenderComponent>(entity, cubeMesh, testShader, testTexture);
     }
 
+    //Spawn camera
+    auto cam_ent = reg.create();
+    reg.emplace<CameraComponent>(cam_ent, 70.0f, 0.1f, 100.0f);
+    reg.emplace<Transform>(cam_ent, glm::vec3(0.0, 0.0, 0.0), glm::angleAxis(0.0f, glm::vec3(0.0, 1.0, 0.0)));
+    reg.emplace<Rotate>(cam_ent, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f, 0.5f);
+
     Uint32 lastTime = 0U;
 
     bool showDemoWindow = true;
@@ -219,11 +225,8 @@ void App::beginLoop()
         ImGui::Render();
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glm::mat4x4 viewProjMat = glm::perspectiveFov<float>(70.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.1f, 100.0f);
-        glUniformMatrix4fv(testShader->getUniformLoc("uViewProjMat"), 1, GL_FALSE, &viewProjMat[0][0]);
-        testShader->bind();
         
+        CameraComponent::Update(reg);
         RenderMeshComponents(reg);
         
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

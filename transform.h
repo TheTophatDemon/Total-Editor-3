@@ -22,6 +22,7 @@ public:
     glm::vec3& setScale(const glm::vec3 scale);
     glm::vec3& setScale(const float scale);
     glm::vec3& setScale();
+    bool isDirty() const;
 protected:
     glm::vec3 m_pos;
     glm::quat m_rot;

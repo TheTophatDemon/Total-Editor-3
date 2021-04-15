@@ -1,6 +1,9 @@
 #pragma once
 
+#include "entt/entt.hpp"
+
 #include "assets.h"
+#include "components.h"
 
 #include <memory>
 
