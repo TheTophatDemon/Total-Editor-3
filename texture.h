@@ -3,10 +3,10 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 
-#include <glew.h>
+#include "glew/include/glew.h"
 #include <GL/gl.h>
 #include <memory>
-#include <SDL.h>
+#include "sdl2/include/SDL.h"
 
 class Texture
 {

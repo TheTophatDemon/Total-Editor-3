@@ -28,6 +28,7 @@
 #include "mesh.h"
 #include "input.h"
 #include "transform.h"
+#include "components.h"
 
 App::App() : gTimer(0.0f)
 {
@@ -81,8 +82,8 @@ void App::beginLoop()
 
     //pos, uv, col, norm
     //-z is in front of default camera
-    auto testMesh = std::shared_ptr<Mesh>(
-        new Mesh (
+    auto cubeMesh = std::shared_ptr<Mesh>(
+        new TriMesh (
             {
                 //Back Side          UV            COLOR                       NORMAL
                 -1.0f, -1.0f, -1.0f, +0.0f, +0.0f, +1.0f, +1.0f, +1.0f, +1.0f, +0.0f, +0.0f, -1.0f,
@@ -104,18 +105,6 @@ void App::beginLoop()
                 +1.0f, -1.0f, +1.0f, +1.0f, +0.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +0.0f, +0.0f,
                 +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +0.0f, +0.0f,
                 +1.0f, +1.0f, -1.0f, +0.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +0.0f, +0.0f,
-            }, 
-            {
-                2U, 1U, 0U, 0U, 3U, 2U, //0
-                4U, 5U, 6U, 6U, 7U, 4U,  //4
-                8U, 9U, 10U, 10U, 11U, 8U, //8
-                14U, 13U, 12U, 12U, 15U, 14U, //12
-            }
-    ));
-
-    auto testMesh2 = std::shared_ptr<Mesh>(
-        new Mesh(
-            {
                 //Top Side           UV            COLOR                       NORMAL
                 -1.0f, +1.0f, -1.0f, +0.0f, +0.0f, +1.0f, +1.0f, +1.0f, +1.0f, +0.0f, +1.0f, +0.0f,
                 +1.0f, +1.0f, -1.0f, +1.0f, +0.0f, +1.0f, +1.0f, +1.0f, +1.0f, +0.0f, +1.0f, +0.0f,
@@ -126,13 +115,18 @@ void App::beginLoop()
                 +1.0f, -1.0f, -1.0f, +1.0f, +0.0f, +1.0f, +1.0f, +1.0f, +1.0f, +0.0f, -1.0f, +0.0f,
                 +1.0f, -1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +0.0f, -1.0f, +0.0f,
                 -1.0f, -1.0f, +1.0f, +0.0f, +1.0f, +1.0f, +1.0f, +1.0f, +1.0f, +0.0f, -1.0f, +0.0f,
-            },
+            }, 
             {
                 2U, 1U, 0U, 0U, 3U, 2U, //0
                 4U, 5U, 6U, 6U, 7U, 4U,  //4
+                8U, 9U, 10U, 10U, 11U, 8U, //8
+                14U, 13U, 12U, 12U, 15U, 14U, //12
+                18U, 17U, 16U, 16U, 19U, 18U, //16
+                20U, 21U, 22U, 22U, 23U, 20U,  //20
             }
-        )
-    );
+    ));
+
+    
 
     auto testShader = std::make_shared<Shader>("assets\\shaders\\mapShader_vert.glsl", "assets\\shaders\\mapShader_frag.glsl");
 
@@ -140,7 +134,6 @@ void App::beginLoop()
     glEnable(GL_CULL_FACE);
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     glClearColor(0.1, 0.1, 0.3, 1.0);
-
 
     entt::registry reg;
 
@@ -163,6 +156,8 @@ void App::beginLoop()
             glm::vec3(frand(-10.0, 10.0), frand(-5.0, 5.0), frand(-25.0, -10.0)), 
             glm::angleAxis(angle, axis), 1.0f);
         reg.emplace<Rotate>(entity, axis, angle, frand(-glm::pi<float>(), glm::pi<float>()));
+            std::cout << "WAH" << std::endl;
+        reg.emplace<MeshRenderComponent>(entity, cubeMesh, testShader, testTexture);
     }
 
     Uint32 lastTime = 0U;
@@ -178,7 +173,7 @@ void App::beginLoop()
         auto rView = reg.view<Transform, Rotate>();
         rView.each([&](Transform &trans, Rotate &ro){
             ro.angle += ro.delta * deltaTime;
-            trans.SetRot(glm::angleAxis(ro.angle, ro.axis));
+            trans.setRot(glm::angleAxis(ro.angle, ro.axis));
         });
 
         //Render
@@ -229,23 +224,8 @@ void App::beginLoop()
         glUniformMatrix4fv(testShader->getUniformLoc("uViewProjMat"), 1, GL_FALSE, &viewProjMat[0][0]);
         testShader->bind();
         
-        auto view = reg.view<Transform>();
-        view.each([&](Transform &trans) {
-            glm::mat4x4 modelMat = trans.GetMatrix();
+        RenderMeshComponents(reg);
         
-            glUniformMatrix4fv(testShader->getUniformLoc("uModelMat"), 1, GL_FALSE, &modelMat[0][0]);
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, testTexture->getID());
-            glUniform1i(testShader->getUniformLoc("uTexture"), 0);
-
-            testMesh->bind();
-            glDrawElements(GL_TRIANGLES, testMesh->getIndexCount(), GL_UNSIGNED_SHORT, 0);
-            testMesh2->bind();
-            glBindTexture(GL_TEXTURE_2D, testTexture2->getID());
-            glDrawElements(GL_TRIANGLES, testMesh2->getIndexCount(), GL_UNSIGNED_SHORT, 0);
-        });
-
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         SDL_GL_SwapWindow(window);

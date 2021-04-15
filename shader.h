@@ -1,9 +1,9 @@
 #pragma once
 
-#include <glew.h>
+#include "glew/include/glew.h"
 #include <GL/gl.h>
 #include <memory>
-#include <SDL.h>
+#include "sdl2/include/SDL.h"
 #include <unordered_map>
 
 class Shader
