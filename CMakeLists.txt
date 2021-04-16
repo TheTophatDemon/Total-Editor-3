@@ -31,7 +31,7 @@ target_link_libraries(TotalEditor3 PRIVATE imgui glm
         "${CMAKE_SOURCE_DIR}/sdl2_image/lib/libSDL2_image.a" 
         opengl32.lib GlU32.lib winmm gdi32 dxguid ws2_32 ole32 imm32 kernel32 hal user32 hid ntdll oleaut32 version uuid advapi32 setupapi shell32)
 #add -O3 or -O2 when releasing
-target_compile_options(TotalEditor3 PRIVATE -w -Wl,-subsystem,console,)
+target_compile_options(TotalEditor3 PRIVATE -w -Wl,-subsystem,console -g)
 target_link_options(TotalEditor3 PRIVATE -mwindows -m64)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
