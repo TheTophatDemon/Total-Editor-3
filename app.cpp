@@ -1,6 +1,3 @@
-//TODO: Set up quad rendering to use shaders and crap
-//TODO: Add actual doc-style comments
-
 #include "app.h"
 
 #include <iostream>
@@ -22,6 +19,7 @@
 #include <glm/ext/quaternion_trigonometric.hpp>
 
 #include <initializer_list>
+#include <vector>
 
 #include "texture.h"
 #include "shader.h"
@@ -156,15 +154,42 @@ void App::beginLoop()
             glm::vec3(frand(-10.0, 10.0), frand(-5.0, 5.0), frand(-25.0, -10.0)), 
             glm::angleAxis(angle, axis), 1.0f);
         reg.emplace<Rotate>(entity, axis, angle, frand(-glm::pi<float>(), glm::pi<float>()));
-            std::cout << "WAH" << std::endl;
         reg.emplace<MeshRenderComponent>(entity, cubeMesh, testShader, testTexture);
     }
+
+    //Spawn level grid
+    const int GRID_SIZE = 50;
+    const float GRID_SPACING = 2.0f;
+    std::vector<glm::vec3> verts;
+    std::vector<unsigned short> inds;
+    for (int i = -GRID_SIZE / 2; i < GRID_SIZE / 2; ++i) {
+        for (int j = -GRID_SIZE / 2; j < GRID_SIZE / 2; ++j) {
+
+            for (unsigned short k : {0, 1, 1, 2, 2, 3, 3, 0}) {
+                inds.push_back(verts.size() + k);
+            }
+            verts.push_back(glm::vec3(i * GRID_SPACING, 0.0f, j * GRID_SPACING));
+            verts.push_back(glm::vec3(i * GRID_SPACING + GRID_SPACING, 0.0f, j * GRID_SPACING));
+            verts.push_back(glm::vec3(i * GRID_SPACING + GRID_SPACING, 0.0f, j * GRID_SPACING + GRID_SPACING));
+            verts.push_back(glm::vec3(i * GRID_SPACING, 0.0f, j * GRID_SPACING + GRID_SPACING));
+        }
+    }
+    /*verts.push_back(glm::vec3(0.0, 0.0, 0.0));
+    verts.push_back(glm::vec3(10.0, 0.0, 0.0));
+    inds.push_back(0);
+    inds.push_back(1);*/
+
+    auto gridShader = std::make_shared<Shader>("assets/shaders/gridShader_vert.glsl", "assets/shaders/gridShader_frag.glsl");
+
+    auto grid_ent = reg.create();
+    reg.emplace<MeshRenderComponent>(grid_ent, std::make_shared<LineMesh>(verts, inds), gridShader, std::weak_ptr<Texture>());
+    reg.emplace<Transform>(grid_ent, glm::vec3(0.0f, -5.0f, 0.0f), glm::quat_identity<float, glm::qualifier::packed_highp>());
 
     //Spawn camera
     auto cam_ent = reg.create();
     reg.emplace<CameraComponent>(cam_ent, 70.0f, 0.1f, 100.0f);
     reg.emplace<Transform>(cam_ent, glm::vec3(0.0, 0.0, 0.0), glm::angleAxis(0.0f, glm::vec3(0.0, 1.0, 0.0)));
-    reg.emplace<Rotate>(cam_ent, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f, 0.5f);
+    reg.emplace<Rotate>(cam_ent, glm::vec3(0.0f, 1.0f, 0.0f), 0.0f, 1.0f);
 
     Uint32 lastTime = 0U;
 

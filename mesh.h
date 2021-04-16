@@ -2,23 +2,25 @@
 
 #include "glew/include/glew.h"
 #include <GL/gl.h>
+#include "glm/glm.hpp"
 #include <vector>
 #include <memory>
 
 class Mesh
 {
 public:
+    Mesh();
     Mesh(std::initializer_list<float> vertices, std::initializer_list<unsigned short> indices);
     virtual ~Mesh();
     virtual void render() = 0;
     int getIndexCount() const;
 protected:
+    virtual void generateOpenGLArrays();
     std::vector<float> m_vertexData;
     std::vector<unsigned short> m_indexData;
     GLuint m_vertexBuffer;
     GLuint m_vertexArrayObject;
     GLuint m_indexBuffer;
-    unsigned m_indexCount;
 };
 
 class TriMesh : public Mesh {
@@ -46,5 +48,6 @@ public:
     constexpr static int ATTRIB_STRIDE = OFS_COLOR + sizeof(float) * 4;
 
     LineMesh(std::initializer_list<float> vertices, std::initializer_list<unsigned short> indices);
+    LineMesh(std::vector<glm::vec3>& vertices, std::vector<unsigned short>& indices);
     virtual void render() override;
 };

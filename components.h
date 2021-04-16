@@ -11,7 +11,7 @@
 struct MeshRenderComponent {
     std::shared_ptr<Mesh> mesh;
     std::shared_ptr<Shader> shader;
-    std::shared_ptr<Texture> texture;
+    std::weak_ptr<Texture> texture;
 };
 
 void RenderMeshComponents(entt::registry& r);

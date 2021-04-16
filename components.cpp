@@ -18,9 +18,11 @@ void RenderMeshComponents(entt::registry& r) {
             }
 
             if (int loc = mesh.shader->getUniformLoc("uTexture"); loc >= 0) {
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, mesh.texture->getID());
-                glUniform1i(loc, 0);
+                if (std::shared_ptr<Texture> tex = mesh.texture.lock()) {
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, tex->getID());
+                    glUniform1i(loc, 0);
+                }
             }
 
             mesh.mesh->render();
