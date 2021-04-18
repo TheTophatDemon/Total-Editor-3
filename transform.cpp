@@ -78,3 +78,32 @@ glm::vec3& Transform::setScale() {
 bool Transform::isDirty() const {
     return m_dirty;
 }
+
+void Transform::rotateX(const float delta) {
+    rotateAxisAngle(glm::vec3(1.0f, 0.0f, 0.0f), delta);
+}
+
+void Transform::rotateY(const float delta) {
+    rotateAxisAngle(glm::vec3(0.0f, 1.0f, 0.0f), delta);
+}
+
+void Transform::rotateZ(const float delta) {
+    rotateAxisAngle(glm::vec3(0.0f, 0.0f, 1.0f), delta);
+}
+
+void Transform::translate(const glm::vec3& delta) {
+    m_pos += delta;
+    m_dirty = true;
+}
+
+void Transform::translate(const float x, const float y, const float z) {
+    m_pos.x += x;
+    m_pos.y += y;
+    m_pos.z += z;
+    m_dirty = true;
+}
+
+void Transform::rotateAxisAngle(const glm::vec3 axis, const float delta) {
+    m_rot *= glm::angleAxis(delta, axis);
+    m_dirty = true;
+}

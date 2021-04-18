@@ -189,9 +189,10 @@ void App::beginLoop()
     auto cam_ent = reg.create();
     reg.emplace<CameraComponent>(cam_ent, 70.0f, 0.1f, 100.0f);
     reg.emplace<Transform>(cam_ent, glm::vec3(0.0, 0.0, 0.0), glm::angleAxis(0.0f, glm::vec3(0.0, 1.0, 0.0)));
-    reg.emplace<Rotate>(cam_ent, glm::vec3(0.0f, 1.0f, 0.0f), 0.0f, 1.0f);
+    reg.emplace<MouseLook>(cam_ent, 0.0f, 0.0f, glm::radians(70.0f), 10.0f, 12.0f);
 
     Uint32 lastTime = 0U;
+    bool mouseMenu = false;
 
     bool showDemoWindow = true;
     while (Input::pollEvents())
@@ -206,6 +207,8 @@ void App::beginLoop()
             ro.angle += ro.delta * deltaTime;
             trans.setRot(glm::angleAxis(ro.angle, ro.axis));
         });
+
+        UpdateMouseLook(reg, deltaTime);
 
         //Render
         ImGui_ImplOpenGL3_NewFrame();
@@ -233,17 +236,20 @@ void App::beginLoop()
             ImGui::Separator();
             if (ImGui::BeginMenu("Debug")) {
                 if (ImGui::MenuItem("Mouse Info", "Ctrl+I")) {
-                    ImGui::Begin("Mouse Debug");
-                    ImGui::Text("Mouse Position: (%f, %f)", Input::getMousePosition().x, Input::getMousePosition().y);
-                    ImGui::Text("Mouse Movement: (%f, %f)", Input::getMouseMovement().x, Input::getMouseMovement().y);
-                    ImGui::Text("Mouse Button 1: Pressed? %s Down? %s", Input::getMouseButtonPressed(1) ? "Y" : "N", Input::getMouseButtonDown(1) ? "Y" : "N");
-                    ImGui::Text("Mouse Button 2: Pressed? %s Down? %s", Input::getMouseButtonPressed(2) ? "Y" : "N", Input::getMouseButtonDown(2) ? "Y" : "N");
-                    ImGui::Text("Mouse Button 3: Pressed? %s Down? %s", Input::getMouseButtonPressed(3) ? "Y" : "N", Input::getMouseButtonDown(3) ? "Y" : "N");
-                    ImGui::End();
+                    mouseMenu = !mouseMenu;
                 }
                 ImGui::EndMenu();
             }
             ImGui::EndMainMenuBar();
+        }
+        if (mouseMenu) {
+            ImGui::Begin("Mouse Debug");
+            ImGui::Text("Mouse Position: (%f, %f)", Input::getMousePosition().x, Input::getMousePosition().y);
+            ImGui::Text("Mouse Movement: (%f, %f)", Input::getMouseMovement().x, Input::getMouseMovement().y);
+            ImGui::Text("Mouse Button left: Pressed? %s Down? %s", Input::isMouseButtonPressed(Input::MouseButton::LEFT) ? "Y" : "N", Input::isMouseButtonDown(Input::MouseButton::LEFT) ? "Y" : "N");
+            ImGui::Text("Mouse Button right: Pressed? %s Down? %s", Input::isMouseButtonPressed(Input::MouseButton::RIGHT) ? "Y" : "N", Input::isMouseButtonDown(Input::MouseButton::RIGHT) ? "Y" : "N");
+            ImGui::Text("Mouse Button middle: Pressed? %s Down? %s", Input::isMouseButtonPressed(Input::MouseButton::MIDDLE) ? "Y" : "N", Input::isMouseButtonDown(Input::MouseButton::MIDDLE) ? "Y" : "N");
+            ImGui::End();
         }
 
 

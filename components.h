@@ -25,3 +25,13 @@ protected:
     glm::mat4 m_projection;
     glm::mat4 m_viewProj;
 };
+
+struct MouseLook {
+    float yaw;
+    float pitch;
+    float pitch_limit;
+    float sensitivity;
+    float move_speed;
+};
+
+void UpdateMouseLook(entt::registry& r, const float deltaTime);

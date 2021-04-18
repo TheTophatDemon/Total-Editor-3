@@ -1,5 +1,7 @@
 #include "components.h"
 #include "app.h"
+#include "input.h"
+#include <algorithm>
 
 void RenderMeshComponents(entt::registry& r) {
     auto mesh_view = r.view<MeshRenderComponent, Transform>();
@@ -43,6 +45,42 @@ const glm::mat4& CameraComponent::GetViewProjMatrix() const {
 void CameraComponent::Update(entt::registry& r) {
     auto view = r.view<Transform, CameraComponent>();
     for (auto [ent, trans, cam] : view.each()) {
-        cam.m_viewProj = cam.m_projection * trans.getMatrix();
+        cam.m_viewProj = cam.m_projection * glm::inverse(trans.getMatrix());
+    }
+}
+
+void UpdateMouseLook(entt::registry& r, const float deltaTime) {
+    auto view = r.view<Transform, MouseLook>();
+    for (auto [ent, trans, look] : view.each()) {
+        if (Input::isMouseButtonDown(Input::MouseButton::RIGHT)) {
+            glm::vec2 mous = Input::getMouseMovement();
+            look.yaw += mous.x * look.sensitivity;
+            look.pitch = std::max(-look.pitch_limit, std::min(look.pitch_limit, look.pitch + mous.y * look.sensitivity));
+            auto newRot = glm::angleAxis(-look.yaw, glm::vec3(0.0f, 1.0f, 0.0f));
+            newRot *= glm::angleAxis(-look.pitch, glm::vec3(1.0f, 0.0f, 0.0f));
+            trans.setRot(newRot);
+        }
+        
+        glm::vec3 movement = glm::vec3(0.0f, 0.0f, 0.0f);
+        if (Input::isKeyDown(SDL_SCANCODE_W)) {
+            movement.z = -1.0f;
+        } else if (Input::isKeyDown(SDL_SCANCODE_S)) {
+            movement.z = 1.0f;
+        }
+        if (Input::isKeyDown(SDL_SCANCODE_D)) {
+            movement.x = 1.0f;
+        } else if (Input::isKeyDown(SDL_SCANCODE_A)) {
+            movement.x = -1.0f;
+        }
+        movement = trans.getRot() * movement;
+        if (Input::isKeyDown(SDL_SCANCODE_C)) {
+            movement.y = -1.0f;
+        } else if (Input::isKeyDown(SDL_SCANCODE_SPACE)) {
+            movement.y = 1.0f;
+        }
+        if (movement.x + movement.y + movement.z != 0.0f) {
+            movement = glm::normalize(movement);
+        }
+        trans.translate(movement * look.move_speed * deltaTime);
     }
 }

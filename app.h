@@ -19,7 +19,8 @@ public:
     static const constexpr int WINDOW_WIDTH = 1280;
     static const constexpr int WINDOW_HEIGHT = 720;
     static const constexpr float WINDOW_ASPECT_RATIO = (float) WINDOW_WIDTH / WINDOW_HEIGHT;
-    
+    static const constexpr float MOUSE_LOOK_SENSITIVITY = 10.0f;
+
     App();
     ~App();
     void beginLoop();

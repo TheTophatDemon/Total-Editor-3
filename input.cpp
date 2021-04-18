@@ -9,6 +9,8 @@ bool Input::mouseButtonDown[];
 bool Input::mouseButtonPress[];
 glm::vec2 Input::mousePosition;
 glm::vec2 Input::mouseMovement;
+std::map<SDL_Scancode, bool> Input::keyDown = std::map<SDL_Scancode, bool>();
+std::map<SDL_Scancode, bool> Input::keyPress = std::map<SDL_Scancode, bool>();
 
 const glm::vec2 Input::getMousePosition()
 {
@@ -31,14 +33,22 @@ void Input::init()
     }
 }
 
-const bool Input::getMouseButtonDown(const Uint8 button)
+const bool Input::isMouseButtonDown(const MouseButton button)
 {
-    return mouseButtonDown[button];
+    return mouseButtonDown[(int)button];
 }
 
-const bool Input::getMouseButtonPressed(const Uint8 button)
+const bool Input::isMouseButtonPressed(const MouseButton button)
 {
-    return mouseButtonPress[button];
+    return mouseButtonPress[(int)button];
+}
+
+const bool Input::isKeyDown(const SDL_Scancode key) {
+    return keyDown[key];
+}
+
+const bool Input::isKeyPressed(const SDL_Scancode key) {
+    return keyPress[key];
 }
 
 bool Input::pollEvents()
@@ -46,6 +56,9 @@ bool Input::pollEvents()
     for (bool& button : mouseButtonPress)
     {
         button = false;
+    }
+    for (auto& [key, val] : keyPress) {
+        val = false;
     }
 
     mouseMovement.x = 0.0f;
@@ -80,6 +93,17 @@ bool Input::pollEvents()
                 mousePosition.y = (float) event.motion.y / App::WINDOW_HEIGHT;
                 mouseMovement.x = (float) event.motion.xrel / App::WINDOW_WIDTH;
                 mouseMovement.y = (float) event.motion.yrel / App::WINDOW_HEIGHT;
+                break;
+            }
+            case SDL_KEYDOWN:
+            {
+                keyDown[event.key.keysym.scancode] = true;
+                keyPress[event.key.keysym.scancode] = true;
+                break;
+            }
+            case SDL_KEYUP:
+            {
+                keyDown[event.key.keysym.scancode] = false;
                 break;
             }
         }

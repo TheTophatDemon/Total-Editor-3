@@ -22,8 +22,14 @@ public:
     glm::vec3& setScale(const glm::vec3 scale);
     glm::vec3& setScale(const float scale);
     glm::vec3& setScale();
+    void rotateX(const float delta);
+    void rotateY(const float delta);
+    void rotateZ(const float delta);
+    void translate(const glm::vec3& delta);
+    void translate(const float x, const float y, const float z);
     bool isDirty() const;
 protected:
+    void rotateAxisAngle(const glm::vec3 axis, const float delta);
     glm::vec3 m_pos;
     glm::quat m_rot;
     glm::vec3 m_scale;
