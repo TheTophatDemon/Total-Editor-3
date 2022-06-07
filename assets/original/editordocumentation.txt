@@ -1,0 +1,61 @@
+Total Editor II
+(totaleditor2.exe)
+
+Controls:
+WASD - Move camera
+Hold shift to move faster
+R - Reset camera
+F and G - Change flag
+Z and X - Change id
+1 - Edit walls
+2 - Edit ceilings
+3 - Edit floors
+4 - Edit things
+Left click - Place tile
+Right click - Pick tile
+Shift+left click - Remove tile
+Tab - Go to texture browser
+O - Save map
+U - Load map
+, and . - Change episode
+N and M - Change map
+Left and right (in things mode) - Change direction
+W and S (in texture browser) - Scroll
+
+Things:
+	'Things' are just things that aren't walls, floors, or ceilings.
+	Pressing left and right will change the thing's direction, but it only really does anything if it's a monster.
+	See indexes.txt for information on what flags spawn what entity.
+
+	Some Thing flags spawn things based on their texture. For example, Thing flag 2 will spawn a medkit if the
+	texture of the Thing is a medkit, but will spawn grenades if the texture is of grenades.
+Walls:
+	See indexes.txt for what the flags do.
+	If two walls have the same id, one will activate the other (such as a switch and a door)
+	Sometimes the id defines something else about the wall, see indexes.txt.
+	Using any one of an animated texture's frames from the texture browser will automatically make
+	the wall animated. This is the same for floors and props as well.
+
+Level design:
+	Last time I tested, the game can handle around 30 enemies at once.
+	The enemies are in their most resource-consuming state when they're searching for the player.
+	The enemies will not search for the player unless they are within ~16 tiles of him/her.
+	Thus, if you're having trouble with framerate, try spreading things out a little bit. Teleporters are your friend!
+	Also, make sure Geoffrey is in every level you make!
+	
+	For some odd reason, the game lags a whole bunch if you finish a map that's too small.
+	So, please make sure your map is at least a little bigger than the editor screen.
+	Make sure both the wall AND floor layers are this size.
+	
+Level names and music can be edited in maps/MAPINFO.txt
+It goes like this:
+	E1M1
+	music.ogg
+	MAP NAME
+	FLAG
+	
+Really, flag is always 0 unless it's the boss level, then it's 1.
+However, boss levels can only be on E1M9, sorry. Just rig the exit to go to E1M9 if you can't be bothered.
+
+	
+If you have questions, contact me on my twitter or something.

@@ -1,0 +1,120 @@
+E1M1
+awaroncewon.ogg
+GENOCIDE CARNIVAL
+2
+E1M2
+crapsabouttogodown.ogg
+FAIR OF DEATH
+0
+E1M3
+maliciousintents.ogg
+MALICIOUS IN TENTS
+0
+E1M4
+bluedangerzone.ogg
+CARNAGE COMPLEX
+0
+E1M5
+endlessclowns.ogg
+SLAUGHTER FESTIVAL
+0
+E1M6
+holyhell.ogg
+OMNICIDE OCEAN
+0
+E1M7
+codegremlins.ogg
+BRUTAL GARRISON
+0
+E1M8
+simplydead.ogg
+SIMPLY DEAD
+0
+E1M9
+bosstime.ogg
+PROVIDENCE
+1
+E1M10
+shaft.ogg
+SUPER NECKBEARD
+0
+E2M1
+codegremlins.ogg
+SPACE STATION
+0
+E2M2
+terminaldefect.ogg
+TERMINAL DEFECT
+0
+E2M3
+crapsabouttogodown.ogg
+LETHAL ERROR
+0
+E2M4
+vertex.ogg
+FATAL FLAW
+0
+E2M5
+bluedangerzone.ogg
+VIRULENT GAFFE
+0
+E2M6
+maliciousintents.ogg
+CRUEL CALAMITY
+0
+E2M7
+simplydead.ogg
+DIABOLICAL CATACLYSM
+0
+E2M8
+terminaldefect.ogg
+VILE CATASTROPHE
+0
+E2M9
+bosstime.ogg
+MECHA
+1
+E2M10
+dankcarnival.ogg
+AYY LMAO
+0
+E3M1
+welcometoprismir.ogg
+WELCOME TO PRISMIR
+0
+E3M2
+underneath.ogg
+UNDERGROUND PALACE
+0
+E3M3
+maliciousintents.ogg
+CHESSMASTER'S DUNGEON
+0
+E3M4
+awaroncewon.ogg
+DIRE RESIDENCE
+0
+E3M5
+holyhell.ogg
+MOLTEN FORTRESS
+0
+E3M6
+underneath.ogg
+SURPRISE
+0
+E3M7
+crapsabouttogodown.ogg
+PRISON RIOT
+0
+E3M8
+pastthefourthwall.ogg
+PAST THE FOURTH WALL
+0
+E3M9
+bosstime.ogg
+GOD
+1
+E3M10
+awaroncewon.ogg
+7 DAY WAR
+0
