@@ -27,19 +27,7 @@ inline Angle AngleForward(Angle angle) {
 struct Tile {
     Model* shape;
     Angle angle;
-    Texture2D* texture;
-
-    Tile() {
-        shape = nullptr;
-        texture = nullptr;
-        angle = ANGLE_0;
-    }
-
-    Tile(Model* s, Angle a, Texture2D* t) {
-        shape = s;
-        angle = a;
-        texture = t;
-    }
+    Material* material;
 };
 
 class TileGrid {

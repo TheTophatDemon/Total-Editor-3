@@ -1,6 +1,5 @@
 #include "raylib.h"
 #include "raymath.h"
-#include "rlgl.h"
 
 #define RAYGUI_IMPLEMENTATION
 #include "extras/raygui.h"
@@ -12,14 +11,15 @@
 
 #include "tile.h"
 #include "math_stuff.h"
+#include "grid_extras.h"
 
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
 
 const float CAMERA_HEIGHT_OFFSET = 10.0f;
 const float CAMERA_MOVE_SPEED_MIN = 8.0f;
-const float CAMERA_MOVE_SPEED_MAX = 32.0f;
-const float CAMERA_ACCELERATION = 4.0f;
+const float CAMERA_MOVE_SPEED_MAX = 64.0f;
+const float CAMERA_ACCELERATION = 16.0f;
 
 const std::string SHAPE_MODEL_PATH = "assets/models/shapes/";
 
@@ -33,51 +33,6 @@ typedef struct Cursor {
     float outlineScale;
 } Cursor;
 
-//Draw a grid centered at the given Vector3 `position`, with a rectangular size given by `slicesX` and `slicesZ`.
-void DrawGridEx(Vector3 position, int slicesX, int slicesZ, float spacing)
-{
-    int halfSlicesX = slicesX/2;
-    int halfSlicesZ = slicesZ/2;
-
-    rlCheckRenderBatchLimit((slicesX + slicesZ + 4)*2);
-
-    rlBegin(RL_LINES);
-        for (int i = -halfSlicesX; i <= halfSlicesX; i++)
-        {
-            if (i == 0)
-            {
-                rlColor3f(0.5f, 0.5f, 0.5f);
-                rlColor3f(0.5f, 0.5f, 0.5f);
-            }
-            else
-            {
-                rlColor3f(0.75f, 0.75f, 0.75f);
-                rlColor3f(0.75f, 0.75f, 0.75f);
-            }
-
-            rlVertex3f(position.x + (float)i*spacing, position.y, position.z + (float)-halfSlicesZ*spacing);
-            rlVertex3f(position.x + (float)i*spacing, position.y, position.z + (float)halfSlicesZ*spacing);
-        }
-
-        for (int j = -halfSlicesZ; j <= halfSlicesZ; j++) 
-        {
-            if (j == 0)
-            {
-                rlColor3f(0.5f, 0.5f, 0.5f);
-                rlColor3f(0.5f, 0.5f, 0.5f);
-            }
-            else
-            {
-                rlColor3f(0.75f, 0.75f, 0.75f);
-                rlColor3f(0.75f, 0.75f, 0.75f);
-            }
-
-            rlVertex3f(position.x + (float)-halfSlicesX*spacing, position.y, position.z + (float)j*spacing);
-            rlVertex3f(position.x + (float)halfSlicesX*spacing, position.y, position.z + (float)j*spacing);
-        }
-    rlEnd();
-}
-
 int main(int argc, char **argv)
 {
 	InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Total Editor 3");
@@ -85,12 +40,15 @@ int main(int argc, char **argv)
 	
 	Font font = LoadFont("assets/fonts/dejavu.fnt");
 
-    Texture2D texture = LoadTexture("assets/original/textures/spacewall.png");
-
     Shader mapShader = LoadShader("assets/shaders/map_geom.vs", "assets/shaders/map_geom.fs");
     mapShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(mapShader, "mvp");
     mapShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(mapShader, "viewPos");
     mapShader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(mapShader, "instanceTransform");
+
+    Texture2D texture = LoadTexture("assets/original/textures/spacewall.png");
+    Material testMaterial = LoadMaterialDefault();
+    SetMaterialTexture(&testMaterial, MATERIAL_MAP_ALBEDO, texture);
+    testMaterial.shader = mapShader;
 
     //Setup camera
 	Camera camera = { 0 };
@@ -139,7 +97,7 @@ int main(int argc, char **argv)
     cursor.outlineScale = 1.0f;
 
     TileGrid tileGrid = TileGrid(100, 5, 100, 2.0f);
-    Vector3 planeGridPos = Vector3{(float)tileGrid.GetWidth() / 2, 0, (float)tileGrid.GetLength() / 2};
+    Vector3 planeGridPos = (Vector3){(float)tileGrid.GetWidth() / 2, 0, (float)tileGrid.GetLength() / 2};
 
     float globalTime = 0.0f;
 
@@ -195,7 +153,7 @@ int main(int argc, char **argv)
             cameraYaw += GetMouseDelta().x * mouseSensitivity * GetFrameTime();
         }
 
-        camera.position = Vector3{ 
+        camera.position = (Vector3){ 
             camera.target.x + cosf(cameraYaw) * CAMERA_HEIGHT_OFFSET, 
             camera.target.y + CAMERA_HEIGHT_OFFSET, 
             camera.target.z + sinf(cameraYaw) * CAMERA_HEIGHT_OFFSET };
@@ -228,11 +186,11 @@ int main(int argc, char **argv)
             //Place tiles
             Vector3 gridPos = tileGrid.WorldToGridPos(cursor.position);
             tileGrid.SetTile(gridPos.x, gridPos.y, gridPos.z, 
-                Tile(
+                (Tile){
                     &shapes[cursor.shapeIndex],
                     cursor.angle,
-                    &texture
-                )
+                    &testMaterial
+                }
             );
         } else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
             //Remove tiles
