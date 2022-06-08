@@ -5,11 +5,11 @@ project_name = "Total Editor 3"
 env = None
 if sys.platform.startswith("linux"):
   env = Environment(
-    tools = ['default', 'g++'],
-    CPPFLAGS = ['-std=c++17'],
+    tools = ['default', 'gcc'],
+    CFLAGS = ['-std=c99'],
     CPPPATH = ['./libraries/include'],
     LIBPATH = ['./libraries/lib'],
-    CPPDEFINES = ['LINUX_UBUNTU_64'],
+    CDEFINES = ['LINUX_UBUNTU_64'],
     LIBS = Split('raylib GL m pthread dl rt X11'),
     OBJPREFIX="../obj/"
   )
@@ -24,7 +24,7 @@ bin_dir = 'debug' if is_debug else 'release'
 
 env.Append(OBJPREFIX='../obj/%s/' % bin_dir)
 
-env.Program(target='./bin/%s/%s' % (bin_dir, project_name), source=Glob('src/*.cpp'))
+env.Program(target='./bin/%s/%s' % (bin_dir, project_name), source=Glob('src/*.c'))
 
 #Copy the assets directory into the release directory
 Install("./bin/%s/assets" % bin_dir, Glob('assets/**'))

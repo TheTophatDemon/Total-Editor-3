@@ -1,8 +1,8 @@
 #version 330
 
 // Input vertex attributes (from vertex shader)
-in vec3 fragPosition;
 in vec2 fragTexCoord;
+in vec4 fragColor;
 
 // Input uniform values
 uniform sampler2D texture0;
@@ -11,16 +11,14 @@ uniform vec4 colDiffuse;
 // Output fragment color
 out vec4 finalColor;
 
-struct MaterialProperty {
-    vec3 color;
-    int useSampler;
-    sampler2D sampler;
-};
+// NOTE: Add here your custom variables
 
 void main()
 {
     // Texel color fetching from texture sampler
-    vec4 texelColor = texture(texture0, fragTexCoord) * colDiffuse;
+    vec4 texelColor = texture(texture0, fragTexCoord);
 
-    finalColor = texelColor;
+    // NOTE: Implement here your fragment shader code
+
+    finalColor = texelColor*colDiffuse;
 }
