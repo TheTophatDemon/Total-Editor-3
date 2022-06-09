@@ -8,22 +8,25 @@
 
 #include "editor_mode.hpp"
 #include "tile.hpp"
+#include "app.hpp"
 
 class PlaceMode : public EditorMode {
 public:
-    PlaceMode();
+    PlaceMode(AppContext *context);
     virtual void Update() override;
     virtual void Draw() override;
 protected:
     struct Cursor {
         Model *shape;
-        std::string textureName;
+        Texture2D *texture;
         Angle angle;
         Vector3 position;
         float outlineScale;
     };
 
     void MoveCamera();
+
+    AppContext *_context;
 
     Camera _camera;
     float _cameraYaw;

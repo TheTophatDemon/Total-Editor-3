@@ -8,8 +8,10 @@
 namespace Assets {
 
     void Initialize();
-    Material *GetMaterialForTexture(const std::string& texturePath, bool instanced = false);
-    Model *GetShape(const std::string& modelPath);
+    Texture2D *GetTexture(const std::string texturePath);
+    Material *GetMaterialForTexture(const std::string texturePath, bool instanced = false);
+    Material *GetMaterialForTexture(const Texture2D *texture, bool instanced = false);
+    Model *GetShape(const std::string modelPath);
     Font *GetFont();
 
 };

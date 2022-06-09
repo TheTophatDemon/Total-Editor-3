@@ -21,14 +21,18 @@ void Assets::Initialize() {
     _font = LoadFont("assets/fonts/dejavu.fnt");
 }
 
-Material *Assets::GetMaterialForTexture(const std::string& texturePath, bool instanced) {
+Texture *Assets::GetTexture(const std::string texturePath) {
     if (_textures.find(texturePath) == _textures.end()) {
         _textures[texturePath] = LoadTexture(texturePath.c_str());
     }
+    return &_textures[texturePath];
+}
+
+Material *Assets::GetMaterialForTexture(const std::string texturePath, bool instanced) {
     if (instanced) {
         if (_instancedMaterials.find(texturePath) == _instancedMaterials.end()) {
             Material mat = LoadMaterialDefault();
-            SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, _textures[texturePath]);
+            SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, *GetTexture(texturePath));
             mat.shader = _mapShader;
             _instancedMaterials[texturePath] = mat; 
         }
@@ -36,14 +40,23 @@ Material *Assets::GetMaterialForTexture(const std::string& texturePath, bool ins
     } else {
         if (_normalMaterials.find(texturePath) == _normalMaterials.end()) {
             Material mat = LoadMaterialDefault();
-            SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, _textures[texturePath]);
+            SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, *GetTexture(texturePath));
             _normalMaterials[texturePath] = mat; 
         }
         return &_normalMaterials[texturePath];
     }
 }
 
-Model *Assets::GetShape(const std::string& modelPath) {
+Material *Assets::GetMaterialForTexture(const Texture2D *texture, bool instanced) {
+    for (const auto& [key, val] : _textures) {
+        if (&val == texture) {
+            return GetMaterialForTexture(key, instanced);
+        }
+    }
+    return nullptr;
+}
+
+Model *Assets::GetShape(const std::string modelPath) {
     if (_shapes.find(modelPath) == _shapes.end()) {
         _shapes[modelPath] = LoadModel(modelPath.c_str());
     }

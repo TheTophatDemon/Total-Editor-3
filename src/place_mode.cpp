@@ -9,10 +9,10 @@ const float CAMERA_HEIGHT_OFFSET = 10.0f;
 const float CAMERA_MOVE_SPEED_MIN = 8.0f;
 const float CAMERA_MOVE_SPEED_MAX = 64.0f;
 const float CAMERA_ACCELERATION = 16.0f;
-const float CAMERA_MOUSE_SENSITIVITY = 0.5f;
 
-PlaceMode::PlaceMode() 
-    :_tileGrid(100, 5, 100, 2.0f)
+PlaceMode::PlaceMode(AppContext *context) 
+    : _context(context), 
+    _tileGrid(100, 5, 100, 2.0f)
 {
     //Setup camera
 	_camera = { 0 };
@@ -26,8 +26,8 @@ PlaceMode::PlaceMode()
 
     //Generate cursor
     _cursor = { 0 };
-    _cursor.shape = Assets::GetShape("assets/models/shapes/cube.obj");
-    _cursor.textureName = "assets/textures/psa.png";
+    _cursor.shape = context->selectedShape;
+    _cursor.texture = context->selectedTexture;
     _cursor.position = Vector3Zero();
     _cursor.angle = ANGLE_0;
     _cursor.outlineScale = 1.0f;
@@ -75,7 +75,7 @@ void PlaceMode::MoveCamera() {
     }
 
     if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
-        _cameraYaw += GetMouseDelta().x * CAMERA_MOUSE_SENSITIVITY * GetFrameTime();
+        _cameraYaw += GetMouseDelta().x * _context->mouseSensitivity * GetFrameTime();
     }
 
     _camera.position = (Vector3){ 
@@ -93,6 +93,9 @@ void PlaceMode::Update() {
         _planeGridPos.y = Clamp(_planeGridPos.y + Sign(GetMouseWheelMove()), 0.0f, _tileGrid.GetHeight() - 1);
     }
     _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
+
+    _cursor.shape = _context->selectedShape;
+    _cursor.texture = _context->selectedTexture;
 
     //Rotate cursor
     if (IsKeyPressed(KEY_Q)) {
@@ -116,14 +119,14 @@ void PlaceMode::Update() {
     }
     _cursor.outlineScale = 1.125f + sinf(GetTime()) * 0.125f;
     
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && _cursor.shape && _cursor.texture) {
         //Place tiles
         Vector3 gridPos = _tileGrid.WorldToGridPos(_cursor.position);
         _tileGrid.SetTile(gridPos.x, gridPos.y, gridPos.z, 
             (Tile){
                 _cursor.shape,
                 _cursor.angle,
-                Assets::GetMaterialForTexture(_cursor.textureName, true)
+                Assets::GetMaterialForTexture(_cursor.texture, true)
             }
         );
     } else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
@@ -137,19 +140,19 @@ void PlaceMode::Draw() {
     BeginMode3D(_camera);
     {
         DrawGridEx(
-            _planeWorldPos, 
+            Vector3Add(_planeWorldPos, (Vector3){ 0.0f, 0.1f, 0.0f }), //Adding the offset to prevent Z-fighting 
             _tileGrid.GetWidth()+1, _tileGrid.GetLength()+1, 
             _tileGrid.GetSpacing());
 
         _tileGrid.Draw();
 
         //Draw cursor
-        if (_cursor.shape) {
+        if (_cursor.shape && _cursor.texture) {
             Matrix cursorTransform = MatrixMultiply(
                 MatrixRotateY(AngleRadians(_cursor.angle)), 
                 MatrixTranslate(_cursor.position.x, _cursor.position.y, _cursor.position.z));
             for (size_t m = 0; m < _cursor.shape->meshCount; ++m) {
-                DrawMesh(_cursor.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.textureName, false), cursorTransform);
+                DrawMesh(_cursor.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.texture, false), cursorTransform);
             }
         }
 
