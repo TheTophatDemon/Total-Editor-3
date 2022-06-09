@@ -85,7 +85,7 @@ public:
         return Vector3{ +((int)_width / 2) * _spacing, +((int)_height / 2) * _spacing, +((int)_length / 2) * _spacing };
     }
 
-    void Draw(const Shader& shader);
+    void Draw();
 
 protected:
     size_t _width, _height, _length;

@@ -4,6 +4,7 @@
 #include "raylib.h"
 
 #include <vector>
+#include <string>
 
 #include "editor_mode.hpp"
 #include "tile.hpp"
@@ -15,17 +16,14 @@ public:
     virtual void Draw() override;
 protected:
     struct Cursor {
-        size_t shapeIndex;
-        size_t materialIndex;
+        Model *shape;
+        std::string textureName;
         Angle angle;
         Vector3 position;
         float outlineScale;
     };
 
     void MoveCamera();
-
-    std::vector<Material> _instancedMaterials;
-    Shader _mapShader;
 
     Camera _camera;
     float _cameraYaw;

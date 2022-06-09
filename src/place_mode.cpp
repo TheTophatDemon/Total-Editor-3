@@ -3,10 +3,7 @@
 #include "raymath.h"
 #include "grid_extras.h"
 #include "math_stuff.hpp"
-
-extern std::vector<Model> gShapes;
-extern size_t gShapesMeshCount;
-extern std::vector<Material> gMaterialsNormal;
+#include "assets.hpp"
 
 const float CAMERA_HEIGHT_OFFSET = 10.0f;
 const float CAMERA_MOVE_SPEED_MIN = 8.0f;
@@ -29,8 +26,8 @@ PlaceMode::PlaceMode()
 
     //Generate cursor
     _cursor = { 0 };
-    _cursor.shapeIndex = 0;
-    _cursor.materialIndex = 0;
+    _cursor.shape = Assets::GetShape("assets/models/shapes/cube.obj");
+    _cursor.textureName = "assets/textures/psa.png";
     _cursor.position = Vector3Zero();
     _cursor.angle = ANGLE_0;
     _cursor.outlineScale = 1.0f;
@@ -38,21 +35,6 @@ PlaceMode::PlaceMode()
     //Editor grid and plane
     _planeGridPos = (Vector3){(float)_tileGrid.GetWidth() / 2, 0, (float)_tileGrid.GetLength() / 2};
     _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
-
-    //Initialize instanced shader for map geometry
-    _mapShader = LoadShader("assets/shaders/map_geom.vs", "assets/shaders/map_geom.fs");
-    _mapShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(_mapShader, "mvp");
-    _mapShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(_mapShader, "viewPos");
-    _mapShader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(_mapShader, "instanceTransform");
-
-    //Generate materials using the instanced shader.
-    _instancedMaterials.reserve(gMaterialsNormal.size());
-    for (const auto& material : gMaterialsNormal) {
-        Material instancedMat = LoadMaterialDefault();
-        SetMaterialTexture(&instancedMat, MATERIAL_MAP_ALBEDO, material.maps[MATERIAL_MAP_ALBEDO].texture);
-        instancedMat.shader = _mapShader;
-        _instancedMaterials.push_back(instancedMat);
-    }
 }
 
 
@@ -139,9 +121,9 @@ void PlaceMode::Update() {
         Vector3 gridPos = _tileGrid.WorldToGridPos(_cursor.position);
         _tileGrid.SetTile(gridPos.x, gridPos.y, gridPos.z, 
             (Tile){
-                &gShapes[_cursor.shapeIndex],
+                _cursor.shape,
                 _cursor.angle,
-                &_instancedMaterials[_cursor.materialIndex]
+                Assets::GetMaterialForTexture(_cursor.textureName, true)
             }
         );
     } else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
@@ -159,14 +141,16 @@ void PlaceMode::Draw() {
             _tileGrid.GetWidth()+1, _tileGrid.GetLength()+1, 
             _tileGrid.GetSpacing());
 
-        _tileGrid.Draw(_mapShader);
+        _tileGrid.Draw();
 
         //Draw cursor
-        Matrix cursorTransform = MatrixMultiply(
-            MatrixRotateY(AngleRadians(_cursor.angle)), 
-            MatrixTranslate(_cursor.position.x, _cursor.position.y, _cursor.position.z));
-        for (size_t m = 0; m < gShapes[_cursor.shapeIndex].meshCount; ++m) {
-            DrawMesh(gShapes[_cursor.shapeIndex].meshes[m], gMaterialsNormal[_cursor.materialIndex], cursorTransform);
+        if (_cursor.shape) {
+            Matrix cursorTransform = MatrixMultiply(
+                MatrixRotateY(AngleRadians(_cursor.angle)), 
+                MatrixTranslate(_cursor.position.x, _cursor.position.y, _cursor.position.z));
+            for (size_t m = 0; m < _cursor.shape->meshCount; ++m) {
+                DrawMesh(_cursor.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.textureName, false), cursorTransform);
+            }
         }
 
         DrawCubeWires(

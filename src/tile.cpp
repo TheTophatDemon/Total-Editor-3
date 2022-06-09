@@ -32,7 +32,7 @@ TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing) {
     }
 }
 
-void TileGrid::Draw(const Shader& shader) {
+void TileGrid::Draw() {
     //Create a hash map of dynamic arrays for each combination of material and mesh
     auto groups = std::map<std::pair<Material*, Mesh*>, std::vector<Matrix>>();
     for (size_t t = 0; t < _grid.size(); ++t) {
