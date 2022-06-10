@@ -4,7 +4,12 @@
 [x] Cursor material bug
 [x] Texture picking
 [x] Texture search filter
-[ ] Shape picking
+[x] Shape picking
+[x] ~~PickMode folder hierarchy?~~ (Searches now include directory names)
+[ ] Switching between list mode and grid mode in picker
+[ ] Test shape with multiple materials
+[ ] Make cylinder align flatly with panels
+[ ] Add corner wedges
 [ ] Basic directional lighting
 [ ] Tile copy
 [ ] Rectangle fill

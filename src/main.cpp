@@ -31,17 +31,17 @@ int main(int argc, char **argv)
     GuiSetFont(*Assets::GetFont());
 
     AppContext context = {
-        .screenWidth = SCREEN_WIDTH,
-        .screenHeight = SCREEN_HEIGHT,
         .mouseSensitivity = 0.5f,
         .selectedTexture = Assets::GetTexture("assets/textures/psa.png"),
-        .selectedShape = Assets::GetShape("assets/models/shapes/cube.obj")
+        .selectedShape = Assets::GetShape("assets/models/shapes/cube.obj"),
+        .texturesDir = "assets/textures",
+        .shapesDir = "assets/models/shapes/"
     };
-
 
     //Editor modes
     PlaceMode placeMode(&context);
-    PickMode pickMode(&context, PickMode::Mode::TEXTURES);
+    PickMode texturePickMode(&context, PickMode::Mode::TEXTURES);
+    PickMode shapePickMode(&context, PickMode::Mode::SHAPES);
     EditorMode *editorMode = &placeMode;
 
 	SetTargetFPS(60);
@@ -51,14 +51,19 @@ int main(int argc, char **argv)
 
         if (IsKeyPressed(KEY_TAB)) {
             if (editorMode == &placeMode) {
-                editorMode = &pickMode;
+                if (IsKeyDown(KEY_LEFT_SHIFT)) {
+                    editorMode = &shapePickMode;
+                } else {
+                    editorMode = &texturePickMode;
+                }
             } else {
-                editorMode = &placeMode;
+                if (IsKeyDown(KEY_LEFT_SHIFT)) {
+                    editorMode = &shapePickMode;
+                } else {
+                    editorMode = &placeMode;
+                }
             }
         }
-
-        context.screenWidth = GetScreenWidth();
-        context.screenHeight = GetScreenHeight();
 
         if (lastMode != editorMode) {
             lastMode->OnExit();
@@ -66,6 +71,7 @@ int main(int argc, char **argv)
         }
 
         //Update
+        Assets::Update();
         editorMode->Update();
 
         //Draw
@@ -81,6 +87,8 @@ int main(int argc, char **argv)
 		EndDrawing();
 	}
 	
+    Assets::Unload();
+
 	CloseWindow();
 
 	return 0;
