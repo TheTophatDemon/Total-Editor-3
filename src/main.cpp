@@ -29,6 +29,9 @@ int main(int argc, char **argv)
 
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(DARKGRAY));
     GuiSetFont(*Assets::GetFont());
+    GuiSetStyle(LABEL, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
+    GuiSetStyle(LABEL, TEXT_COLOR_FOCUSED, ColorToInt(YELLOW));
+    GuiSetStyle(LABEL, TEXT_COLOR_PRESSED, ColorToInt(LIGHTGRAY));
 
     AppContext context = {
         .mouseSensitivity = 0.5f,
