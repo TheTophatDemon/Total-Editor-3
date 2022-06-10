@@ -1,6 +1,8 @@
 #include "place_mode.hpp"
 
 #include "raymath.h"
+#include "rlgl.h"
+
 #include "grid_extras.h"
 #include "math_stuff.hpp"
 #include "assets.hpp"
@@ -37,6 +39,13 @@ PlaceMode::PlaceMode(AppContext *context)
     _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
 }
 
+void PlaceMode::OnEnter() {
+
+}
+
+void PlaceMode::OnExit() {
+    
+}
 
 void PlaceMode::MoveCamera() {
     //Camera controls
@@ -155,13 +164,14 @@ void PlaceMode::Draw() {
                 DrawMesh(_cursor.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.texture, false), cursorTransform);
             }
         }
-
+        rlDisableDepthTest();
         DrawCubeWires(
             _cursor.position, 
             _tileGrid.GetSpacing() * _cursor.outlineScale, 
             _tileGrid.GetSpacing() * _cursor.outlineScale, 
             _tileGrid.GetSpacing() * _cursor.outlineScale, 
             MAGENTA);
+        rlEnableDepthTest();
     }
     EndMode3D();
 }

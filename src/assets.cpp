@@ -2,8 +2,8 @@
 
 #include <unordered_map>
 
-static std::unordered_map<std::string, Material> _normalMaterials;
-static std::unordered_map<std::string, Material> _instancedMaterials;
+static std::unordered_map<const Texture *, Material> _normalMaterials;
+static std::unordered_map<const Texture *, Material> _instancedMaterials;
 static std::unordered_map<std::string, Texture2D> _textures;
 static Shader _mapShader;
 
@@ -29,31 +29,26 @@ Texture *Assets::GetTexture(const std::string texturePath) {
 }
 
 Material *Assets::GetMaterialForTexture(const std::string texturePath, bool instanced) {
-    if (instanced) {
-        if (_instancedMaterials.find(texturePath) == _instancedMaterials.end()) {
-            Material mat = LoadMaterialDefault();
-            SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, *GetTexture(texturePath));
-            mat.shader = _mapShader;
-            _instancedMaterials[texturePath] = mat; 
-        }
-        return &_instancedMaterials[texturePath];
-    } else {
-        if (_normalMaterials.find(texturePath) == _normalMaterials.end()) {
-            Material mat = LoadMaterialDefault();
-            SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, *GetTexture(texturePath));
-            _normalMaterials[texturePath] = mat; 
-        }
-        return &_normalMaterials[texturePath];
-    }
+    return GetMaterialForTexture(GetTexture(texturePath), instanced);
 }
 
 Material *Assets::GetMaterialForTexture(const Texture2D *texture, bool instanced) {
-    for (const auto& [key, val] : _textures) {
-        if (&val == texture) {
-            return GetMaterialForTexture(key, instanced);
+    if (instanced) {
+        if (_instancedMaterials.find(texture) == _instancedMaterials.end()) {
+            Material mat = LoadMaterialDefault();
+            SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, *texture);
+            mat.shader = _mapShader;
+            _instancedMaterials[texture] = mat; 
         }
+        return &_instancedMaterials[texture];
+    } else {
+        if (_normalMaterials.find(texture) == _normalMaterials.end()) {
+            Material mat = LoadMaterialDefault();
+            SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, *texture);
+            _normalMaterials[texture] = mat; 
+        }
+        return &_normalMaterials[texture];
     }
-    return nullptr;
 }
 
 Model *Assets::GetShape(const std::string modelPath) {

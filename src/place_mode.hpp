@@ -15,6 +15,8 @@ public:
     PlaceMode(AppContext *context);
     virtual void Update() override;
     virtual void Draw() override;
+    virtual void OnEnter() override;
+    virtual void OnExit() override;
 protected:
     struct Cursor {
         Model *shape;

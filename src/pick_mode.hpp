@@ -19,15 +19,22 @@ public:
     enum class Mode { TEXTURES, SHAPES };
 
     PickMode(AppContext *context, Mode mode);
+    virtual ~PickMode();
     virtual void Update() override;
     virtual void Draw() override;
+    virtual void OnEnter() override;
+    virtual void OnExit() override;
+    
+    inline void SetMode(Mode mode) { _mode = mode; }
+    inline Mode GetMode() const { return _mode; }
 protected:
     AppContext *_context;
     std::vector<Frame> _frames;
     Frame *_selectedFrame;
-    std::string _searchFilter;
-    Rectangle _framesView;
-    Rectangle _framesContent;
+    
+    char *_searchFilterBuffer;
+    bool _searchFilterFocused;
+    
     Mode _mode;
     Vector2 _scroll;
 };
