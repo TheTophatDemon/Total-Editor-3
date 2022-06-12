@@ -7,12 +7,13 @@
 [x] Shape picking
 [x] ~~PickMode folder hierarchy?~~ (Searches now include directory names)
 [x] Switching between list mode and grid mode in picker
-[ ] Test shape with multiple materials
-[ ] Make cylinder align flatly with panels
-[ ] Add corner wedges
-[ ] Basic directional lighting
+[x] Test shape with multiple materials
+[x] Make cylinder align flatly with panels
+[x] Add corner wedges
+[x] Basic directional lighting
+[ ] Decide on better hotkeys for picking
 [ ] Embed font and shaders
-[ ] Tile copy
+[ ] Tile copy (Copy texture or shape or both?)
 [ ] Rectangle fill
 [ ] Import TI2
 [ ] Entity placement
