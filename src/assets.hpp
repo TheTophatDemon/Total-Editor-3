@@ -20,6 +20,7 @@ namespace Assets {
     Texture2D *GetShapeIcon(const Model *shape);
     void DrawShapeIcon(const RenderTexture2D& target, const Model *shape);
     Font *GetFont();
+    Shader *GetMapShader();
 
 };
 

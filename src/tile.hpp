@@ -8,12 +8,13 @@
 #include <vector>
 #include <assert.h>
 
-typedef enum Angle { ANGLE_0, ANGLE_90, ANGLE_180, ANGLE_270 } Angle;
+typedef enum Angle { ANGLE_0, ANGLE_90, ANGLE_180, ANGLE_270, ANGLE_COUNT } Angle;
 
 float AngleDegrees(Angle angle);
 float AngleRadians(Angle angle);
 Angle AngleBack(Angle angle);
 Angle AngleForward(Angle angle);
+Matrix AngleMatrix(Angle angle);
 
 typedef struct Tile {
     Model* shape;

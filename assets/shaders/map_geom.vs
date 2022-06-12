@@ -10,7 +10,6 @@ in mat4 instanceTransform;
 
 // Input uniform values
 uniform mat4 mvp;
-uniform mat4 matNormal;
 
 // Output vertex attributes (to fragment shader)
 out vec3 fragPosition;
@@ -29,7 +28,8 @@ void main()
     fragPosition = vec3(mvpi*vec4(vertexPosition, 1.0));
     fragTexCoord = vertexTexCoord;
     fragColor = vertexColor;
-    fragNormal = normalize(vec3(matNormal*vec4(vertexNormal, 1.0)));
+    mat3 matNormal = mat3(mvpi[0], mvpi[1], mvpi[2]);
+    fragNormal = normalize(matNormal*vertexNormal);
 
     // Calculate final vertex position
     gl_Position = mvpi*vec4(vertexPosition, 1.0);

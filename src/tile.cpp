@@ -5,20 +5,33 @@
 
 #include "assets.hpp"
 
-float AngleDegrees(Angle angle) {
+float AngleDegrees(Angle angle) 
+{
     return (float)(((int)angle) * 90);
 }
 
-float AngleRadians(Angle angle) {
+float AngleRadians(Angle angle) 
+{
     return (float)angle * PI / 2.0f;
 }
 
-Angle AngleBack(Angle angle) {
+Angle AngleBack(Angle angle) 
+{
     return (Angle)((angle - 1) < ANGLE_0 ? ANGLE_270 : (angle - 1));
 }
 
-Angle AngleForward(Angle angle) {
+Angle AngleForward(Angle angle) 
+{
     return (Angle)((angle + 1) > ANGLE_270 ? ANGLE_0 : (angle + 1));
+}
+
+static const Matrix ANGLE_MATRICES[ANGLE_COUNT] = {
+    MatrixRotateY(0.0f), MatrixRotateY(PI / 2.0f), MatrixRotateY(PI), MatrixRotateY(3.0f * PI / 2.0f)
+};
+
+Matrix AngleMatrix(Angle angle)
+{
+    return ANGLE_MATRICES[angle];
 }
 
 bool operator==(const Tile &lhs, const Tile &rhs)
@@ -67,7 +80,7 @@ void TileGrid::Draw() {
             //Calculate world space matrix for the tile
             Vector3 worldPos = GridToWorldPos(UnflattenIndex(t), true);
             Matrix matrix = MatrixMultiply(
-                MatrixRotateY(AngleRadians(tile.angle)), 
+                AngleMatrix(tile.angle), 
                 MatrixTranslate(worldPos.x, worldPos.y, worldPos.z));
 
             for (size_t m = 0; m < tile.shape->meshCount; ++m) {
