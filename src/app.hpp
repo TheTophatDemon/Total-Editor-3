@@ -6,6 +6,7 @@
 
 //Contains settings and other "application wide" information.
 struct AppContext {
+    size_t undoStackSize;
     float mouseSensitivity;
     Texture2D *selectedTexture;
     Model *selectedShape;

@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <string>
+#include <deque>
 
 #include "editor_mode.hpp"
 #include "tile.hpp"
@@ -18,15 +19,25 @@ public:
     virtual void OnEnter() override;
     virtual void OnExit() override;
 protected:
+    struct TileAction {
+        size_t i, j, k;
+        TileGrid prevState;
+        TileGrid newState;
+    };
+
     struct Cursor {
         Model *shape;
-        Texture2D *texture;
+        Material *instancedMaterial;
+        Material *normalMaterial;
         Angle angle;
         Vector3 position;
         float outlineScale;
     };
 
     void MoveCamera();
+    TileAction &QueueTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile);
+    void DoAction(TileAction &action);
+    void UndoAction(TileAction &action);
 
     AppContext *_context;
 
@@ -36,6 +47,10 @@ protected:
 
     Cursor _cursor;
     TileGrid _tileGrid;
+    //Stores recently executed actions to be undone on command.
+    std::deque<TileAction> _undoHistory;
+    //Stores recently undone actions to be redone on command, unless the history is altered.
+    std::deque<TileAction> _redoHistory;
 
     Vector3 _planeGridPos;
     Vector3 _planeWorldPos;

@@ -29,7 +29,8 @@ PlaceMode::PlaceMode(AppContext *context)
     //Generate cursor
     _cursor = { 0 };
     _cursor.shape = context->selectedShape;
-    _cursor.texture = context->selectedTexture;
+    _cursor.instancedMaterial = Assets::GetMaterialForTexture(context->selectedTexture, true);
+    _cursor.normalMaterial = Assets::GetMaterialForTexture(context->selectedTexture, false);
     _cursor.position = Vector3Zero();
     _cursor.angle = ANGLE_0;
     _cursor.outlineScale = 1.0f;
@@ -40,7 +41,7 @@ PlaceMode::PlaceMode(AppContext *context)
 }
 
 void PlaceMode::OnEnter() {
-
+    
 }
 
 void PlaceMode::OnExit() {
@@ -64,7 +65,7 @@ void PlaceMode::MoveCamera() {
 
     if (IsKeyDown(KEY_SPACE)) {
         cameraMovement.y = 1.0f;
-    } else if (IsKeyDown(KEY_LEFT_CONTROL)) {
+    } else if (IsKeyDown(KEY_C)) {
         cameraMovement.y = -1.0f;
     }
 
@@ -103,8 +104,10 @@ void PlaceMode::Update() {
     }
     _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
 
+    //Update the cursor
     _cursor.shape = _context->selectedShape;
-    _cursor.texture = _context->selectedTexture;
+    _cursor.instancedMaterial = Assets::GetMaterialForTexture(_context->selectedTexture, true);
+    _cursor.normalMaterial = Assets::GetMaterialForTexture(_context->selectedTexture, false);
 
     //Rotate cursor
     if (IsKeyPressed(KEY_Q)) {
@@ -128,19 +131,38 @@ void PlaceMode::Update() {
     }
     _cursor.outlineScale = 1.125f + sinf(GetTime()) * 0.125f;
     
+    //Perform Tile operations
     Vector3 cursorGridPos = _tileGrid.WorldToGridPos(_cursor.position);
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && _cursor.shape && _cursor.texture) {
+    size_t i = (size_t)cursorGridPos.x; 
+    size_t j = (size_t)cursorGridPos.y;
+    size_t k = (size_t)cursorGridPos.z;
+    Tile underTile = _tileGrid.GetTile(i, j, k);
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && _cursor.shape && _cursor.instancedMaterial) {
         //Place tiles
-        _tileGrid.SetTile(cursorGridPos.x, cursorGridPos.y, cursorGridPos.z, 
-            (Tile){
-                _cursor.shape,
-                _cursor.angle,
-                Assets::GetMaterialForTexture(_cursor.texture, true)
-            }
-        );
+        if (underTile.shape != _cursor.shape || underTile.material != _cursor.instancedMaterial || underTile.angle != _cursor.angle)
+        {
+            DoAction(
+                QueueTileAction(
+                    i, j, k, 1, 1, 1,
+                    (Tile) {
+                        _cursor.shape, 
+                        _cursor.angle, 
+                        _cursor.instancedMaterial
+                    }
+                )
+            );
+        }
     } else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
         //Remove tiles
-        _tileGrid.UnsetTile(cursorGridPos.x, cursorGridPos.y, cursorGridPos.z);
+        if (underTile.shape != nullptr || underTile.material != nullptr)
+        {
+            DoAction(
+                QueueTileAction(
+                    i, j, k, 1, 1, 1,
+                    (Tile) {nullptr, ANGLE_0, nullptr}
+                )
+            );
+        }
     } else if (IsKeyDown(KEY_G)) {
         //(G)rab the shape from the tile under the cursor
         Model *shape  = _tileGrid.GetTile(cursorGridPos.x, cursorGridPos.y, cursorGridPos.z).shape;
@@ -149,6 +171,27 @@ void PlaceMode::Update() {
         //Pick the (T)exture from the tile under the cursor.
         Material *material = _tileGrid.GetTile(cursorGridPos.x, cursorGridPos.y, cursorGridPos.z).material;
         if (material) _context->selectedTexture = Assets::GetTextureForMaterial(material);
+    }
+
+    //Undo and redo
+    if (IsKeyDown(KEY_LEFT_CONTROL))
+    {
+        if (IsKeyPressed(KEY_Z) && !_undoHistory.empty())
+        {
+            //Undo (Ctrl + Z)
+            TileAction &action = _undoHistory.back();
+            UndoAction(action);
+            _redoHistory.push_back(action);
+            _undoHistory.pop_back();
+        }
+        else if (IsKeyPressed(KEY_Y) && !_redoHistory.empty())
+        {
+            //Redo (Ctrl + Y)
+            TileAction &action = _redoHistory.back();
+            DoAction(action);
+            _undoHistory.push_back(action);
+            _redoHistory.pop_back();
+        }
     }
 }
 
@@ -163,12 +206,12 @@ void PlaceMode::Draw() {
         _tileGrid.Draw();
 
         //Draw cursor
-        if (_cursor.shape && _cursor.texture) {
+        if (_cursor.shape && _cursor.instancedMaterial) {
             Matrix cursorTransform = MatrixMultiply(
                 MatrixRotateY(AngleRadians(_cursor.angle)), 
                 MatrixTranslate(_cursor.position.x, _cursor.position.y, _cursor.position.z));
             for (size_t m = 0; m < _cursor.shape->meshCount; ++m) {
-                DrawMesh(_cursor.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.texture, false), cursorTransform);
+                DrawMesh(_cursor.shape->meshes[m], *_cursor.normalMaterial, cursorTransform);
             }
         }
         rlDisableDepthTest();
@@ -181,4 +224,29 @@ void PlaceMode::Draw() {
         rlEnableDepthTest();
     }
     EndMode3D();
+}
+
+PlaceMode::TileAction &PlaceMode::QueueTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile)
+{
+    _undoHistory.push_back((TileAction){
+        .i = i, 
+        .j = j, 
+        .k = k, 
+        .prevState = _tileGrid.Subsection(i, j, k, w, h, l),
+        .newState = TileGrid(w, h, l, _tileGrid.GetSpacing(), newTile) 
+    });
+    if (_undoHistory.size() > _context->undoStackSize) _undoHistory.pop_front();
+    _redoHistory.clear();
+
+    return _undoHistory.back();
+}
+
+void PlaceMode::DoAction(TileAction &action)
+{
+    _tileGrid.CopyTiles(action.i, action.j, action.k, action.newState);
+}
+
+void PlaceMode::UndoAction(TileAction &action)
+{
+    _tileGrid.CopyTiles(action.i, action.j, action.k, action.prevState);
 }

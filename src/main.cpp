@@ -34,6 +34,7 @@ int main(int argc, char **argv)
     GuiSetStyle(LABEL, TEXT_COLOR_PRESSED, ColorToInt(LIGHTGRAY));
 
     AppContext context = {
+        .undoStackSize = 30UL,
         .mouseSensitivity = 0.5f,
         .selectedTexture = Assets::GetTexture("assets/textures/psa.png"),
         .selectedShape = Assets::GetShape("assets/models/shapes/cube.obj"),

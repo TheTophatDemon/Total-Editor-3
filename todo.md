@@ -13,9 +13,9 @@
 [x] Basic directional lighting
 [x] Decide on better hotkeys for picking
 [x] Tile copy (Copy texture or shape or both?)
-[ ] Undo/Redo?
-[ ] Embed font and shaders
+[x] Undo/Redo!! (That was difficult)
 [ ] Rectangle fill
+[ ] Embed font and shaders
 [ ] Import TI2
 [ ] Entity placement
 [ ] Entity configuration

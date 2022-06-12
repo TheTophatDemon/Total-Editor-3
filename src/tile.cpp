@@ -1,6 +1,7 @@
 #include "tile.hpp"
 
 #include <map>
+#include <assert.h>
 
 float AngleDegrees(Angle angle) {
     return (float)(((int)angle) * 90);
@@ -32,6 +33,19 @@ TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing) {
     }
 }
 
+TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing, Tile filler) {
+    _width = width;
+    _height = height;
+    _length = length;
+    _spacing = spacing;
+    _grid.resize(width * height * length);
+    
+    for (size_t i = 0; i < _grid.size(); ++i)
+    {
+        _grid[i] = filler;
+    }
+}
+
 void TileGrid::Draw() {
     //Create a hash map of dynamic arrays for each combination of material and mesh
     auto groups = std::map<std::pair<Material*, Mesh*>, std::vector<Matrix>>();
@@ -60,4 +74,27 @@ void TileGrid::Draw() {
     for (auto& [pair, matrices] : groups) {
         DrawMeshInstanced(*pair.second, *pair.first, matrices.data(), matrices.size());
     }
+}
+
+TileGrid TileGrid::Subsection(int i, int j, int k, int w, int h, int l) const
+{
+    assert(i >= 0 && j >= 0 && k >= 0);
+    assert(i + w <= _width && j + h <= _height && k + l <= _length);
+
+    TileGrid newGrid(w, h, l, _spacing);
+
+    for (int z = k; z < k + l; ++z) 
+    {
+        for (int y = j; y < j + h; ++y)
+        {
+            size_t ourBase = FlatIndex(0, y, z);
+            size_t theirBase = newGrid.FlatIndex(0, y - j, z - k);
+            for (int x = i; x < i + w; ++x)
+            {
+                newGrid._grid[theirBase + (x - i)] = _grid[ourBase + x];
+            }
+        }
+    }
+
+    return newGrid;
 }
