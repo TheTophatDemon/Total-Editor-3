@@ -18,8 +18,11 @@ Angle AngleForward(Angle angle);
 typedef struct Tile {
     Model* shape;
     Angle angle;
-    Material* material;
+    Texture2D* texture;
 } Tile;
+
+bool operator==(const Tile &lhs, const Tile &rhs);
+bool operator!=(const Tile &lhs, const Tile &rhs);
 
 class TileGrid {
 public:

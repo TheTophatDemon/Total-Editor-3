@@ -3,6 +3,8 @@
 #include <map>
 #include <assert.h>
 
+#include "assets.hpp"
+
 float AngleDegrees(Angle angle) {
     return (float)(((int)angle) * 90);
 }
@@ -19,6 +21,16 @@ Angle AngleForward(Angle angle) {
     return (Angle)((angle + 1) > ANGLE_270 ? ANGLE_0 : (angle + 1));
 }
 
+bool operator==(const Tile &lhs, const Tile &rhs)
+{
+    return (lhs.shape == rhs.shape) && (lhs.texture == rhs.texture) && (lhs.angle == rhs.angle);
+}
+
+bool operator!=(const Tile &lhs, const Tile &rhs)
+{
+    return !(lhs == rhs);
+}
+
 TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing) {
     _width = width;
     _height = height;
@@ -29,7 +41,7 @@ TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing) {
     //Make sure the grid is full of empty tiles
     for (Tile& tile : _grid) {
         tile.shape = nullptr;
-        tile.material = nullptr;
+        tile.texture = nullptr;
     }
 }
 
@@ -47,11 +59,11 @@ TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing, Ti
 }
 
 void TileGrid::Draw() {
-    //Create a hash map of dynamic arrays for each combination of material and mesh
-    auto groups = std::map<std::pair<Material*, Mesh*>, std::vector<Matrix>>();
+    //Create a hash map of dynamic arrays for each combination of texture and mesh
+    auto groups = std::map<std::pair<Texture2D*, Mesh*>, std::vector<Matrix>>();
     for (size_t t = 0; t < _grid.size(); ++t) {
         const Tile& tile = _grid[t];
-        if (tile.material && tile.shape) {
+        if (tile.texture && tile.shape) {
             //Calculate world space matrix for the tile
             Vector3 worldPos = GridToWorldPos(UnflattenIndex(t), true);
             Matrix matrix = MatrixMultiply(
@@ -60,7 +72,7 @@ void TileGrid::Draw() {
 
             for (size_t m = 0; m < tile.shape->meshCount; ++m) {
                 //Add the tile's transform to the instance arrays for each mesh
-                auto pair = std::make_pair(tile.material, &tile.shape->meshes[m]);
+                auto pair = std::make_pair(tile.texture, &tile.shape->meshes[m]);
                 if (groups.find(pair) == groups.end()) {
                     //Put in a vector for this pair if there hasn't been one already
                     groups[pair] = std::vector<Matrix>();
@@ -72,7 +84,7 @@ void TileGrid::Draw() {
 
     //This allows us to call DrawMeshInstanced for each combination of material and mesh.
     for (auto& [pair, matrices] : groups) {
-        DrawMeshInstanced(*pair.second, *pair.first, matrices.data(), matrices.size());
+        DrawMeshInstanced(*pair.second, *Assets::GetMaterialForTexture(pair.first, true), matrices.data(), matrices.size());
     }
 }
 

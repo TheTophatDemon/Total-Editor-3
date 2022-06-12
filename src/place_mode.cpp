@@ -18,7 +18,7 @@ PlaceMode::PlaceMode(AppContext *context)
 {
     //Setup camera
 	_camera = { 0 };
-	_camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
+	_camera.up = VEC3_UP;
 	_camera.fovy = 70.0f;
 	_camera.projection = CAMERA_PERSPECTIVE;
 	SetCameraMode(_camera, CAMERA_PERSPECTIVE);
@@ -28,11 +28,12 @@ PlaceMode::PlaceMode(AppContext *context)
 
     //Generate cursor
     _cursor = { 0 };
-    _cursor.shape = context->selectedShape;
-    _cursor.instancedMaterial = Assets::GetMaterialForTexture(context->selectedTexture, true);
-    _cursor.normalMaterial = Assets::GetMaterialForTexture(context->selectedTexture, false);
+    _cursor.tile = (Tile) {
+        .shape = context->selectedShape,
+        .angle = ANGLE_0,
+        .texture = context->selectedTexture
+    };
     _cursor.position = Vector3Zero();
-    _cursor.angle = ANGLE_0;
     _cursor.outlineScale = 1.0f;
 
     //Editor grid and plane
@@ -41,7 +42,8 @@ PlaceMode::PlaceMode(AppContext *context)
 }
 
 void PlaceMode::OnEnter() {
-    
+    _cursor.tile.shape = _context->selectedShape;
+    _cursor.tile.texture = _context->selectedTexture;
 }
 
 void PlaceMode::OnExit() {
@@ -105,15 +107,12 @@ void PlaceMode::Update() {
     _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
 
     //Update the cursor
-    _cursor.shape = _context->selectedShape;
-    _cursor.instancedMaterial = Assets::GetMaterialForTexture(_context->selectedTexture, true);
-    _cursor.normalMaterial = Assets::GetMaterialForTexture(_context->selectedTexture, false);
-
+    
     //Rotate cursor
     if (IsKeyPressed(KEY_Q)) {
-        _cursor.angle = AngleBack(_cursor.angle);
+        _cursor.tile.angle = AngleBack(_cursor.tile.angle);
     } else if (IsKeyPressed(KEY_E)) {
-        _cursor.angle = AngleForward(_cursor.angle);
+        _cursor.tile.angle = AngleForward(_cursor.tile.angle);
     }
 
     //Position cursor
@@ -137,24 +136,17 @@ void PlaceMode::Update() {
     size_t j = (size_t)cursorGridPos.y;
     size_t k = (size_t)cursorGridPos.z;
     Tile underTile = _tileGrid.GetTile(i, j, k);
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && _cursor.shape && _cursor.instancedMaterial) {
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && _cursor.tile.shape && _cursor.tile.texture) {
         //Place tiles
-        if (underTile.shape != _cursor.shape || underTile.material != _cursor.instancedMaterial || underTile.angle != _cursor.angle)
+        if (underTile != _cursor.tile)
         {
             DoAction(
-                QueueTileAction(
-                    i, j, k, 1, 1, 1,
-                    (Tile) {
-                        _cursor.shape, 
-                        _cursor.angle, 
-                        _cursor.instancedMaterial
-                    }
-                )
+                QueueTileAction(i, j, k, 1, 1, 1, _cursor.tile)
             );
         }
     } else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
         //Remove tiles
-        if (underTile.shape != nullptr || underTile.material != nullptr)
+        if (underTile.shape != nullptr || underTile.texture != nullptr)
         {
             DoAction(
                 QueueTileAction(
@@ -166,11 +158,19 @@ void PlaceMode::Update() {
     } else if (IsKeyDown(KEY_G)) {
         //(G)rab the shape from the tile under the cursor
         Model *shape  = _tileGrid.GetTile(cursorGridPos.x, cursorGridPos.y, cursorGridPos.z).shape;
-        if (shape) _context->selectedShape = shape;
+        if (shape) 
+        {
+            _cursor.tile.shape = shape;
+            _context->selectedShape = shape;
+        }
     } else if (IsKeyDown(KEY_T)) {
         //Pick the (T)exture from the tile under the cursor.
-        Material *material = _tileGrid.GetTile(cursorGridPos.x, cursorGridPos.y, cursorGridPos.z).material;
-        if (material) _context->selectedTexture = Assets::GetTextureForMaterial(material);
+        Texture2D *tex = _tileGrid.GetTile(cursorGridPos.x, cursorGridPos.y, cursorGridPos.z).texture;
+        if (tex) 
+        {
+            _cursor.tile.texture = tex;
+            _context->selectedTexture = tex;
+        }
     }
 
     //Undo and redo
@@ -199,19 +199,19 @@ void PlaceMode::Draw() {
     BeginMode3D(_camera);
     {
         DrawGridEx(
-            Vector3Add(_planeWorldPos, (Vector3){ 0.0f, 0.1f, 0.0f }), //Adding the offset to prevent Z-fighting 
+            Vector3Add(_planeWorldPos, (Vector3){ 0.0f, 0.05f, 0.0f }), //Adding the offset to prevent Z-fighting 
             _tileGrid.GetWidth()+1, _tileGrid.GetLength()+1, 
             _tileGrid.GetSpacing());
 
         _tileGrid.Draw();
 
         //Draw cursor
-        if (_cursor.shape && _cursor.instancedMaterial) {
+        if (_cursor.tile.shape && _cursor.tile.texture) {
             Matrix cursorTransform = MatrixMultiply(
-                MatrixRotateY(AngleRadians(_cursor.angle)), 
+                MatrixRotateY(AngleRadians(_cursor.tile.angle)), 
                 MatrixTranslate(_cursor.position.x, _cursor.position.y, _cursor.position.z));
-            for (size_t m = 0; m < _cursor.shape->meshCount; ++m) {
-                DrawMesh(_cursor.shape->meshes[m], *_cursor.normalMaterial, cursorTransform);
+            for (size_t m = 0; m < _cursor.tile.shape->meshCount; ++m) {
+                DrawMesh(_cursor.tile.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.tile.texture, false), cursorTransform);
             }
         }
         rlDisableDepthTest();

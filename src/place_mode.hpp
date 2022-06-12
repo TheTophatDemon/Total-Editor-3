@@ -26,10 +26,7 @@ protected:
     };
 
     struct Cursor {
-        Model *shape;
-        Material *instancedMaterial;
-        Material *normalMaterial;
-        Angle angle;
+        Tile tile;
         Vector3 position;
         float outlineScale;
     };
