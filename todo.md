@@ -14,7 +14,9 @@
 [x] Decide on better hotkeys for picking
 [x] Tile copy (Copy texture or shape or both?)
 [x] Undo/Redo!! (That was difficult)
-[ ] Rectangle fill
+[x] Rectangle fill
+[ ] More flexible camera?
+[ ] Hide/reveal layers?
 [ ] Embed font and shaders
 [ ] Import TI2
 [ ] Entity placement

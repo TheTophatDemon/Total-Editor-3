@@ -33,12 +33,14 @@ PlaceMode::PlaceMode(AppContext *context)
         .angle = ANGLE_0,
         .texture = context->selectedTexture
     };
-    _cursor.position = Vector3Zero();
+    _cursor.startPosition = _cursor.endPosition = Vector3Zero();
     _cursor.outlineScale = 1.0f;
 
     //Editor grid and plane
     _planeGridPos = (Vector3){(float)_tileGrid.GetWidth() / 2, 0, (float)_tileGrid.GetLength() / 2};
     _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
+
+    _cursor.outlineScale = 1.125f;
 }
 
 void PlaceMode::OnEnter() {
@@ -125,18 +127,35 @@ void PlaceMode::Update() {
         (Vector3){ gridMax.x, _planeWorldPos.y, gridMax.z }, 
         (Vector3){ gridMin.x, _planeWorldPos.y, gridMax.z });
     if (col.hit) {
-        _cursor.position = _tileGrid.SnapToCelCenter(col.point);
-        _cursor.position.y = _planeWorldPos.y + _tileGrid.GetSpacing() / 2.0f;
+        _cursor.endPosition = _tileGrid.SnapToCelCenter(col.point);
+        _cursor.endPosition.y = _planeWorldPos.y + _tileGrid.GetSpacing() / 2.0f;
     }
-    _cursor.outlineScale = 1.125f + sinf(GetTime()) * 0.125f;
+    //_cursor.outlineScale = 1.125f + sinf(GetTime()) * 0.125f;
     
+    //If shift is not held, the cursor only applies to the tile the cursor is on right now.
+    bool multiSelect = false;
+    if (!IsKeyDown(KEY_LEFT_SHIFT))
+    {
+        _cursor.startPosition = _cursor.endPosition;
+    }
+    else
+    {
+        multiSelect = true;
+    }
+
     //Perform Tile operations
-    Vector3 cursorGridPos = _tileGrid.WorldToGridPos(_cursor.position);
-    size_t i = (size_t)cursorGridPos.x; 
-    size_t j = (size_t)cursorGridPos.y;
-    size_t k = (size_t)cursorGridPos.z;
+    Vector3 cursorStartGridPos = _tileGrid.WorldToGridPos(_cursor.startPosition);
+    Vector3 cursorEndGridPos = _tileGrid.WorldToGridPos(_cursor.endPosition);
+    Vector3 gridPosMin = Vector3Min(cursorStartGridPos, cursorEndGridPos);
+    Vector3 gridPosMax = Vector3Max(cursorStartGridPos, cursorEndGridPos);
+    size_t i = (size_t)gridPosMin.x; 
+    size_t j = (size_t)gridPosMin.y;
+    size_t k = (size_t)gridPosMin.z;
+    size_t w = (size_t)gridPosMax.x - i + 1;
+    size_t h = (size_t)gridPosMax.y - j + 1;
+    size_t l = (size_t)gridPosMax.z - k + 1;
     Tile underTile = _tileGrid.GetTile(i, j, k);
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && _cursor.tile.shape && _cursor.tile.texture) {
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !multiSelect) {
         //Place tiles
         if (underTile != _cursor.tile)
         {
@@ -144,7 +163,16 @@ void PlaceMode::Update() {
                 QueueTileAction(i, j, k, 1, 1, 1, _cursor.tile)
             );
         }
-    } else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+    }
+    else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && multiSelect)
+    {
+        //Place tiles rectangle
+        DoAction(
+            QueueTileAction(i, j, k, w, h, l, _cursor.tile)
+        );
+    }
+    else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && !multiSelect) 
+    {
         //Remove tiles
         if (underTile.shape != nullptr || underTile.texture != nullptr)
         {
@@ -155,17 +183,31 @@ void PlaceMode::Update() {
                 )
             );
         }
-    } else if (IsKeyDown(KEY_G)) {
+    } 
+    else if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && multiSelect)
+    {
+        //Remove tiles RECTANGLE
+        DoAction(
+            QueueTileAction(
+                i, j, k, w, h, l,
+                (Tile) {nullptr, ANGLE_0, nullptr}
+            )
+        );
+    }
+    else if (IsKeyDown(KEY_G)) 
+    {
         //(G)rab the shape from the tile under the cursor
-        Model *shape  = _tileGrid.GetTile(cursorGridPos.x, cursorGridPos.y, cursorGridPos.z).shape;
+        Model *shape  = _tileGrid.GetTile(cursorEndGridPos.x, cursorEndGridPos.y, cursorEndGridPos.z).shape;
         if (shape) 
         {
             _cursor.tile.shape = shape;
             _context->selectedShape = shape;
         }
-    } else if (IsKeyDown(KEY_T)) {
+    } 
+    else if (IsKeyDown(KEY_T)) 
+    {
         //Pick the (T)exture from the tile under the cursor.
-        Texture2D *tex = _tileGrid.GetTile(cursorGridPos.x, cursorGridPos.y, cursorGridPos.z).texture;
+        Texture2D *tex = _tileGrid.GetTile(cursorEndGridPos.x, cursorEndGridPos.y, cursorEndGridPos.z).texture;
         if (tex) 
         {
             _cursor.tile.texture = tex;
@@ -206,20 +248,20 @@ void PlaceMode::Draw() {
         _tileGrid.Draw();
 
         //Draw cursor
-        if (_cursor.tile.shape && _cursor.tile.texture) {
+        if (!IsKeyDown(KEY_LEFT_SHIFT) && _cursor.tile.shape && _cursor.tile.texture) {
             Matrix cursorTransform = MatrixMultiply(
                 MatrixRotateY(AngleRadians(_cursor.tile.angle)), 
-                MatrixTranslate(_cursor.position.x, _cursor.position.y, _cursor.position.z));
+                MatrixTranslate(_cursor.endPosition.x, _cursor.endPosition.y, _cursor.endPosition.z));
             for (size_t m = 0; m < _cursor.tile.shape->meshCount; ++m) {
                 DrawMesh(_cursor.tile.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.tile.texture, false), cursorTransform);
             }
         }
         rlDisableDepthTest();
         DrawCubeWires(
-            _cursor.position, 
-            _tileGrid.GetSpacing() * _cursor.outlineScale, 
-            _tileGrid.GetSpacing() * _cursor.outlineScale, 
-            _tileGrid.GetSpacing() * _cursor.outlineScale, 
+            Vector3Scale(Vector3Add(_cursor.startPosition, _cursor.endPosition), 0.5f), 
+            fabs(_cursor.endPosition.x - _cursor.startPosition.x) + _tileGrid.GetSpacing() * _cursor.outlineScale, 
+            fabs(_cursor.endPosition.y - _cursor.startPosition.y) + _tileGrid.GetSpacing() * _cursor.outlineScale, 
+            fabs(_cursor.endPosition.z - _cursor.startPosition.z) + _tileGrid.GetSpacing() * _cursor.outlineScale, 
             MAGENTA);
         rlEnableDepthTest();
     }

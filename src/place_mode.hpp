@@ -27,7 +27,8 @@ protected:
 
     struct Cursor {
         Tile tile;
-        Vector3 position;
+        Vector3 endPosition;
+        Vector3 startPosition;
         float outlineScale;
     };
 
