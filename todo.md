@@ -11,9 +11,10 @@
 [x] Make cylinder align flatly with panels
 [x] Add corner wedges
 [x] Basic directional lighting
-[ ] Decide on better hotkeys for picking
+[x] Decide on better hotkeys for picking
+[x] Tile copy (Copy texture or shape or both?)
+[ ] Undo/Redo?
 [ ] Embed font and shaders
-[ ] Tile copy (Copy texture or shape or both?)
 [ ] Rectangle fill
 [ ] Import TI2
 [ ] Entity placement

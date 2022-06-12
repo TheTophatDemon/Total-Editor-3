@@ -128,10 +128,10 @@ void PlaceMode::Update() {
     }
     _cursor.outlineScale = 1.125f + sinf(GetTime()) * 0.125f;
     
+    Vector3 cursorGridPos = _tileGrid.WorldToGridPos(_cursor.position);
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && _cursor.shape && _cursor.texture) {
         //Place tiles
-        Vector3 gridPos = _tileGrid.WorldToGridPos(_cursor.position);
-        _tileGrid.SetTile(gridPos.x, gridPos.y, gridPos.z, 
+        _tileGrid.SetTile(cursorGridPos.x, cursorGridPos.y, cursorGridPos.z, 
             (Tile){
                 _cursor.shape,
                 _cursor.angle,
@@ -140,8 +140,15 @@ void PlaceMode::Update() {
         );
     } else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
         //Remove tiles
-        Vector3 gridPos = _tileGrid.WorldToGridPos(_cursor.position);
-        _tileGrid.UnsetTile(gridPos.x, gridPos.y, gridPos.z);
+        _tileGrid.UnsetTile(cursorGridPos.x, cursorGridPos.y, cursorGridPos.z);
+    } else if (IsKeyDown(KEY_G)) {
+        //(G)rab the shape from the tile under the cursor
+        Model *shape  = _tileGrid.GetTile(cursorGridPos.x, cursorGridPos.y, cursorGridPos.z).shape;
+        if (shape) _context->selectedShape = shape;
+    } else if (IsKeyDown(KEY_T)) {
+        //Pick the (T)exture from the tile under the cursor.
+        Material *material = _tileGrid.GetTile(cursorGridPos.x, cursorGridPos.y, cursorGridPos.z).material;
+        if (material) _context->selectedTexture = Assets::GetTextureForMaterial(material);
     }
 }
 

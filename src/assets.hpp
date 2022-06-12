@@ -14,7 +14,8 @@ namespace Assets {
     void Unload();
     Texture2D *GetTexture(const std::string texturePath);
     Material *GetMaterialForTexture(const std::string texturePath, bool instanced = false);
-    Material *GetMaterialForTexture(const Texture2D *texture, bool instanced = false);
+    Material *GetMaterialForTexture(Texture2D *texture, bool instanced = false);
+    Texture2D *GetTextureForMaterial(const Material *material);
     Model *GetShape(const std::string modelPath);
     Texture2D *GetShapeIcon(const Model *shape);
     void DrawShapeIcon(const RenderTexture2D& target, const Model *shape);

@@ -61,7 +61,8 @@ int main(int argc, char **argv)
                 }
             } else {
                 if (IsKeyDown(KEY_LEFT_SHIFT)) {
-                    editorMode = &shapePickMode;
+                    if (editorMode == &texturePickMode) editorMode = &shapePickMode;
+                    else if (editorMode == &shapePickMode) editorMode = &texturePickMode;
                 } else {
                     editorMode = &placeMode;
                 }

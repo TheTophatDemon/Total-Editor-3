@@ -4,8 +4,8 @@
 
 #include <unordered_map>
 
-static std::unordered_map<const Texture *, Material> _normalMaterials;
-static std::unordered_map<const Texture *, Material> _instancedMaterials;
+static std::unordered_map<Texture2D *, Material> _normalMaterials;
+static std::unordered_map<Texture2D *, Material> _instancedMaterials;
 static std::unordered_map<std::string, Texture2D> _textures;
 static Shader _mapShader;
 
@@ -58,7 +58,7 @@ Material *Assets::GetMaterialForTexture(const std::string texturePath, bool inst
     return GetMaterialForTexture(GetTexture(texturePath), instanced);
 }
 
-Material *Assets::GetMaterialForTexture(const Texture2D *texture, bool instanced) {
+Material *Assets::GetMaterialForTexture(Texture2D *texture, bool instanced) {
     if (instanced) {
         if (_instancedMaterials.find(texture) == _instancedMaterials.end()) {
             Material mat = LoadMaterialDefault();
@@ -75,6 +75,20 @@ Material *Assets::GetMaterialForTexture(const Texture2D *texture, bool instanced
         }
         return &_normalMaterials[texture];
     }
+}
+
+Texture2D *Assets::GetTextureForMaterial(const Material *material) {
+    for (const auto& [tex, mat] : _instancedMaterials) {
+        if (&mat == material) {
+            return tex;
+        }
+    }
+    for (const auto& [tex, mat] : _normalMaterials) {
+        if (&mat == material) {
+            return tex;
+        }
+    }
+    return nullptr;
 }
 
 Model *Assets::GetShape(const std::string modelPath) {

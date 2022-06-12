@@ -69,6 +69,10 @@ public:
         _grid[FlatIndex(i, j, k)] = tile;
     }
 
+    inline Tile GetTile(int i, int j, int k) {
+        return _grid[FlatIndex(i, j, k)];
+    }
+
     inline void UnsetTile(int i, int j, int k) {
         _grid[FlatIndex(i, j, k)].shape = nullptr;
     }
