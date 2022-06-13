@@ -15,7 +15,10 @@
 [x] Tile copy (Copy texture or shape or both?)
 [x] Undo/Redo!! (That was difficult)
 [x] Rectangle fill
+[x] Fix the scroll bar bug
+[ ] Fix lighting again
 [ ] More flexible camera?
+[ ] Increase scroll speed for textures
 [ ] Hide/reveal layers?
 [ ] Embed font and shaders
 [ ] Import TI2

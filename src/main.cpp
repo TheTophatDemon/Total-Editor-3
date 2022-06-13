@@ -32,6 +32,7 @@ int main(int argc, char **argv)
     GuiSetStyle(LABEL, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
     GuiSetStyle(LABEL, TEXT_COLOR_FOCUSED, ColorToInt(YELLOW));
     GuiSetStyle(LABEL, TEXT_COLOR_PRESSED, ColorToInt(LIGHTGRAY));
+    GuiSetStyle(SCROLLBAR, SCROLL_SPEED, 64);
 
     AppContext context = {
         .undoStackSize = 30UL,

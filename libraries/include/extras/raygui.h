@@ -1542,8 +1542,8 @@ Rectangle GuiScrollPanel(Rectangle bounds, const char *text, Rectangle content, 
             float wheelMove = GetMouseWheelMove();
 
             // Horizontal scroll (Shift + Mouse wheel)
-            if (hasHorizontalScrollBar && (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_SHIFT))) scrollPos.x += wheelMove*20;
-            else scrollPos.y += wheelMove*20; // Vertical scroll
+            if (hasHorizontalScrollBar && (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_SHIFT))) scrollPos.x += wheelMove*(GuiGetStyle(SCROLLBAR, SCROLL_SPEED)+8);
+            else scrollPos.y += wheelMove*(GuiGetStyle(SCROLLBAR, SCROLL_SPEED)+8); // Vertical scroll
         }
     }
 
@@ -4094,6 +4094,8 @@ static Vector3 ConvertHSVtoRGB(Vector3 hsv)
     return rgb;
 }
 
+static Vector2 lastScrollBarClickPosition = RAYGUI_CLITERAL(Vector2){ NAN, NAN };
+
 // Scroll bar control (used by GuiScrollPanel())
 static int GuiScrollBar(Rectangle bounds, int value, int minValue, int maxValue)
 {
@@ -4142,11 +4144,16 @@ static int GuiScrollBar(Rectangle bounds, int value, int minValue, int maxValue)
 
     // Update control
     //--------------------------------------------------------------------
+    if (!IsMouseButtonDown(MOUSE_LEFT_BUTTON))
+    {
+        lastScrollBarClickPosition.x = NAN;
+        lastScrollBarClickPosition.y = NAN;
+    }
     if ((state != STATE_DISABLED) && !guiLocked)
     {
         Vector2 mousePoint = GetMousePosition();
 
-        if (CheckCollisionPointRec(mousePoint, bounds))
+        if (CheckCollisionPointRec(mousePoint, bounds) || CheckCollisionPointRec(lastScrollBarClickPosition, bounds))
         {
             state = STATE_FOCUSED;
 
@@ -4158,6 +4165,7 @@ static int GuiScrollBar(Rectangle bounds, int value, int minValue, int maxValue)
             {
                 if (CheckCollisionPointRec(mousePoint, arrowUpLeft)) value -= range/GuiGetStyle(SCROLLBAR, SCROLL_SPEED);
                 else if (CheckCollisionPointRec(mousePoint, arrowDownRight)) value += range/GuiGetStyle(SCROLLBAR, SCROLL_SPEED);
+                lastScrollBarClickPosition = mousePoint;
 
                 state = STATE_PRESSED;
             }
@@ -4166,12 +4174,18 @@ static int GuiScrollBar(Rectangle bounds, int value, int minValue, int maxValue)
                 if (!isVertical)
                 {
                     Rectangle scrollArea = { arrowUpLeft.x + arrowUpLeft.width, arrowUpLeft.y, scrollbar.width, bounds.height - 2*GuiGetStyle(SCROLLBAR, BORDER_WIDTH) };
-                    if (CheckCollisionPointRec(mousePoint, scrollArea)) value = (int)(((float)(mousePoint.x - scrollArea.x - slider.width/2)*range)/(scrollArea.width - slider.width) + minValue);
+                    if (CheckCollisionPointRec(mousePoint, scrollArea) || CheckCollisionPointRec(lastScrollBarClickPosition, bounds)) 
+                    {
+                        value = (int)(((float)(mousePoint.x - scrollArea.x - slider.width/2)*range)/(scrollArea.width - slider.width) + minValue);
+                    }
                 }
                 else
                 {
                     Rectangle scrollArea = { arrowUpLeft.x, arrowUpLeft.y+arrowUpLeft.height, bounds.width - 2*GuiGetStyle(SCROLLBAR, BORDER_WIDTH),  scrollbar.height };
-                    if (CheckCollisionPointRec(mousePoint, scrollArea)) value = (int)(((float)(mousePoint.y - scrollArea.y - slider.height/2)*range)/(scrollArea.height - slider.height) + minValue);
+                    if (CheckCollisionPointRec(mousePoint, scrollArea) || CheckCollisionPointRec(lastScrollBarClickPosition, bounds))
+                    {
+                        value = (int)(((float)(mousePoint.y - scrollArea.y - slider.height/2)*range)/(scrollArea.height - slider.height) + minValue);
+                    } 
                 }
             }
         }
