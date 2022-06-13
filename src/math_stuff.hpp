@@ -2,6 +2,7 @@
 #define MATH_STUFF_H
 
 const Vector3 VEC3_UP = (Vector3) { 0.0f, 1.0f, 0.0f };
+const Vector3 VEC3_FORWARD = (Vector3) { 0.0f, 0.0f, -1.0f };
 
 //Returns the parameter that is lower in value.
 int Min(int a, int b) {

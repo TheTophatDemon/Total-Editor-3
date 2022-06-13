@@ -7,10 +7,11 @@
 #include "math_stuff.hpp"
 #include "assets.hpp"
 
-const float CAMERA_HEIGHT_OFFSET = 10.0f;
-const float CAMERA_MOVE_SPEED_MIN = 8.0f;
-const float CAMERA_MOVE_SPEED_MAX = 64.0f;
-const float CAMERA_ACCELERATION = 16.0f;
+#define CAMERA_PITCH_LIMIT (PI / 2.5f)
+#define CAMERA_MOVE_SPEED_MIN   8.0f
+#define CAMERA_MOVE_SPEED_MAX   64.0f
+#define CAMERA_ACCELERATION     16.0f
+
 
 PlaceMode::PlaceMode(AppContext *context) 
     : _context(context), 
@@ -21,12 +22,12 @@ PlaceMode::PlaceMode(AppContext *context)
 	_camera.up = VEC3_UP;
 	_camera.fovy = 70.0f;
 	_camera.projection = CAMERA_PERSPECTIVE;
-	SetCameraMode(_camera, CAMERA_PERSPECTIVE);
 
     _cameraYaw = 0.0f;
+    _cameraPitch = PI / 4.0f;
     _cameraMoveSpeed = CAMERA_MOVE_SPEED_MIN;
 
-    //Generate cursor
+    //Setup cursor
     _cursor = { 0 };
     _cursor.tile = (Tile) {
         .shape = context->selectedShape,
@@ -43,63 +44,76 @@ PlaceMode::PlaceMode(AppContext *context)
     _cursor.outlineScale = 1.125f;
 }
 
-void PlaceMode::OnEnter() {
+void PlaceMode::OnEnter() 
+{
     _cursor.tile.shape = _context->selectedShape;
     _cursor.tile.texture = _context->selectedTexture;
 }
 
-void PlaceMode::OnExit() {
-    
+void PlaceMode::OnExit() 
+{
+    _context->selectedShape = _cursor.tile.shape;
+    _context->selectedTexture = _cursor.tile.texture;
 }
 
-void PlaceMode::MoveCamera() {
+void PlaceMode::MoveCamera() 
+{
     //Camera controls
     Vector3 cameraMovement = Vector3Zero();
-    if (IsKeyDown(KEY_D)) {
+    if (IsKeyDown(KEY_D)) 
+    {
         cameraMovement.x = 1.0f;
-    } else if (IsKeyDown(KEY_A)) {
+    } 
+    else if (IsKeyDown(KEY_A)) 
+    {
         cameraMovement.x = -1.0f;
     }
 
-    if (IsKeyDown(KEY_W)) {
+    if (IsKeyDown(KEY_W))
+    {
         cameraMovement.z = -1.0f;
-    } else if (IsKeyDown(KEY_S)) {
+    }
+    else if (IsKeyDown(KEY_S))
+    {
         cameraMovement.z = 1.0f;
     }
 
-    if (IsKeyDown(KEY_SPACE)) {
+    if (IsKeyDown(KEY_SPACE))
+    {
         cameraMovement.y = 1.0f;
-    } else if (IsKeyDown(KEY_C)) {
+    }
+    else if (IsKeyDown(KEY_C))
+    {
         cameraMovement.y = -1.0f;
     }
 
-    if (IsKeyDown(KEY_D) || IsKeyDown(KEY_A) || IsKeyDown(KEY_W) || IsKeyDown(KEY_S)) {
+    if (IsKeyDown(KEY_D) || IsKeyDown(KEY_A) || IsKeyDown(KEY_W) || IsKeyDown(KEY_S))
+    {
         _cameraMoveSpeed += CAMERA_ACCELERATION * GetFrameTime();
-    } else {
+    }
+    else
+    {
         _cameraMoveSpeed = CAMERA_MOVE_SPEED_MIN;
     }
     _cameraMoveSpeed = Clamp(_cameraMoveSpeed, CAMERA_MOVE_SPEED_MIN, CAMERA_MOVE_SPEED_MAX);
     
-    cameraMovement = Vector3Scale(Vector3Normalize(cameraMovement), _cameraMoveSpeed * GetFrameTime());
-    Vector3 rotatedMovement = Vector3Transform(cameraMovement, MatrixRotateY(_cameraYaw - PI / 2.0f));
-    _camera.target = Vector3Add(_camera.target, rotatedMovement);
-
-    if (IsKeyPressed(KEY_R)) {
-        _camera.target = Vector3Zero();
-    }
-
-    if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
+    if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) 
+    {
         _cameraYaw += GetMouseDelta().x * _context->mouseSensitivity * GetFrameTime();
+        _cameraPitch += GetMouseDelta().y * _context->mouseSensitivity * GetFrameTime();
+        _cameraPitch = Clamp(_cameraPitch, -CAMERA_PITCH_LIMIT, CAMERA_PITCH_LIMIT);
     }
 
-    _camera.position = (Vector3){ 
-        _camera.target.x + cosf(_cameraYaw) * CAMERA_HEIGHT_OFFSET, 
-        _camera.target.y + CAMERA_HEIGHT_OFFSET, 
-        _camera.target.z + sinf(_cameraYaw) * CAMERA_HEIGHT_OFFSET };
+    cameraMovement = Vector3Scale(Vector3Normalize(cameraMovement), _cameraMoveSpeed * GetFrameTime());
+    Matrix cameraRotation = MatrixMultiply(MatrixRotateX(_cameraPitch), MatrixRotateY(_cameraYaw));
+    Vector3 rotatedMovement = Vector3Transform(cameraMovement, cameraRotation);
+    
+    _camera.position = Vector3Add(_camera.position, rotatedMovement);
+    _camera.target = Vector3Add(_camera.position, Vector3Transform(VEC3_FORWARD, cameraRotation));
 }
 
 void PlaceMode::Update() {
-    UpdateCamera(&_camera);
+    //UpdateCamera(&_camera);
     MoveCamera();
     
     //Move editing plane
@@ -107,6 +121,22 @@ void PlaceMode::Update() {
         _planeGridPos.y = Clamp(_planeGridPos.y + Sign(GetMouseWheelMove()), 0.0f, _tileGrid.GetHeight() - 1);
     }
     _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
+
+    if (IsKeyPressed(KEY_H))
+    {
+        if (IsKeyDown(KEY_LEFT_ALT))
+        {
+            _tileGrid.ShowAllLayers();
+        }
+        else if (IsKeyDown(KEY_LEFT_SHIFT))
+        {
+            _tileGrid.SoloLayer((int) _planeGridPos.y);
+        }
+        else
+        {
+            _tileGrid.ToggleShowLayer((int) _planeGridPos.y);
+        }
+    }
 
     //Update the cursor
     
@@ -201,7 +231,6 @@ void PlaceMode::Update() {
         if (shape) 
         {
             _cursor.tile.shape = shape;
-            _context->selectedShape = shape;
         }
     } 
     else if (IsKeyDown(KEY_T)) 
@@ -211,7 +240,6 @@ void PlaceMode::Update() {
         if (tex) 
         {
             _cursor.tile.texture = tex;
-            _context->selectedTexture = tex;
         }
     }
 

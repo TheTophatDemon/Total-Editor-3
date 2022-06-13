@@ -19,6 +19,7 @@ public:
     virtual void OnEnter() override;
     virtual void OnExit() override;
 protected:
+
     struct TileAction {
         size_t i, j, k;
         TileGrid prevState;
@@ -41,6 +42,7 @@ protected:
 
     Camera _camera;
     float _cameraYaw;
+    float _cameraPitch;
     float _cameraMoveSpeed;
 
     Cursor _cursor;

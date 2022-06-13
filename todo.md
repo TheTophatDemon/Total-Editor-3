@@ -17,9 +17,11 @@
 [x] Rectangle fill
 [x] Fix the scroll bar bug
 [x] Fix lighting again
-[ ] More flexible camera?
-[ ] Increase scroll speed for textures
-[ ] Hide/reveal layers?
+[x] Increase scroll speed for textures
+[x] ~~More flexible camera?~~ First person camera
+[x] Hide/reveal layers
+[ ] Menu bar
+[ ] Status message for hiding / revealing layers
 [ ] Embed font and shaders
 [ ] Import TI2
 [ ] Entity placement

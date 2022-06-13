@@ -50,6 +50,7 @@ TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing) {
     _length = length;
     _spacing = spacing;
     _grid.resize(width * height * length);
+    _hiddenLayers.resize(height);
     
     //Make sure the grid is full of empty tiles
     for (Tile& tile : _grid) {
@@ -64,6 +65,7 @@ TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing, Ti
     _length = length;
     _spacing = spacing;
     _grid.resize(width * height * length);
+    _hiddenLayers.resize(height);
     
     for (size_t i = 0; i < _grid.size(); ++i)
     {
@@ -78,7 +80,9 @@ void TileGrid::Draw() {
         const Tile& tile = _grid[t];
         if (tile.texture && tile.shape) {
             //Calculate world space matrix for the tile
-            Vector3 worldPos = GridToWorldPos(UnflattenIndex(t), true);
+            Vector3 gridPos = UnflattenIndex(t);
+            if (_hiddenLayers[(size_t)gridPos.y]) continue;
+            Vector3 worldPos = GridToWorldPos(gridPos, true);
             Matrix matrix = MatrixMultiply(
                 AngleMatrix(tile.angle), 
                 MatrixTranslate(worldPos.x, worldPos.y, worldPos.z));
