@@ -28,7 +28,7 @@ void main()
     fragPosition = vec3(mvpi*vec4(vertexPosition, 1.0));
     fragTexCoord = vertexTexCoord;
     fragColor = vertexColor;
-    mat3 matNormal = mat3(mvpi[0], mvpi[1], mvpi[2]);
+    mat3 matNormal = mat3(instanceTransform[0].xyz, instanceTransform[1].xyz, instanceTransform[2].xyz);
     fragNormal = normalize(matNormal*vertexNormal);
 
     // Calculate final vertex position

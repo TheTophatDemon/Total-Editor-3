@@ -16,7 +16,7 @@
 [x] Undo/Redo!! (That was difficult)
 [x] Rectangle fill
 [x] Fix the scroll bar bug
-[ ] Fix lighting again
+[x] Fix lighting again
 [ ] More flexible camera?
 [ ] Increase scroll speed for textures
 [ ] Hide/reveal layers?
