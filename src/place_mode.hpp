@@ -28,14 +28,19 @@ protected:
 
     struct Cursor {
         Tile tile;
+        TileGrid brush;
         Vector3 endPosition;
         Vector3 startPosition;
         float outlineScale;
+        bool brushMode;
     };
 
     void MoveCamera();
     void UpdateCursor();
+    //Queues a tile action for filling an area with one tile
     TileAction &QueueTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile);
+    //Queues a tile action for filling an area using a brush
+    TileAction &QueueTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, TileGrid brush);
     void DoAction(TileAction &action);
     void UndoAction(TileAction &action);
 

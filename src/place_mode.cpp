@@ -22,10 +22,10 @@ PlaceMode::PlaceMode(AppContext *context)
       _layerViewMin(0)
 {
     _menuBar.AddMenu("FILE", {"NEW", "OPEN", "SAVE", "SAVE AS", "RESIZE"});
-    _menuBar.AddMenu("VIEW", {"TEXTURES", "SHAPES", "THINGS"});
+    _menuBar.AddMenu("VIEW", {"MAP", "TEXTURES", "SHAPES", "THINGS"});
     _menuBar.AddMenu("CONFIG", {"ASSET PATHS", "SETTINGS"});
     _menuBar.AddMenu("INFO", {"ABOUT", "SHORTCUTS", "INSTRUCTIONS"});
-
+    
     //Setup camera
 	_camera = { 0 };
 	_camera.up = VEC3_UP;
@@ -37,12 +37,13 @@ PlaceMode::PlaceMode(AppContext *context)
     _cameraMoveSpeed = CAMERA_MOVE_SPEED_MIN;
 
     //Setup cursor
-    _cursor = { 0 };
     _cursor.tile = (Tile) {
         .shape = context->selectedShape,
         .angle = ANGLE_0,
         .texture = context->selectedTexture
     };
+    _cursor.brush = TileGrid(1, 1, 1, _tileGrid.GetSpacing());
+    _cursor.brushMode = false;
     _cursor.startPosition = _cursor.endPosition = Vector3Zero();
     _cursor.outlineScale = 1.0f;
 
@@ -57,6 +58,7 @@ void PlaceMode::OnEnter()
 {
     _cursor.tile.shape = _context->selectedShape;
     _cursor.tile.texture = _context->selectedTexture;
+    _cursor.brushMode = false;
 }
 
 void PlaceMode::OnExit() 
@@ -145,15 +147,17 @@ void PlaceMode::UpdateCursor()
     }
     //_cursor.outlineScale = 1.125f + sinf(GetTime()) * 0.125f;
     
-    //If shift is not held, the cursor only applies to the tile the cursor is on right now.
     bool multiSelect = false;
-    if (!IsKeyDown(KEY_LEFT_SHIFT))
+    if (!_cursor.brushMode)
     {
-        _cursor.startPosition = _cursor.endPosition;
-    }
-    else
-    {
-        multiSelect = true;
+        if (!IsKeyDown(KEY_LEFT_SHIFT))
+        {
+            _cursor.startPosition = _cursor.endPosition;
+        }
+        else
+        {
+            multiSelect = true;
+        }
     }
 
     //Perform Tile operations
@@ -167,65 +171,90 @@ void PlaceMode::UpdateCursor()
     size_t w = (size_t)gridPosMax.x - i + 1;
     size_t h = (size_t)gridPosMax.y - j + 1;
     size_t l = (size_t)gridPosMax.z - k + 1;
-    Tile underTile = _tileGrid.GetTile(i, j, k);
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !multiSelect) {
-        //Place tiles
-        if (underTile != _cursor.tile)
+    Tile underTile = _tileGrid.GetTile(i, j, k); // * hi. my name's sans undertile...you get it?
+
+    //Press Shift+B to enter brush mode, copying the currently selected rectangle of tiles.
+    if (!_cursor.brushMode && IsKeyPressed(KEY_B) && IsKeyDown(KEY_LEFT_SHIFT))
+    {
+        _cursor.brushMode = true;
+        _cursor.brush = _tileGrid.Subsection(i, j, k, w, h, l);
+    }
+
+    if (_cursor.brushMode)
+    {
+        _cursor.startPosition = (Vector3) {
+            _cursor.endPosition.x + (_cursor.brush.GetWidth()  - 1) * _cursor.brush.GetSpacing(),
+            _cursor.endPosition.y + (_cursor.brush.GetHeight() - 1) * _cursor.brush.GetSpacing(),
+            _cursor.endPosition.z + (_cursor.brush.GetLength() - 1) * _cursor.brush.GetSpacing(),
+        };
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
             DoAction(
-                QueueTileAction(i, j, k, 1, 1, 1, _cursor.tile)
+                QueueTileAction(i, j, k, w, h, l, _cursor.brush)
             );
         }
-    }
-    else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && multiSelect)
-    {
-        //Place tiles rectangle
-        DoAction(
-            QueueTileAction(i, j, k, w, h, l, _cursor.tile)
-        );
-    }
-    else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && !multiSelect) 
-    {
-        //Remove tiles
-        if (underTile.shape != nullptr || underTile.texture != nullptr)
+        else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
         {
+            _cursor.brushMode = false;
+        }
+    }
+    else
+    {
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !multiSelect) {
+            //Place tiles
+            if (underTile != _cursor.tile)
+            {
+                DoAction(
+                    QueueTileAction(i, j, k, 1, 1, 1, _cursor.tile)
+                );
+            }
+        }
+        else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && multiSelect)
+        {
+            //Place tiles rectangle
+            DoAction(
+                QueueTileAction(i, j, k, w, h, l, _cursor.tile)
+            );
+        }
+        else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && !multiSelect) 
+        {
+            //Remove tiles
+            if (underTile.shape != nullptr || underTile.texture != nullptr)
+            {
+                DoAction(
+                    QueueTileAction(
+                        i, j, k, 1, 1, 1,
+                        (Tile) {nullptr, ANGLE_0, nullptr}
+                    )
+                );
+            }
+        } 
+        else if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && multiSelect)
+        {
+            //Remove tiles RECTANGLE
             DoAction(
                 QueueTileAction(
-                    i, j, k, 1, 1, 1,
+                    i, j, k, w, h, l,
                     (Tile) {nullptr, ANGLE_0, nullptr}
                 )
             );
         }
-    } 
-    else if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && multiSelect)
-    {
-        //Remove tiles RECTANGLE
-        DoAction(
-            QueueTileAction(
-                i, j, k, w, h, l,
-                (Tile) {nullptr, ANGLE_0, nullptr}
-            )
-        );
-    }
-    else if (IsKeyDown(KEY_G)) 
-    {
-        //(G)rab the shape from the tile under the cursor
-        Tile underTile = _tileGrid.GetTile(cursorEndGridPos.x, cursorEndGridPos.y, cursorEndGridPos.z);
-        //Look, it's Sans Undertile!
-        Model *shape  = underTile.shape;
-        if (shape) 
+        else if (IsKeyDown(KEY_G) && !multiSelect) 
         {
-            _cursor.tile.shape = shape;
-            _cursor.tile.angle = underTile.angle;
-        }
-    } 
-    else if (IsKeyDown(KEY_T)) 
-    {
-        //Pick the (T)exture from the tile under the cursor.
-        Texture2D *tex = _tileGrid.GetTile(cursorEndGridPos.x, cursorEndGridPos.y, cursorEndGridPos.z).texture;
-        if (tex) 
+            //(G)rab the shape from the tile under the cursor
+            if (underTile.shape) 
+            {
+                _cursor.tile.shape = underTile.shape;
+                _cursor.tile.angle = underTile.angle;
+            }
+        } 
+        else if (IsKeyDown(KEY_T) && !multiSelect) 
         {
-            _cursor.tile.texture = tex;
+            //Pick the (T)exture from the tile under the cursor.
+            if (underTile.texture) 
+            {
+                _cursor.tile.texture = underTile.texture;
+            }
         }
     }
 }
@@ -247,6 +276,11 @@ void PlaceMode::Update() {
                 int planeLayer = (int)_planeGridPos.y;
                 if (planeLayer < _layerViewMin) _layerViewMin = planeLayer;
                 if (planeLayer > _layerViewMax) _layerViewMax = planeLayer;
+            }
+            else
+            {
+                //Prevent the user from editing hidden layers.
+                _planeGridPos.y = Clamp(_planeGridPos.y, _layerViewMin, _layerViewMax);
             }
         }
         _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
@@ -301,15 +335,27 @@ void PlaceMode::Draw() {
             _tileGrid.GetWidth()+1, _tileGrid.GetLength()+1, 
             _tileGrid.GetSpacing());
 
-        _tileGrid.Draw(_layerViewMin, _layerViewMax);
+        _tileGrid.Draw(Vector3Zero(), _layerViewMin, _layerViewMax);
 
         //Draw cursor
         if (!IsKeyDown(KEY_LEFT_SHIFT) && _cursor.tile.shape && _cursor.tile.texture) {
             Matrix cursorTransform = MatrixMultiply(
                 MatrixRotateY(AngleRadians(_cursor.tile.angle)), 
                 MatrixTranslate(_cursor.endPosition.x, _cursor.endPosition.y, _cursor.endPosition.z));
-            for (size_t m = 0; m < _cursor.tile.shape->meshCount; ++m) {
-                DrawMesh(_cursor.tile.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.tile.texture, false), cursorTransform);
+            
+            if (_cursor.brushMode)
+            {
+                Vector3 brushOffset = Vector3Add(Vector3Min(_cursor.startPosition, _cursor.endPosition), _cursor.brush.GetCenterOffset());
+                brushOffset.x -= _cursor.brush.GetSpacing() / 2.0f;
+                brushOffset.y -= _cursor.brush.GetSpacing() / 2.0f;
+                brushOffset.z -= _cursor.brush.GetSpacing() / 2.0f;
+                _cursor.brush.Draw(brushOffset);
+            }
+            else
+            {
+                for (size_t m = 0; m < _cursor.tile.shape->meshCount; ++m) {
+                    DrawMesh(_cursor.tile.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.tile.texture, false), cursorTransform);
+                }
             }
         }
         rlDisableDepthTest();
@@ -342,6 +388,26 @@ PlaceMode::TileAction &PlaceMode::QueueTileAction(size_t i, size_t j, size_t k, 
         .k = k, 
         .prevState = _tileGrid.Subsection(i, j, k, w, h, l),
         .newState = TileGrid(w, h, l, _tileGrid.GetSpacing(), newTile) 
+    });
+    if (_undoHistory.size() > _context->undoStackSize) _undoHistory.pop_front();
+    _redoHistory.clear();
+
+    return _undoHistory.back();
+}
+
+PlaceMode::TileAction &PlaceMode::QueueTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, TileGrid brush)
+{
+    _undoHistory.push_back((TileAction){
+        .i = i, 
+        .j = j, 
+        .k = k, 
+        .prevState = _tileGrid.Subsection(
+            i, j, k, 
+            Min(w, _tileGrid.GetWidth() - i),  //Cut off parts that go beyond map boundaries
+            Min(h, _tileGrid.GetHeight() - j), 
+            Min(l, _tileGrid.GetLength() - k)
+        ),
+        .newState = brush
     });
     if (_undoHistory.size() > _context->undoStackSize) _undoHistory.pop_front();
     _redoHistory.clear();

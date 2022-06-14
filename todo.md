@@ -24,11 +24,14 @@
 [x] Make editormode take care of hide/reveal layers.
 [x] Status message for hiding / revealing layers
 [x] Make shape picking capture orientation
-[ ] Modal windows
-[ ] Brush copying (Be careful about resize)
+[x] Brush copying (Be careful about resize)
 [ ] Embed font and shaders
+[ ] Modal windows
+[ ] Implement View menu
+[ ] Implement Resize
 [ ] Entity placement
 [ ] Entity configuration
 [ ] File operations, .TI3
 [ ] Import TI2
+[ ] Are you sure you want to exit?
 [ ] Finish instructions, settings

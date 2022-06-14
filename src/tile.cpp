@@ -44,6 +44,14 @@ bool operator!=(const Tile &lhs, const Tile &rhs)
     return !(lhs == rhs);
 }
 
+TileGrid::TileGrid()
+{
+    _width = 0;
+    _height = 0;
+    _length = 0;
+    _spacing = 0.0f;
+}
+
 TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing) 
 {
     _width = width;
@@ -74,7 +82,12 @@ TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing, Ti
     }
 }
 
-void TileGrid::Draw(int fromY, int toY)
+void TileGrid::Draw(Vector3 position)
+{
+    Draw(position, 0, _height - 1);
+}
+
+void TileGrid::Draw(Vector3 position, int fromY, int toY)
 {
     const size_t layerArea = _width * _length;
     //Create a hash map of dynamic arrays for each combination of texture and mesh
@@ -86,7 +99,7 @@ void TileGrid::Draw(int fromY, int toY)
             if (tile.texture && tile.shape) {
                 //Calculate world space matrix for the tile
                 Vector3 gridPos = UnflattenIndex(t);
-                Vector3 worldPos = GridToWorldPos(gridPos, true);
+                Vector3 worldPos = Vector3Add(position, GridToWorldPos(gridPos, true));
                 Matrix matrix = MatrixMultiply(
                     AngleMatrix(tile.angle), 
                     MatrixTranslate(worldPos.x, worldPos.y, worldPos.z));
@@ -108,11 +121,6 @@ void TileGrid::Draw(int fromY, int toY)
     for (auto& [pair, matrices] : groups) {
         DrawMeshInstanced(*pair.second, *Assets::GetMaterialForTexture(pair.first, true), matrices.data(), matrices.size());
     }
-}
-
-void TileGrid::Draw() 
-{
-    Draw(0, _height - 1);
 }
 
 TileGrid TileGrid::Subsection(int i, int j, int k, int w, int h, int l) const

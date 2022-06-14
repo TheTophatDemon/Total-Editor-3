@@ -8,6 +8,8 @@
 #include <vector>
 #include <assert.h>
 
+#include "math_stuff.hpp"
+
 typedef enum Angle { ANGLE_0, ANGLE_90, ANGLE_180, ANGLE_270, ANGLE_COUNT } Angle;
 
 float AngleDegrees(Angle angle);
@@ -27,6 +29,8 @@ bool operator!=(const Tile &lhs, const Tile &rhs);
 
 class TileGrid {
 public:
+    //Constructs a blank TileGrid with no size
+    TileGrid();
     //Constructs a TileGrid full of empty tiles.
     TileGrid(size_t width, size_t height, size_t length, float spacing);
     //Constructs a TileGrid filled with the given tile.
@@ -96,18 +100,20 @@ public:
     }
 
     //Takes the tiles of `src` and places them in this grid starting at the offset at (i, j, k)
-    //`src` MUST be of smaller or equal size to this grid.
+    //If the offset results in `src` exceeding the current grid's boundaries, it is cut off.
     inline void CopyTiles(int i, int j, int k, const TileGrid &src)
     {
         assert(i >= 0 && j >= 0 && k >= 0);
-        assert(i + src._width <= _width && j + src._height <= _height && k + src._length <= _length);
-        for (int z = k; z < k + src._length; ++z) 
+        int xEnd = Min(i + src._width, _width); 
+        int yEnd = Min(j + src._height, _height);
+        int zEnd = Min(k + src._length, _length);
+        for (int z = k; z < zEnd; ++z) 
         {
-            for (int y = j; y < j + src._height; ++y)
+            for (int y = j; y < yEnd; ++y)
             {
                 size_t ourBase = FlatIndex(0, y, z);
                 size_t theirBase = src.FlatIndex(0, y - j, z - k);
-                for (int x = i; x < i + src._width; ++x)
+                for (int x = i; x < xEnd; ++x)
                 {
                     _grid[ourBase + x] = src._grid[theirBase + (x - i)];
                 }
@@ -134,13 +140,17 @@ public:
     inline Vector3 GetMaxCorner() const {
         return Vector3{ +((int)_width / 2) * _spacing, +((int)_height / 2) * _spacing, +((int)_length / 2) * _spacing };
     }
+    inline Vector3 GetCenterOffset() const {
+        return (Vector3) { (float)_width * _spacing / 2.0f, (float)_height * _spacing / 2.0f, (float) _length * _spacing / 2.0f };
+    }
 
     //Returns a smaller TileGrid with a copy of the tile data in the rectangle defined by coordinates (i, j, k) and size (w, h, l).
     TileGrid Subsection(int i, int j, int k, int w, int h, int l) const;
 
-    void Draw();
     //Draws the tile grid, hiding all layers that are outside of the given y coordinate range.
-    void Draw(int fromY, int toY);
+    void Draw(Vector3 position, int fromY, int toY);
+
+    void Draw(Vector3 position);
 
 protected:
     size_t _width, _height, _length;
