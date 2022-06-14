@@ -7,7 +7,7 @@
 #include <stack>
 
 #include "assets.hpp"
-#include "files_util.hpp"
+#include "text_util.hpp"
 
 const int FRAME_SIZE = 64;
 const int FRAME_MARGIN = 16;
@@ -213,6 +213,7 @@ void PickMode::Draw()
     {
         _searchFilterFocused = !_searchFilterFocused;
     }
+    
     //Clear button
     Rectangle clearButtonRect = (Rectangle){searchBoxRect.x + searchBoxRect.width + 4, searchBoxRect.y, 96, 32};
     if (GuiButton(clearButtonRect, "Clear"))

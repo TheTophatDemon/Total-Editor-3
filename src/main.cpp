@@ -33,6 +33,7 @@ int main(int argc, char **argv)
     GuiSetStyle(LABEL, TEXT_COLOR_FOCUSED, ColorToInt(YELLOW));
     GuiSetStyle(LABEL, TEXT_COLOR_PRESSED, ColorToInt(LIGHTGRAY));
     GuiSetStyle(SCROLLBAR, SCROLL_SPEED, 64);
+    GuiSetStyle(LISTVIEW, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
 
     AppContext context = {
         .undoStackSize = 30UL,
@@ -87,8 +88,7 @@ int main(int argc, char **argv)
 
 		editorMode->Draw();
 		
-        DrawRectangle(2, 2, 128, 32, DARKGRAY);
-		DrawFPS(4, 4);
+		DrawFPS(4, GetScreenHeight() - 24);
 
 		EndDrawing();
 	}

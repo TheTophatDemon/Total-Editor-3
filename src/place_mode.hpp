@@ -10,6 +10,7 @@
 #include "editor_mode.hpp"
 #include "tile.hpp"
 #include "app.hpp"
+#include "menu_bar.hpp"
 
 class PlaceMode : public EditorMode {
 public:
@@ -19,7 +20,6 @@ public:
     virtual void OnEnter() override;
     virtual void OnExit() override;
 protected:
-
     struct TileAction {
         size_t i, j, k;
         TileGrid prevState;
@@ -34,6 +34,7 @@ protected:
     };
 
     void MoveCamera();
+    void UpdateCursor();
     TileAction &QueueTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile);
     void DoAction(TileAction &action);
     void UndoAction(TileAction &action);
@@ -44,6 +45,8 @@ protected:
     float _cameraYaw;
     float _cameraPitch;
     float _cameraMoveSpeed;
+
+    MenuBar _menuBar;
 
     Cursor _cursor;
     TileGrid _tileGrid;

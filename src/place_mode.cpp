@@ -2,6 +2,7 @@
 
 #include "raymath.h"
 #include "rlgl.h"
+#include "extras/raygui.h"
 
 #include "grid_extras.h"
 #include "math_stuff.hpp"
@@ -12,11 +13,17 @@
 #define CAMERA_MOVE_SPEED_MAX   64.0f
 #define CAMERA_ACCELERATION     16.0f
 
+static Rectangle topBar = (Rectangle) { 0 };
 
 PlaceMode::PlaceMode(AppContext *context) 
     : _context(context), 
     _tileGrid(100, 5, 100, 2.0f)
 {
+    _menuBar.AddMenu("FILE", {"NEW", "OPEN", "SAVE", "SAVE AS", "RESIZE"});
+    _menuBar.AddMenu("VIEW", {"TEXTURES", "SHAPES", "THINGS"});
+    _menuBar.AddMenu("CONFIG", {"ASSET PATHS", "SETTINGS"});
+    _menuBar.AddMenu("INFO", {"ABOUT", "SHORTCUTS", "INSTRUCTIONS"});
+
     //Setup camera
 	_camera = { 0 };
 	_camera.up = VEC3_UP;
@@ -112,34 +119,8 @@ void PlaceMode::MoveCamera()
     _camera.target = Vector3Add(_camera.position, Vector3Transform(VEC3_FORWARD, cameraRotation));
 }
 
-void PlaceMode::Update() {
-    //UpdateCamera(&_camera);
-    MoveCamera();
-    
-    //Move editing plane
-    if (GetMouseWheelMove() > EPSILON || GetMouseWheelMove() < -EPSILON) {
-        _planeGridPos.y = Clamp(_planeGridPos.y + Sign(GetMouseWheelMove()), 0.0f, _tileGrid.GetHeight() - 1);
-    }
-    _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
-
-    if (IsKeyPressed(KEY_H))
-    {
-        if (IsKeyDown(KEY_LEFT_ALT))
-        {
-            _tileGrid.ShowAllLayers();
-        }
-        else if (IsKeyDown(KEY_LEFT_SHIFT))
-        {
-            _tileGrid.SoloLayer((int) _planeGridPos.y);
-        }
-        else
-        {
-            _tileGrid.ToggleShowLayer((int) _planeGridPos.y);
-        }
-    }
-
-    //Update the cursor
-    
+void PlaceMode::UpdateCursor()
+{
     //Rotate cursor
     if (IsKeyPressed(KEY_Q)) {
         _cursor.tile.angle = AngleBack(_cursor.tile.angle);
@@ -242,26 +223,63 @@ void PlaceMode::Update() {
             _cursor.tile.texture = tex;
         }
     }
+}
 
-    //Undo and redo
-    if (IsKeyDown(KEY_LEFT_CONTROL))
+void PlaceMode::Update() {
+    _menuBar.Update();
+
+    if (!_menuBar.IsFocused())
     {
-        if (IsKeyPressed(KEY_Z) && !_undoHistory.empty())
-        {
-            //Undo (Ctrl + Z)
-            TileAction &action = _undoHistory.back();
-            UndoAction(action);
-            _redoHistory.push_back(action);
-            _undoHistory.pop_back();
+        MoveCamera();
+        
+        //Move editing plane
+        if (GetMouseWheelMove() > EPSILON || GetMouseWheelMove() < -EPSILON) {
+            _planeGridPos.y = Clamp(_planeGridPos.y + Sign(GetMouseWheelMove()), 0.0f, _tileGrid.GetHeight() - 1);
         }
-        else if (IsKeyPressed(KEY_Y) && !_redoHistory.empty())
+        _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
+
+        if (IsKeyPressed(KEY_H))
         {
-            //Redo (Ctrl + Y)
-            TileAction &action = _redoHistory.back();
-            DoAction(action);
-            _undoHistory.push_back(action);
-            _redoHistory.pop_back();
+            if (IsKeyDown(KEY_LEFT_ALT))
+            {
+                _tileGrid.ShowAllLayers();
+            }
+            else if (IsKeyDown(KEY_LEFT_SHIFT))
+            {
+                _tileGrid.SoloLayer((int) _planeGridPos.y);
+            }
+            else
+            {
+                _tileGrid.ToggleShowLayer((int) _planeGridPos.y);
+            }
         }
+
+        if (!CheckCollisionPointRec(GetMousePosition(), topBar))
+        {
+            UpdateCursor();
+        }
+
+        //Undo and redo
+        if (IsKeyDown(KEY_LEFT_CONTROL))
+        {
+            if (IsKeyPressed(KEY_Z) && !_undoHistory.empty())
+            {
+                //Undo (Ctrl + Z)
+                TileAction &action = _undoHistory.back();
+                UndoAction(action);
+                _redoHistory.push_back(action);
+                _undoHistory.pop_back();
+            }
+            else if (IsKeyPressed(KEY_Y) && !_redoHistory.empty())
+            {
+                //Redo (Ctrl + Y)
+                TileAction &action = _redoHistory.back();
+                DoAction(action);
+                _undoHistory.push_back(action);
+                _redoHistory.pop_back();
+            }
+        }
+
     }
 }
 
@@ -294,6 +312,10 @@ void PlaceMode::Draw() {
         rlEnableDepthTest();
     }
     EndMode3D();
+
+    topBar = (Rectangle) { 0, 0, (float)GetScreenWidth(), 32 };
+    DrawRectangleGradientV(topBar.x, topBar.y, topBar.width, topBar.height, GRAY, DARKGRAY);
+    _menuBar.Draw((Rectangle) { topBar.x, topBar.y, topBar.width / 2.0f, topBar.height });
 }
 
 PlaceMode::TileAction &PlaceMode::QueueTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile)

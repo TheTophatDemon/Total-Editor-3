@@ -29,14 +29,14 @@ void Assets::Initialize()
     _iconCamera.up = (Vector3){ 0.0f, -1.0f, 0.0f };
     _iconCamera.fovy = 45.0f;
     _iconCamera.projection = CAMERA_PERSPECTIVE;
-    SetCameraMode(_iconCamera, CAMERA_ORBITAL);
+    //SetCameraMode(_iconCamera, CAMERA_ORBITAL);
     _iconCamera.position = (Vector3){ 4.0f, 4.0f, 4.0f };
     _iconCamera.target = Vector3Zero();
 }
 
 void Assets::Update() 
 {
-    UpdateCamera(&_iconCamera);
+    //UpdateCamera(&_iconCamera);
 
     for (const auto& [model, target] : _shapeIcons) 
     {

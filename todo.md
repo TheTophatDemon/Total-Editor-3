@@ -20,11 +20,15 @@
 [x] Increase scroll speed for textures
 [x] ~~More flexible camera?~~ First person camera
 [x] Hide/reveal layers
-[ ] Menu bar
+[x] Menu bar
+[ ] Modal windows
+[ ] Make editormode take care of hide/reveal layers.
 [ ] Status message for hiding / revealing layers
+[ ] Make shape picking capture orientation
+[ ] Brush copying (Be careful about resize)
 [ ] Embed font and shaders
-[ ] Import TI2
 [ ] Entity placement
 [ ] Entity configuration
-[ ] Export/Import TI3
-[ ] F1 help dialog with shortcuts
+[ ] File operations, .TI3
+[ ] Import TI2
+[ ] Finish instructions, settings
