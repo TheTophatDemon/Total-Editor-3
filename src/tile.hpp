@@ -75,29 +75,6 @@ public:
 
     inline void SetTile(int i, int j, int k, const Tile& tile) {
         _grid[FlatIndex(i, j, k)] = tile;
-        _hiddenLayers[j] = false;
-    }
-
-    inline void ToggleShowLayer(int y)
-    {
-        _hiddenLayers[y] = !_hiddenLayers[y];
-    }
-
-    inline void SoloLayer(int y)
-    {
-        for (size_t l = 0; l < _hiddenLayers.size(); ++l)
-        {
-            if (l != y) _hiddenLayers[l] = true;
-            else _hiddenLayers[l] = false;
-        }
-    }
-
-    inline void ShowAllLayers()
-    {
-        for (size_t l = 0; l < _hiddenLayers.size(); ++l)
-        {
-            _hiddenLayers[l] = false;
-        }
     }
 
     //Sets a range of tiles in the grid inside of the rectangular prism with a corner at (i, j, k) and size (w, h, l).
@@ -107,7 +84,6 @@ public:
         assert(i + w <= _width && j + h <= _height && k + l <= _length);
         for (int y = j; y < j + h; ++y)
         {
-            _hiddenLayers[y] = false;
             for (int z = k; z < k + l; ++z)
             {
                 size_t base = FlatIndex(0, y, z);
@@ -129,7 +105,6 @@ public:
         {
             for (int y = j; y < j + src._height; ++y)
             {
-                _hiddenLayers[y] = false;
                 size_t ourBase = FlatIndex(0, y, z);
                 size_t theirBase = src.FlatIndex(0, y - j, z - k);
                 for (int x = i; x < i + src._width; ++x)
@@ -146,7 +121,6 @@ public:
 
     inline void UnsetTile(int i, int j, int k) {
         _grid[FlatIndex(i, j, k)].shape = nullptr;
-        _hiddenLayers[j] = false;
     }
 
     inline size_t GetWidth() const { return _width; }
@@ -165,12 +139,13 @@ public:
     TileGrid Subsection(int i, int j, int k, int w, int h, int l) const;
 
     void Draw();
+    //Draws the tile grid, hiding all layers that are outside of the given y coordinate range.
+    void Draw(int fromY, int toY);
 
 protected:
     size_t _width, _height, _length;
     float _spacing;
     std::vector<Tile> _grid;
-    std::vector<bool> _hiddenLayers;
 };
 
 #endif

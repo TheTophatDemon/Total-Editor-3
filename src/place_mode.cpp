@@ -17,7 +17,9 @@ static Rectangle topBar = (Rectangle) { 0 };
 
 PlaceMode::PlaceMode(AppContext *context) 
     : _context(context), 
-    _tileGrid(100, 5, 100, 2.0f)
+      _tileGrid(100, 5, 100, 2.0f),
+      _layerViewMax(_tileGrid.GetHeight() - 1),
+      _layerViewMin(0)
 {
     _menuBar.AddMenu("FILE", {"NEW", "OPEN", "SAVE", "SAVE AS", "RESIZE"});
     _menuBar.AddMenu("VIEW", {"TEXTURES", "SHAPES", "THINGS"});
@@ -208,10 +210,13 @@ void PlaceMode::UpdateCursor()
     else if (IsKeyDown(KEY_G)) 
     {
         //(G)rab the shape from the tile under the cursor
-        Model *shape  = _tileGrid.GetTile(cursorEndGridPos.x, cursorEndGridPos.y, cursorEndGridPos.z).shape;
+        Tile underTile = _tileGrid.GetTile(cursorEndGridPos.x, cursorEndGridPos.y, cursorEndGridPos.z);
+        //Look, it's Sans Undertile!
+        Model *shape  = underTile.shape;
         if (shape) 
         {
             _cursor.tile.shape = shape;
+            _cursor.tile.angle = underTile.angle;
         }
     } 
     else if (IsKeyDown(KEY_T)) 
@@ -235,22 +240,27 @@ void PlaceMode::Update() {
         //Move editing plane
         if (GetMouseWheelMove() > EPSILON || GetMouseWheelMove() < -EPSILON) {
             _planeGridPos.y = Clamp(_planeGridPos.y + Sign(GetMouseWheelMove()), 0.0f, _tileGrid.GetHeight() - 1);
+
+            //Reveal hidden layers when the grid is over them and holding H
+            if (IsKeyDown(KEY_H))
+            {
+                int planeLayer = (int)_planeGridPos.y;
+                if (planeLayer < _layerViewMin) _layerViewMin = planeLayer;
+                if (planeLayer > _layerViewMax) _layerViewMax = planeLayer;
+            }
         }
         _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
 
         if (IsKeyPressed(KEY_H))
         {
-            if (IsKeyDown(KEY_LEFT_ALT))
+            if (_layerViewMin == 0 && _layerViewMax == _tileGrid.GetHeight() - 1)
             {
-                _tileGrid.ShowAllLayers();
-            }
-            else if (IsKeyDown(KEY_LEFT_SHIFT))
-            {
-                _tileGrid.SoloLayer((int) _planeGridPos.y);
+                _layerViewMax = _layerViewMin = (int) _planeGridPos.y;
             }
             else
             {
-                _tileGrid.ToggleShowLayer((int) _planeGridPos.y);
+                _layerViewMin = 0;
+                _layerViewMax = _tileGrid.GetHeight() - 1;
             }
         }
 
@@ -291,7 +301,7 @@ void PlaceMode::Draw() {
             _tileGrid.GetWidth()+1, _tileGrid.GetLength()+1, 
             _tileGrid.GetSpacing());
 
-        _tileGrid.Draw();
+        _tileGrid.Draw(_layerViewMin, _layerViewMax);
 
         //Draw cursor
         if (!IsKeyDown(KEY_LEFT_SHIFT) && _cursor.tile.shape && _cursor.tile.texture) {
@@ -315,7 +325,13 @@ void PlaceMode::Draw() {
 
     topBar = (Rectangle) { 0, 0, (float)GetScreenWidth(), 32 };
     DrawRectangleGradientV(topBar.x, topBar.y, topBar.width, topBar.height, GRAY, DARKGRAY);
-    _menuBar.Draw((Rectangle) { topBar.x, topBar.y, topBar.width / 2.0f, topBar.height });
+    const Rectangle MENU_BAR_RECT = (Rectangle) { topBar.x, topBar.y, topBar.width / 2.0f, topBar.height };
+    _menuBar.Draw(MENU_BAR_RECT);
+    
+    if (_layerViewMin > 0 || _layerViewMax < _tileGrid.GetHeight() - 1)
+    {
+        DrawTextEx(*Assets::GetFont(), "PRESS H TO UNHIDE LAYERS", (Vector2) { MENU_BAR_RECT.x + MENU_BAR_RECT.width + 4, 2 }, 24, 0.0f, WHITE);
+    }
 }
 
 PlaceMode::TileAction &PlaceMode::QueueTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile)

@@ -50,6 +50,7 @@ protected:
 
     Cursor _cursor;
     TileGrid _tileGrid;
+    int _layerViewMin, _layerViewMax;
     //Stores recently executed actions to be undone on command.
     std::deque<TileAction> _undoHistory;
     //Stores recently undone actions to be redone on command, unless the history is altered.

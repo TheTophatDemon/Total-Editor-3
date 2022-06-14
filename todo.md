@@ -21,10 +21,10 @@
 [x] ~~More flexible camera?~~ First person camera
 [x] Hide/reveal layers
 [x] Menu bar
+[x] Make editormode take care of hide/reveal layers.
+[x] Status message for hiding / revealing layers
+[x] Make shape picking capture orientation
 [ ] Modal windows
-[ ] Make editormode take care of hide/reveal layers.
-[ ] Status message for hiding / revealing layers
-[ ] Make shape picking capture orientation
 [ ] Brush copying (Be careful about resize)
 [ ] Embed font and shaders
 [ ] Entity placement
