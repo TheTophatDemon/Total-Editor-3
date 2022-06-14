@@ -28,6 +28,7 @@
 [ ] Embed font and shaders
 [ ] Modal windows
 [ ] Implement View menu
+[ ] Show axes in some shape or form
 [ ] Implement Resize
 [ ] Entity placement
 [ ] Entity configuration

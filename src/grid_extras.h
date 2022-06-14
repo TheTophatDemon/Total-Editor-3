@@ -52,6 +52,38 @@ void DrawGridEx(Vector3 position, int slicesX, int slicesZ, float spacing)
     rlEnd();
 }
 
+void DrawAxes3D(Vector3 position, float scale)
+{
+    //Draw axes
+    rlBegin(RL_LINES);
+    
+    rlColor3f(1.0f, 0.0f, 0.0f); 
+    //Line X
+    rlVertex3f(position.x, position.y, position.z); rlVertex3f(position.x + scale, position.y, position.z);
+    //X
+    rlVertex3f(position.x + scale * 1.0f, position.y + scale * 0.25f, position.z); rlVertex3f(position.x + scale * 1.5f, position.y + scale * -0.25f, position.z); 
+    rlVertex3f(position.x + scale * 1.5f, position.y + scale * 0.25f, position.z); rlVertex3f(position.x + scale * 1.0f, position.y + scale * -0.25f, position.z);
+    
+    rlColor3f(0.0f, 1.0f, 0.0f); 
+    //Line Y
+    rlVertex3f(position.x, position.y, position.z); rlVertex3f(position.x, position.y + scale, position.z);
+    //Y
+    rlVertex3f(position.x, position.y + scale * 1.25f,position.z); rlVertex3f(position.x + scale * 0.0f,  position.y + scale * 1.5f,  position.z);
+    rlVertex3f(position.x, position.y + scale * 1.5f, position.z); rlVertex3f(position.x + scale * 0.25f, position.y + scale *  1.75f,position.z);
+    rlVertex3f(position.x, position.y + scale * 1.5f, position.z); rlVertex3f(position.x + scale *-0.25f, position.y + scale *  1.75f,position.z);
+
+    rlColor3f(0.0f, 0.0f, 1.0f); 
+    //Line Z
+    rlVertex3f(position.x, position.y, position.z); rlVertex3f(position.x, position.y, position.z + scale);
+    //Z
+    rlVertex3f(position.x, position.y + scale * -0.25f,position.z +  scale * 1.25f); rlVertex3f(position.x, position.y + scale * -0.25f,position.z +  scale * 1.75f);
+    rlVertex3f(position.x, position.y + scale * -0.25f,position.z +  scale * 1.75f); rlVertex3f(position.x, position.y + scale * 0.25f, position.z + scale * 1.25f);
+    rlVertex3f(position.x, position.y + scale * 0.25f, position.z + scale * 1.25f); rlVertex3f( position.x, position.y + scale * 0.25f, position.z + scale * 1.75f);
+
+    rlSetLineWidth(2.0f);
+    rlEnd();
+}
+
 #if defined(__cplusplus)
 }          
 #endif

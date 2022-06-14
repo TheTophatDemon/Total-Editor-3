@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <assert.h>
+#include <map>
 
 #include "math_stuff.hpp"
 
@@ -79,6 +80,7 @@ public:
 
     inline void SetTile(int i, int j, int k, const Tile& tile) {
         _grid[FlatIndex(i, j, k)] = tile;
+        _regenBatches = true;
     }
 
     //Sets a range of tiles in the grid inside of the rectangular prism with a corner at (i, j, k) and size (w, h, l).
@@ -97,6 +99,7 @@ public:
                 }
             }
         }
+        _regenBatches = true;
     }
 
     //Takes the tiles of `src` and places them in this grid starting at the offset at (i, j, k)
@@ -119,6 +122,7 @@ public:
                 }
             }
         }
+        _regenBatches = true;
     }
 
     inline Tile GetTile(int i, int j, int k) {
@@ -127,6 +131,7 @@ public:
 
     inline void UnsetTile(int i, int j, int k) {
         _grid[FlatIndex(i, j, k)].shape = nullptr;
+        _regenBatches = true;
     }
 
     inline size_t GetWidth() const { return _width; }
@@ -149,13 +154,19 @@ public:
 
     //Draws the tile grid, hiding all layers that are outside of the given y coordinate range.
     void Draw(Vector3 position, int fromY, int toY);
-
     void Draw(Vector3 position);
 
 protected:
+    void _RegenBatches();
+
     size_t _width, _height, _length;
     float _spacing;
     std::vector<Tile> _grid;
+    std::map<std::pair<Texture2D*, Mesh*>, std::vector<Matrix>> _drawBatches;
+    bool _regenBatches;
+    int _batchFromY;
+    int _batchToY;
+    Vector3 _batchPosition;
 };
 
 #endif

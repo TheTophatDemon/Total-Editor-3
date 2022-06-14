@@ -22,7 +22,7 @@ PlaceMode::PlaceMode(AppContext *context)
       _layerViewMin(0)
 {
     _menuBar.AddMenu("FILE", {"NEW", "OPEN", "SAVE", "SAVE AS", "RESIZE"});
-    _menuBar.AddMenu("VIEW", {"MAP", "TEXTURES", "SHAPES", "THINGS"});
+    _menuBar.AddMenu("VIEW", {"TEXTURES", "SHAPES", "THINGS"});
     _menuBar.AddMenu("CONFIG", {"ASSET PATHS", "SETTINGS"});
     _menuBar.AddMenu("INFO", {"ABOUT", "SHORTCUTS", "INSTRUCTIONS"});
     
@@ -285,6 +285,7 @@ void PlaceMode::Update() {
         }
         _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
 
+        //Layer hiding
         if (IsKeyPressed(KEY_H))
         {
             if (_layerViewMin == 0 && _layerViewMax == _tileGrid.GetHeight() - 1)
@@ -298,7 +299,8 @@ void PlaceMode::Update() {
             }
         }
 
-        if (!CheckCollisionPointRec(GetMousePosition(), topBar))
+        //Update cursor
+        if (!CheckCollisionPointRec(GetMousePosition(), topBar)) //Don't update when using the menus
         {
             UpdateCursor();
         }
@@ -365,6 +367,8 @@ void PlaceMode::Draw() {
             fabs(_cursor.endPosition.y - _cursor.startPosition.y) + _tileGrid.GetSpacing() * _cursor.outlineScale, 
             fabs(_cursor.endPosition.z - _cursor.startPosition.z) + _tileGrid.GetSpacing() * _cursor.outlineScale, 
             MAGENTA);
+
+        DrawAxes3D((Vector3){ 1.0f, 1.0f, 1.0f }, 10.0f);
         rlEnableDepthTest();
     }
     EndMode3D();

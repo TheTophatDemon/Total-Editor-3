@@ -1,6 +1,5 @@
 #include "tile.hpp"
 
-#include <map>
 #include <assert.h>
 
 #include "assets.hpp"
@@ -50,6 +49,7 @@ TileGrid::TileGrid()
     _height = 0;
     _length = 0;
     _spacing = 0.0f;
+    _regenBatches = false;
 }
 
 TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing) 
@@ -66,6 +66,8 @@ TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing)
         tile.shape = nullptr;
         tile.texture = nullptr;
     }
+
+    _regenBatches = false;
 }
 
 TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing, Tile filler) 
@@ -80,6 +82,40 @@ TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing, Ti
     {
         _grid[i] = filler;
     }
+
+    _regenBatches = true;
+}
+
+void TileGrid::_RegenBatches()
+{
+    _drawBatches.clear();
+
+    const size_t layerArea = _width * _length;
+    //Create a hash map of dynamic arrays for each combination of texture and mesh
+    for (int y = _batchFromY; y <= _batchToY; ++y)
+    {
+        for (size_t t = y * layerArea; t < (y + 1) * layerArea; ++t) {
+            const Tile& tile = _grid[t];
+            if (tile.texture && tile.shape) {
+                //Calculate world space matrix for the tile
+                Vector3 gridPos = UnflattenIndex(t);
+                Vector3 worldPos = Vector3Add(_batchPosition, GridToWorldPos(gridPos, true));
+                Matrix matrix = MatrixMultiply(
+                    AngleMatrix(tile.angle), 
+                    MatrixTranslate(worldPos.x, worldPos.y, worldPos.z));
+
+                for (size_t m = 0; m < tile.shape->meshCount; ++m) {
+                    //Add the tile's transform to the instance arrays for each mesh
+                    auto pair = std::make_pair(tile.texture, &tile.shape->meshes[m]);
+                    if (_drawBatches.find(pair) == _drawBatches.end()) {
+                        //Put in a vector for this pair if there hasn't been one already
+                        _drawBatches[pair] = std::vector<Matrix>();
+                    }
+                    _drawBatches[pair].push_back(matrix);
+                }
+            }
+        }
+    }
 }
 
 void TileGrid::Draw(Vector3 position)
@@ -89,36 +125,17 @@ void TileGrid::Draw(Vector3 position)
 
 void TileGrid::Draw(Vector3 position, int fromY, int toY)
 {
-    const size_t layerArea = _width * _length;
-    //Create a hash map of dynamic arrays for each combination of texture and mesh
-    auto groups = std::map<std::pair<Texture2D*, Mesh*>, std::vector<Matrix>>();
-    for (int y = fromY; y <= toY; ++y)
+    if (_regenBatches || fromY != _batchFromY || toY != _batchToY || !Vector3Equals(position, _batchPosition))
     {
-        for (size_t t = y * layerArea; t < (y + 1) * layerArea; ++t) {
-            const Tile& tile = _grid[t];
-            if (tile.texture && tile.shape) {
-                //Calculate world space matrix for the tile
-                Vector3 gridPos = UnflattenIndex(t);
-                Vector3 worldPos = Vector3Add(position, GridToWorldPos(gridPos, true));
-                Matrix matrix = MatrixMultiply(
-                    AngleMatrix(tile.angle), 
-                    MatrixTranslate(worldPos.x, worldPos.y, worldPos.z));
-
-                for (size_t m = 0; m < tile.shape->meshCount; ++m) {
-                    //Add the tile's transform to the instance arrays for each mesh
-                    auto pair = std::make_pair(tile.texture, &tile.shape->meshes[m]);
-                    if (groups.find(pair) == groups.end()) {
-                        //Put in a vector for this pair if there hasn't been one already
-                        groups[pair] = std::vector<Matrix>();
-                    }
-                    groups[pair].push_back(matrix);
-                }
-            }
-        }
+        _batchFromY = fromY;
+        _batchToY = toY;
+        _batchPosition = position;
+        _RegenBatches();
+        _regenBatches = false;
     }
 
-    //This allows us to call DrawMeshInstanced for each combination of material and mesh.
-    for (auto& [pair, matrices] : groups) {
+    //Call DrawMeshInstanced for each combination of material and mesh.
+    for (auto& [pair, matrices] : _drawBatches) {
         DrawMeshInstanced(*pair.second, *Assets::GetMaterialForTexture(pair.first, true), matrices.data(), matrices.size());
     }
 }
@@ -142,6 +159,8 @@ TileGrid TileGrid::Subsection(int i, int j, int k, int w, int h, int l) const
             }
         }
     }
+
+    newGrid._regenBatches = true;
 
     return newGrid;
 }

@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <string>
+#include <memory>
 
 #include "app.hpp"
 #include "assets.hpp"
@@ -19,6 +20,7 @@ const int SCREEN_HEIGHT = 720;
 
 int main(int argc, char **argv)
 {
+    //Window stuff
 	InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Total Editor 3");
     SetWindowMinSize(640, 480);
     SetWindowState(FLAG_WINDOW_RESIZABLE);
@@ -27,6 +29,7 @@ int main(int argc, char **argv)
 
     Assets::Initialize();
 
+    //RayGUI Styling
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(DARKGRAY));
     GuiSetFont(*Assets::GetFont());
     GuiSetStyle(LABEL, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
@@ -35,6 +38,7 @@ int main(int argc, char **argv)
     GuiSetStyle(SCROLLBAR, SCROLL_SPEED, 64);
     GuiSetStyle(LISTVIEW, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
 
+    //Context
     AppContext context = {
         .undoStackSize = 30UL,
         .mouseSensitivity = 0.5f,
@@ -44,34 +48,37 @@ int main(int argc, char **argv)
         .shapesDir = "assets/models/shapes/"
     };
 
-    //Editor modes
-    PlaceMode placeMode(&context);
-    PickMode texturePickMode(&context, PickMode::Mode::TEXTURES);
-    PickMode shapePickMode(&context, PickMode::Mode::SHAPES);
-    EditorMode *editorMode = &placeMode;
+    //Editor modes initialization
+    std::unique_ptr<PlaceMode> placeMode      = std::make_unique<PlaceMode>(&context);
+    std::unique_ptr<PickMode> texturePickMode = std::make_unique<PickMode>(&context, PickMode::Mode::TEXTURES);
+    std::unique_ptr<PickMode> shapePickMode   = std::make_unique<PickMode>(&context, PickMode::Mode::SHAPES);
+    EditorMode *editorMode = placeMode.get();
 
-	SetTargetFPS(60);
+    //Main loop
+	SetTargetFPS(300);
 	while (!WindowShouldClose())
 	{
         EditorMode *lastMode = editorMode;
 
+        //Shortcuts for mode switching
         if (IsKeyPressed(KEY_TAB)) {
-            if (editorMode == &placeMode) {
+            if (editorMode == placeMode.get()) {
                 if (IsKeyDown(KEY_LEFT_SHIFT)) {
-                    editorMode = &shapePickMode;
+                    editorMode = shapePickMode.get();
                 } else {
-                    editorMode = &texturePickMode;
+                    editorMode = texturePickMode.get();
                 }
             } else {
                 if (IsKeyDown(KEY_LEFT_SHIFT)) {
-                    if (editorMode == &texturePickMode) editorMode = &shapePickMode;
-                    else if (editorMode == &shapePickMode) editorMode = &texturePickMode;
+                    if (editorMode == texturePickMode.get()) editorMode = shapePickMode.get();
+                    else if (editorMode == shapePickMode.get()) editorMode = texturePickMode.get();
                 } else {
-                    editorMode = &placeMode;
+                    editorMode = placeMode.get();
                 }
             }
         }
 
+        //Mode change handlers
         if (lastMode != editorMode) {
             lastMode->OnExit();
             editorMode->OnEnter();
@@ -92,9 +99,9 @@ int main(int argc, char **argv)
 
 		EndDrawing();
 	}
-	
+    
+    //Deinitialization
     Assets::Unload();
-
 	CloseWindow();
 
 	return 0;
