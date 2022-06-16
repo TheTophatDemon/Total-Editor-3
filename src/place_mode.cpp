@@ -332,11 +332,13 @@ void PlaceMode::Update() {
 void PlaceMode::Draw() {
     BeginMode3D(_camera);
     {
+        //Grid
         DrawGridEx(
             Vector3Add(_planeWorldPos, (Vector3){ 0.0f, 0.05f, 0.0f }), //Adding the offset to prevent Z-fighting 
             _tileGrid.GetWidth()+1, _tileGrid.GetLength()+1, 
             _tileGrid.GetSpacing());
 
+        //Draw tiles
         _tileGrid.Draw(Vector3Zero(), _layerViewMin, _layerViewMax);
 
         //Draw cursor
@@ -360,6 +362,7 @@ void PlaceMode::Draw() {
                 }
             }
         }
+        rlDrawRenderBatchActive();
         rlDisableDepthTest();
         DrawCubeWires(
             Vector3Scale(Vector3Add(_cursor.startPosition, _cursor.endPosition), 0.5f), 
@@ -369,10 +372,12 @@ void PlaceMode::Draw() {
             MAGENTA);
 
         DrawAxes3D((Vector3){ 1.0f, 1.0f, 1.0f }, 10.0f);
+        rlDrawRenderBatchActive();
         rlEnableDepthTest();
     }
     EndMode3D();
 
+    //Draw menu
     topBar = (Rectangle) { 0, 0, (float)GetScreenWidth(), 32 };
     DrawRectangleGradientV(topBar.x, topBar.y, topBar.width, topBar.height, GRAY, DARKGRAY);
     const Rectangle MENU_BAR_RECT = (Rectangle) { topBar.x, topBar.y, topBar.width / 2.0f, topBar.height };
