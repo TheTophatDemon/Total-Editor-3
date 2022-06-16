@@ -25,7 +25,7 @@
 [x] Status message for hiding / revealing layers
 [x] Make shape picking capture orientation
 [x] Brush copying (Be careful about resize)
-[ ] Embed font and shaders
+[x] Embed font and shaders
 [ ] Modal windows
 [ ] Implement View menu
 [ ] Show axes in some shape or form

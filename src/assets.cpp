@@ -2,7 +2,12 @@
 
 #include "raymath.h"
 
+#include "assets/shaders/map_shader.hpp"
+#include "assets/fonts/font_dejavu.h"
+
+#include <iostream>
 #include <unordered_map>
+#include <fstream>
 
 static std::unordered_map<Texture2D *, Material> _normalMaterials;
 static std::unordered_map<Texture2D *, Material> _instancedMaterials;
@@ -15,15 +20,22 @@ static Camera _iconCamera;
 
 static Font _font;
 
+static Shader LoadShaderText(const char *vSrc, const char *fSrc)
+{
+    Shader shader = { 0 };
+    shader = LoadShaderFromMemory(vSrc, fSrc);
+    return shader;
+}
+
 void Assets::Initialize() 
 {
     //Initialize instanced shader for map geometry
-    _mapShader = LoadShader("assets/shaders/map_geom.vs", "assets/shaders/map_geom.fs");
+    _mapShader = LoadShaderText(MAP_SHADER_V_SRC, MAP_SHADER_F_SRC);
     _mapShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(_mapShader, "mvp");
     _mapShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(_mapShader, "viewPos");
     _mapShader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(_mapShader, "instanceTransform");
 
-    _font = LoadFont("assets/fonts/dejavu.fnt");
+    _font = LoadFont_Dejavu();
 
     _iconCamera = { 0 };
     _iconCamera.up = (Vector3){ 0.0f, -1.0f, 0.0f };
