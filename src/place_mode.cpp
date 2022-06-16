@@ -406,17 +406,22 @@ PlaceMode::TileAction &PlaceMode::QueueTileAction(size_t i, size_t j, size_t k, 
 
 PlaceMode::TileAction &PlaceMode::QueueTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, TileGrid brush)
 {
-    _undoHistory.push_back((TileAction){
-        .i = i, 
-        .j = j, 
-        .k = k, 
-        .prevState = _tileGrid.Subsection(
+    const TileGrid prevState = _tileGrid.Subsection(
             i, j, k, 
             Min(w, _tileGrid.GetWidth() - i),  //Cut off parts that go beyond map boundaries
             Min(h, _tileGrid.GetHeight() - j), 
             Min(l, _tileGrid.GetLength() - k)
-        ),
-        .newState = brush
+        );
+
+    TileGrid newState = prevState; //Copy the old state and merge the brush into it
+    newState.CopyTiles(0, 0, 0, brush, true);
+
+    _undoHistory.push_back((TileAction){
+        .i = i, 
+        .j = j, 
+        .k = k, 
+        .prevState = prevState,
+        .newState = newState
     });
     if (_undoHistory.size() > _context->undoStackSize) _undoHistory.pop_front();
     _redoHistory.clear();

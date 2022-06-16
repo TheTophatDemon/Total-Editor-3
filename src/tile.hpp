@@ -104,7 +104,8 @@ public:
 
     //Takes the tiles of `src` and places them in this grid starting at the offset at (i, j, k)
     //If the offset results in `src` exceeding the current grid's boundaries, it is cut off.
-    inline void CopyTiles(int i, int j, int k, const TileGrid &src)
+    //If `ignoreEmpty` is true, then empty tiles do not overwrite existing tiles.
+    inline void CopyTiles(int i, int j, int k, const TileGrid &src, bool ignoreEmpty = false)
     {
         assert(i >= 0 && j >= 0 && k >= 0);
         int xEnd = Min(i + src._width, _width); 
@@ -118,7 +119,11 @@ public:
                 size_t theirBase = src.FlatIndex(0, y - j, z - k);
                 for (int x = i; x < xEnd; ++x)
                 {
-                    _grid[ourBase + x] = src._grid[theirBase + (x - i)];
+                    const Tile &tile = src._grid[theirBase + (x - i)];
+                    if (!ignoreEmpty || tile.shape != nullptr)
+                    {
+                        _grid[ourBase + x] = tile;
+                    }
                 }
             }
         }
