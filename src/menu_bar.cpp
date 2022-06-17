@@ -8,61 +8,100 @@
 
 #define BUTTON_MARGIN 4.0f
 
-MenuBar::MenuBar()
-    : _focused(false),
-      _activeMenu(nullptr)
+MenuBar::MenuBar(App::Settings &settings)
+    : _settings(settings),
+      _focused(false),
+      _activeMenu(nullptr),
+      _activeDialog(nullptr)
 {
+    _menus = {
+        (Menu) {
+            .name = "MAP",
+            .items = {
+                (Item) { "NEW",     [&](){ _activeDialog = nullptr; } },
+                (Item) { "OPEN",    [&](){ _activeDialog = nullptr; } },
+                (Item) { "SAVE",    [&](){ _activeDialog = nullptr; } },
+                (Item) { "SAVE AS", [&](){ _activeDialog = nullptr; } },
+                (Item) { "RESIZE",  [&](){ _activeDialog = nullptr; } },
+            }
+        },
+        (Menu) {
+            .name = "VIEW",
+            .items = {
+                (Item) { "MAP EDITOR",     [](){ App::Get()->ChangeEditorMode(App::Mode::PLACE_TILE); } },
+                (Item) { "TEXTURE PICKER", [](){ App::Get()->ChangeEditorMode(App::Mode::PICK_TEXTURE); } },
+                (Item) { "SHAPE PICKER",   [](){ App::Get()->ChangeEditorMode(App::Mode::PICK_SHAPE); } },
+                (Item) { "THINGS",         [](){ App::Get()->ChangeEditorMode(App::Mode::PLACE_ENT); } },
+                (Item) { "RESET CAMERA",   [](){ App::Get()->ResetEditorCamera(); } },
+            }
+        },
+        (Menu) {
+            .name = "CONFIG",
+            .items = {
+                (Item) { "ASSET PATHS", [](){} },
+                (Item) { "SETTINGS",    [](){} },
+            }
+        },
+        (Menu) {
+            .name = "INFO",
+            .items = {
+                (Item) { "ABOUT",        [](){} },
+                (Item) { "SHORTCUTS",    [](){} },
+                (Item) { "INSTRUCTIONS", [](){} },
+            }
+        }
+    };
 }
 
 void MenuBar::Update()
 {
+    _topBar = (Rectangle) { 0, 0, (float)GetScreenWidth(), 32 };
+
     if (_activeMenu)
     {
         _focused = true;
+        //Clicking outside of the menu returns focus to the editor.
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !CheckCollisionPointRec(GetMousePosition(), _activeMenuBounds))
         {
             _focused = false;
             _activeMenu = nullptr;
         }
     }
-    else
+    else if (!IsMouseButtonDown(MOUSE_LEFT_BUTTON))
     {
         _focused = false;
     }
 }
 
-void MenuBar::AddMenu(const std::string &menuName, std::initializer_list<std::string> items)
-{
-    Menu *menu = nullptr;
-    for (Menu &m : _menus)
-    {
-        if (m.name == menuName) menu = &m;
-    }
-    if (!menu) _menus.push_back((Menu) { .name = menuName, .items = items });
-    else menu->items = items;
-}
-
-std::string MenuBar::_GetMenuList(const MenuBar::Menu &menu) const
+std::string MenuBar::_GetMenuString(const MenuBar::Menu &menu) const
 {
     std::string output;
 
-    for (const std::string &item : menu.items)
+    for (const MenuBar::Item &item : menu.items)
     {
-        output += item;
-        if (item != *(menu.items.end() - 1)) output.append(";");
+        output += item.name;
+        if (item.name != (menu.items.end() - 1)->name) output.append(";");
     }
 
     return output;
 }
 
-void MenuBar::Draw(Rectangle bounds)
+void MenuBar::Draw()
 {
-    const float BUTTON_WIDTH = (bounds.width / _menus.size()) - (BUTTON_MARGIN * 2.0f);
+    DrawRectangleGradientV(_topBar.x, _topBar.y, _topBar.width, _topBar.height, GRAY, DARKGRAY);
+    const Rectangle MENU_BOUNDS = (Rectangle) { _topBar.x, _topBar.y, _topBar.width / 2.0f, _topBar.height };
+    
+    // if (_layerViewMin > 0 || _layerViewMax < _tileGrid.GetHeight() - 1)
+    // {
+    //     DrawTextEx(*Assets::GetFont(), "PRESS H TO UNHIDE LAYERS", (Vector2) { MENU_BAR_RECT.x + MENU_BAR_RECT.width + 4, 2 }, 24, 0.0f, WHITE);
+    // }
+
+    const float BUTTON_WIDTH = (MENU_BOUNDS.width / _menus.size()) - (BUTTON_MARGIN * 2.0f);
 
     float x = BUTTON_MARGIN;
     for (auto &menu : _menus)
     {
-        const Rectangle BUTT_RECT = (Rectangle) { bounds.x + x, bounds.y, BUTTON_WIDTH, bounds.height }; //Heehee! Butt!
+        const Rectangle BUTT_RECT = (Rectangle) { MENU_BOUNDS.x + x, MENU_BOUNDS.y, BUTTON_WIDTH, MENU_BOUNDS.height }; //Heehee! Butt!
 
         GuiButton(BUTT_RECT, menu.name.c_str());
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), BUTT_RECT))
@@ -79,7 +118,7 @@ void MenuBar::Draw(Rectangle bounds)
 
         if (_activeMenu == &menu)
         {
-            std::string list = _GetMenuList(menu);
+            std::string list = _GetMenuString(menu);
             Rectangle listBounds = (Rectangle) { 
                 .x = BUTT_RECT.x, 
                 .y = BUTT_RECT.y + BUTT_RECT.height, 
@@ -93,7 +132,12 @@ void MenuBar::Draw(Rectangle bounds)
                 .height = BUTT_RECT.height + listBounds.height,
             };
             
-            GuiListView(listBounds, list.c_str(), nullptr, -1);
+            int selectedItemIdx = GuiListView(listBounds, list.c_str(), nullptr, -1);
+            if (selectedItemIdx >= 0)
+            {
+                menu.items[selectedItemIdx].action();
+                _activeMenu = nullptr;
+            }
         }
 
         x += BUTTON_WIDTH + BUTTON_MARGIN;

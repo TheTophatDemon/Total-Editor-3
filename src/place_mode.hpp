@@ -7,18 +7,25 @@
 #include <string>
 #include <deque>
 
-#include "editor_mode.hpp"
 #include "tile.hpp"
 #include "app.hpp"
 #include "menu_bar.hpp"
 
-class PlaceMode : public EditorMode {
+class PlaceMode : public App::ModeImpl {
 public:
-    PlaceMode(AppContext *context);
+    enum class Mode { TILES, ENTS };
+    
+    PlaceMode(Mode mode);
+    
     virtual void Update() override;
     virtual void Draw() override;
     virtual void OnEnter() override;
     virtual void OnExit() override;
+
+    inline void SetCursorShape(Model *shape) { _cursor.tile.shape = shape; }
+    inline void SetCursorTexture(Texture2D *tex) { _cursor.tile.texture = tex; }
+
+    void ResetCamera();
 protected:
     struct TileAction {
         size_t i, j, k;
@@ -36,7 +43,9 @@ protected:
     };
 
     void MoveCamera();
+
     void UpdateCursor();
+    
     //Queues a tile action for filling an area with one tile
     TileAction &QueueTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile);
     //Queues a tile action for filling an area using a brush
@@ -44,14 +53,12 @@ protected:
     void DoAction(TileAction &action);
     void UndoAction(TileAction &action);
 
-    AppContext *_context;
+    Mode _mode;
 
     Camera _camera;
     float _cameraYaw;
     float _cameraPitch;
     float _cameraMoveSpeed;
-
-    MenuBar _menuBar;
 
     Cursor _cursor;
     TileGrid _tileGrid;

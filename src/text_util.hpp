@@ -28,7 +28,7 @@ inline int GetStringWidth(Font font, const std::string &string)
         {
             if (font.glyphs[g].value == (int) c)
             {
-                width += font.glyphs[g].image.width + font.glyphPadding;
+                width += font.glyphs[g].offsetX + font.glyphs[g].advanceX;
                 break;
             }
         }

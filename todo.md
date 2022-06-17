@@ -26,9 +26,8 @@
 [x] Make shape picking capture orientation
 [x] Brush copying (Be careful about resize)
 [x] Embed font and shaders
+[x] Implement View menu
 [ ] Modal windows
-[ ] Implement View menu
-[ ] Show axes in some shape or form
 [ ] Implement Resize
 [ ] Entity placement
 [ ] Entity configuration

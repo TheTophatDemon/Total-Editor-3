@@ -7,31 +7,51 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <functional>
+
+#include "app.hpp"
 
 class MenuBar 
 {
 public:
-    MenuBar();
-    void Update();
-    void Draw(Rectangle bounds);
-
-    void AddMenu(const std::string &menuName, std::initializer_list<std::string> items);
-
-    inline bool IsFocused() const { return _focused; }
-protected:
-    struct Menu 
+    class Dialog
     {
-        std::string name;
-        std::vector<std::string> items;
+        virtual void Draw() = 0;
     };
 
+    struct Item
+    {
+        std::string name;
+        std::function<void()> action;
+    };
+
+    struct Menu
+    {
+        std::string name;
+        std::vector<Item> items;
+    };
+
+    MenuBar(App::Settings &settings);
+    void Update();
+    void Draw();
+
+    inline bool IsMouseOn() const { return _mouseOn; }
+    inline bool IsFocused() const { return _focused; }
+    inline Rectangle GetTopBar() const { return _topBar; }
+protected:
     //Turns the menu's item list into a single string of semicolon separated names for use with RayGUI
-    std::string _GetMenuList(const Menu &menu) const;
+    std::string _GetMenuString(const Menu &menu) const;
+
+    App::Settings &_settings;
+    Rectangle _topBar;
 
     std::vector<Menu> _menus;
     Menu *_activeMenu;
+    Dialog *_activeDialog;
     Rectangle _activeMenuBounds;
+
     bool _focused;
+    bool _mouseOn;
 };
 
 #endif

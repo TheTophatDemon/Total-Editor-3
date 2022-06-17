@@ -13,19 +13,12 @@
 #define CAMERA_MOVE_SPEED_MAX   64.0f
 #define CAMERA_ACCELERATION     16.0f
 
-static Rectangle topBar = (Rectangle) { 0 };
-
-PlaceMode::PlaceMode(AppContext *context) 
-    : _context(context), 
+PlaceMode::PlaceMode(PlaceMode::Mode mode) 
+    : _mode(mode),
       _tileGrid(100, 5, 100, 2.0f),
       _layerViewMax(_tileGrid.GetHeight() - 1),
       _layerViewMin(0)
 {
-    _menuBar.AddMenu("FILE", {"NEW", "OPEN", "SAVE", "SAVE AS", "RESIZE"});
-    _menuBar.AddMenu("VIEW", {"TEXTURES", "SHAPES", "THINGS"});
-    _menuBar.AddMenu("CONFIG", {"ASSET PATHS", "SETTINGS"});
-    _menuBar.AddMenu("INFO", {"ABOUT", "SHORTCUTS", "INSTRUCTIONS"});
-    
     //Setup camera
 	_camera = { 0 };
 	_camera.up = VEC3_UP;
@@ -38,9 +31,9 @@ PlaceMode::PlaceMode(AppContext *context)
 
     //Setup cursor
     _cursor.tile = (Tile) {
-        .shape = context->selectedShape,
+        .shape = Assets::GetShape("assets/models/shapes/cube.obj"),
         .angle = ANGLE_0,
-        .texture = context->selectedTexture
+        .texture = Assets::GetTexture("assets/textures/brickwall.png")
     };
     _cursor.brush = TileGrid(1, 1, 1, _tileGrid.GetSpacing());
     _cursor.brushMode = false;
@@ -56,15 +49,19 @@ PlaceMode::PlaceMode(AppContext *context)
 
 void PlaceMode::OnEnter() 
 {
-    _cursor.tile.shape = _context->selectedShape;
-    _cursor.tile.texture = _context->selectedTexture;
     _cursor.brushMode = false;
 }
 
 void PlaceMode::OnExit() 
 {
-    _context->selectedShape = _cursor.tile.shape;
-    _context->selectedTexture = _cursor.tile.texture;
+}
+
+void PlaceMode::ResetCamera()
+{
+    _camera.position = Vector3Zero();
+    _camera.target = VEC3_FORWARD;
+    _cameraYaw = 0.0f;
+    _cameraPitch = 0.0f;
 }
 
 void PlaceMode::MoveCamera() 
@@ -110,8 +107,8 @@ void PlaceMode::MoveCamera()
     
     if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) 
     {
-        _cameraYaw += GetMouseDelta().x * _context->mouseSensitivity * GetFrameTime();
-        _cameraPitch += GetMouseDelta().y * _context->mouseSensitivity * GetFrameTime();
+        _cameraYaw += GetMouseDelta().x * App::Get()->GetMouseSensitivity() * GetFrameTime();
+        _cameraPitch += GetMouseDelta().y * App::Get()->GetMouseSensitivity() * GetFrameTime();
         _cameraPitch = Clamp(_cameraPitch, -CAMERA_PITCH_LIMIT, CAMERA_PITCH_LIMIT);
     }
 
@@ -126,9 +123,12 @@ void PlaceMode::MoveCamera()
 void PlaceMode::UpdateCursor()
 {
     //Rotate cursor
-    if (IsKeyPressed(KEY_Q)) {
+    if (IsKeyPressed(KEY_Q))
+    {
         _cursor.tile.angle = AngleBack(_cursor.tile.angle);
-    } else if (IsKeyPressed(KEY_E)) {
+    }
+    else if (IsKeyPressed(KEY_E))
+    {
         _cursor.tile.angle = AngleForward(_cursor.tile.angle);
     }
 
@@ -141,11 +141,11 @@ void PlaceMode::UpdateCursor()
         (Vector3){ gridMax.x, _planeWorldPos.y, gridMin.z }, 
         (Vector3){ gridMax.x, _planeWorldPos.y, gridMax.z }, 
         (Vector3){ gridMin.x, _planeWorldPos.y, gridMax.z });
-    if (col.hit) {
+    if (col.hit)
+    {
         _cursor.endPosition = _tileGrid.SnapToCelCenter(col.point);
         _cursor.endPosition.y = _planeWorldPos.y + _tileGrid.GetSpacing() / 2.0f;
     }
-    //_cursor.outlineScale = 1.125f + sinf(GetTime()) * 0.125f;
     
     bool multiSelect = false;
     if (!_cursor.brushMode)
@@ -259,77 +259,74 @@ void PlaceMode::UpdateCursor()
     }
 }
 
-void PlaceMode::Update() {
-    _menuBar.Update();
-
-    if (!_menuBar.IsFocused())
+void PlaceMode::Update() 
+{
+    MoveCamera();
+    
+    //Move editing plane
+    if (GetMouseWheelMove() > EPSILON || GetMouseWheelMove() < -EPSILON) 
     {
-        MoveCamera();
-        
-        //Move editing plane
-        if (GetMouseWheelMove() > EPSILON || GetMouseWheelMove() < -EPSILON) {
-            _planeGridPos.y = Clamp(_planeGridPos.y + Sign(GetMouseWheelMove()), 0.0f, _tileGrid.GetHeight() - 1);
+        _planeGridPos.y = Clamp(_planeGridPos.y + Sign(GetMouseWheelMove()), 0.0f, _tileGrid.GetHeight() - 1);
 
-            //Reveal hidden layers when the grid is over them and holding H
-            if (IsKeyDown(KEY_H))
-            {
-                int planeLayer = (int)_planeGridPos.y;
-                if (planeLayer < _layerViewMin) _layerViewMin = planeLayer;
-                if (planeLayer > _layerViewMax) _layerViewMax = planeLayer;
-            }
-            else
-            {
-                //Prevent the user from editing hidden layers.
-                _planeGridPos.y = Clamp(_planeGridPos.y, _layerViewMin, _layerViewMax);
-            }
-        }
-        _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
-
-        //Layer hiding
-        if (IsKeyPressed(KEY_H))
+        //Reveal hidden layers when the grid is over them and holding H
+        if (IsKeyDown(KEY_H))
         {
-            if (_layerViewMin == 0 && _layerViewMax == _tileGrid.GetHeight() - 1)
-            {
-                _layerViewMax = _layerViewMin = (int) _planeGridPos.y;
-            }
-            else
-            {
-                _layerViewMin = 0;
-                _layerViewMax = _tileGrid.GetHeight() - 1;
-            }
+            int planeLayer = (int)_planeGridPos.y;
+            if (planeLayer < _layerViewMin) _layerViewMin = planeLayer;
+            if (planeLayer > _layerViewMax) _layerViewMax = planeLayer;
         }
-
-        //Update cursor
-        if (!CheckCollisionPointRec(GetMousePosition(), topBar)) //Don't update when using the menus
+        else
         {
-            UpdateCursor();
+            //Prevent the user from editing hidden layers.
+            _planeGridPos.y = Clamp(_planeGridPos.y, _layerViewMin, _layerViewMax);
         }
+    }
+    _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
 
-        //Undo and redo
-        if (IsKeyDown(KEY_LEFT_CONTROL))
+    //Layer hiding
+    if (IsKeyPressed(KEY_H))
+    {
+        if (_layerViewMin == 0 && _layerViewMax == _tileGrid.GetHeight() - 1)
         {
-            if (IsKeyPressed(KEY_Z) && !_undoHistory.empty())
-            {
-                //Undo (Ctrl + Z)
-                TileAction &action = _undoHistory.back();
-                UndoAction(action);
-                _redoHistory.push_back(action);
-                _undoHistory.pop_back();
-            }
-            else if (IsKeyPressed(KEY_Y) && !_redoHistory.empty())
-            {
-                //Redo (Ctrl + Y)
-                TileAction &action = _redoHistory.back();
-                DoAction(action);
-                _undoHistory.push_back(action);
-                _redoHistory.pop_back();
-            }
+            _layerViewMax = _layerViewMin = (int) _planeGridPos.y;
         }
+        else
+        {
+            _layerViewMin = 0;
+            _layerViewMax = _tileGrid.GetHeight() - 1;
+        }
+    }
 
+    //Update cursor
+    if (!CheckCollisionPointRec(GetMousePosition(), App::Get()->GetMenuBarRect())) //Don't update when using the menus
+    {
+        UpdateCursor();
+    }
+
+    //Undo and redo
+    if (IsKeyDown(KEY_LEFT_CONTROL))
+    {
+        if (IsKeyPressed(KEY_Z) && !_undoHistory.empty())
+        {
+            //Undo (Ctrl + Z)
+            TileAction &action = _undoHistory.back();
+            UndoAction(action);
+            _redoHistory.push_back(action);
+            _undoHistory.pop_back();
+        }
+        else if (IsKeyPressed(KEY_Y) && !_redoHistory.empty())
+        {
+            //Redo (Ctrl + Y)
+            TileAction &action = _redoHistory.back();
+            DoAction(action);
+            _undoHistory.push_back(action);
+            _redoHistory.pop_back();
+        }
     }
 }
 
-void PlaceMode::Draw() {
+void PlaceMode::Draw() 
+{
     BeginMode3D(_camera);
     {
         //Grid
@@ -376,17 +373,6 @@ void PlaceMode::Draw() {
         rlEnableDepthTest();
     }
     EndMode3D();
-
-    //Draw menu
-    topBar = (Rectangle) { 0, 0, (float)GetScreenWidth(), 32 };
-    DrawRectangleGradientV(topBar.x, topBar.y, topBar.width, topBar.height, GRAY, DARKGRAY);
-    const Rectangle MENU_BAR_RECT = (Rectangle) { topBar.x, topBar.y, topBar.width / 2.0f, topBar.height };
-    _menuBar.Draw(MENU_BAR_RECT);
-    
-    if (_layerViewMin > 0 || _layerViewMax < _tileGrid.GetHeight() - 1)
-    {
-        DrawTextEx(*Assets::GetFont(), "PRESS H TO UNHIDE LAYERS", (Vector2) { MENU_BAR_RECT.x + MENU_BAR_RECT.width + 4, 2 }, 24, 0.0f, WHITE);
-    }
 }
 
 PlaceMode::TileAction &PlaceMode::QueueTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile)
@@ -398,7 +384,7 @@ PlaceMode::TileAction &PlaceMode::QueueTileAction(size_t i, size_t j, size_t k, 
         .prevState = _tileGrid.Subsection(i, j, k, w, h, l),
         .newState = TileGrid(w, h, l, _tileGrid.GetSpacing(), newTile) 
     });
-    if (_undoHistory.size() > _context->undoStackSize) _undoHistory.pop_front();
+    if (_undoHistory.size() > App::Get()->GetUndoMax()) _undoHistory.pop_front();
     _redoHistory.clear();
 
     return _undoHistory.back();
@@ -423,7 +409,7 @@ PlaceMode::TileAction &PlaceMode::QueueTileAction(size_t i, size_t j, size_t k, 
         .prevState = prevState,
         .newState = newState
     });
-    if (_undoHistory.size() > _context->undoStackSize) _undoHistory.pop_front();
+    if (_undoHistory.size() > App::Get()->GetUndoMax()) _undoHistory.pop_front();
     _redoHistory.clear();
 
     return _undoHistory.back();

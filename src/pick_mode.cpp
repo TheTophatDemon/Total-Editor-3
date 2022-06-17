@@ -13,23 +13,16 @@ const int FRAME_SIZE = 64;
 const int FRAME_MARGIN = 16;
 const int FRAME_SPACING = (FRAME_SIZE + FRAME_MARGIN * 2);
 
-#define SEARCH_BUFFER_SIZE 256
+#define UPPER_MARGIN 48
 
-PickMode::PickMode(AppContext *context, Mode mode)
+PickMode::PickMode(Mode mode)
     : _mode(mode),
-      _context(context),
       _scroll(Vector2Zero()),
       _selectedFrame(nullptr),
       _searchFilterFocused(false),
       _view(mode == Mode::TEXTURES ? View::GRID : View::LIST),
       _longestLabelLength(0)
 {
-    _searchFilterBuffer = (char *)calloc(SEARCH_BUFFER_SIZE, sizeof(char));
-}
-
-PickMode::~PickMode()
-{
-    free(_searchFilterBuffer);
 }
 
 void PickMode::_GetFrames(std::string rootDir)
@@ -84,9 +77,9 @@ void PickMode::OnEnter()
     _frames.clear();
 
     if (_mode == Mode::TEXTURES)
-        _GetFrames(_context->texturesDir);
+        _GetFrames(App::Get()->GetTexturesDir());
     else if (_mode == Mode::SHAPES)
-        _GetFrames(_context->shapesDir);
+        _GetFrames(App::Get()->GetShapesDir());
 
     ClearDirectoryFiles();
 }
@@ -97,14 +90,6 @@ void PickMode::OnExit()
 
 void PickMode::Update()
 {
-    if (_selectedFrame)
-    {
-        if (_mode == Mode::TEXTURES)
-            _context->selectedTexture = _selectedFrame->tex;
-        else if (_mode == Mode::SHAPES)
-            _context->selectedShape = _selectedFrame->shape;
-    }
-    
     //Filter frames by the search text. If the search text is contained anywhere in the file path, then it passes.
     _filteredFrames.clear();
     for (Frame& frame : _frames) {
@@ -207,8 +192,8 @@ void PickMode::_DrawFrame(Frame *frame, Rectangle rect)
 void PickMode::Draw()
 {
     //Draw search box
-    GuiLabel((Rectangle){32, 32, 128, 32}, "SEARCH:");
-    Rectangle searchBoxRect = (Rectangle){128, 32, (float)GetScreenWidth() / 3.0f, 32};
+    GuiLabel((Rectangle){32, UPPER_MARGIN, 128, 32}, "SEARCH:");
+    Rectangle searchBoxRect = (Rectangle){128, UPPER_MARGIN, (float)GetScreenWidth() / 3.0f, 32};
     if (GuiTextBox(searchBoxRect, _searchFilterBuffer, SEARCH_BUFFER_SIZE, _searchFilterFocused))
     {
         _searchFilterFocused = !_searchFilterFocused;
@@ -239,7 +224,10 @@ void PickMode::Draw()
         std::string selectString = std::string("Selected: ") + _selectedFrame->label;
 
         GuiLabel((Rectangle){
-                     32, searchBoxRect.y + searchBoxRect.height + 4, (float)GetScreenWidth() / 2.0f, 16},
-                 selectString.c_str());
+                    .x = 64, 
+                    .y = (float)GetScreenHeight() - 24, 
+                    .width = (float)GetScreenWidth() / 2.0f, 
+                    .height = 16},
+                selectString.c_str());
     }
 }
