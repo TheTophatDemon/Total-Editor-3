@@ -18,7 +18,7 @@ MenuBar::MenuBar(App::Settings &settings)
         (Menu) {
             .name = "MAP",
             .items = {
-                (Item) { "NEW",     [&](){ _activeDialog = nullptr; } },
+                (Item) { "NEW",     [&](){ _activeDialog.reset(new NewMapDialog()); } },
                 (Item) { "OPEN",    [&](){ _activeDialog = nullptr; } },
                 (Item) { "SAVE",    [&](){ _activeDialog = nullptr; } },
                 (Item) { "SAVE AS", [&](){ _activeDialog = nullptr; } },
@@ -66,6 +66,10 @@ void MenuBar::Update()
             _focused = false;
             _activeMenu = nullptr;
         }
+    }
+    else if (_activeDialog.get())
+    {
+        _focused = true;
     }
     else if (!IsMouseButtonDown(MOUSE_LEFT_BUTTON))
     {
@@ -141,5 +145,11 @@ void MenuBar::Draw()
         }
 
         x += BUTTON_WIDTH + BUTTON_MARGIN;
+    }
+
+    //Draw modal dialogs
+    if (_activeDialog.get())
+    {
+        if (!_activeDialog->Draw()) _activeDialog.reset(nullptr);
     }
 }

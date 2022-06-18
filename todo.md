@@ -27,8 +27,10 @@
 [x] Brush copying (Be careful about resize)
 [x] Embed font and shaders
 [x] Implement View menu
-[ ] Modal windows
-[ ] Implement Resize
+[x] Modal windows
+[ ] Implement New Map
+[ ] Implement Resize Map
+[ ] Reinstate Hidden Layer Message
 [ ] Entity placement
 [ ] Entity configuration
 [ ] File operations, .TI3

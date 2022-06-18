@@ -153,6 +153,7 @@ int main(int argc, char **argv)
     GuiSetStyle(LABEL, TEXT_COLOR_PRESSED, ColorToInt(LIGHTGRAY));
     GuiSetStyle(SCROLLBAR, SCROLL_SPEED, 64);
     GuiSetStyle(LISTVIEW, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
+    GuiSetStyle(VALUEBOX, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
 
     //Main loop
 	SetTargetFPS(300);

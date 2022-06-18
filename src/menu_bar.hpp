@@ -8,17 +8,14 @@
 #include <map>
 #include <vector>
 #include <functional>
+#include <memory>
 
 #include "app.hpp"
+#include "dialogs.hpp"
 
 class MenuBar 
 {
 public:
-    class Dialog
-    {
-        virtual void Draw() = 0;
-    };
-
     struct Item
     {
         std::string name;
@@ -47,7 +44,7 @@ protected:
 
     std::vector<Menu> _menus;
     Menu *_activeMenu;
-    Dialog *_activeDialog;
+    std::unique_ptr<Dialog> _activeDialog;
     Rectangle _activeMenuBounds;
 
     bool _focused;

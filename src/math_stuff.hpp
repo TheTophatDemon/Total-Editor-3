@@ -22,4 +22,9 @@ inline int Sign(int a) {
     return a < 0 ? -1 : 1;
 }
 
+inline Rectangle CenteredRect(float x, float y, float w, float h)
+{
+    return (Rectangle) { x - (w / 2.0f), y - (h / 2.0f), w, h };
+}
+
 #endif

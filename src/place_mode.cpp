@@ -330,10 +330,13 @@ void PlaceMode::Draw()
     BeginMode3D(_camera);
     {
         //Grid
+        rlDrawRenderBatchActive();
+        rlSetLineWidth(1.0f);
         DrawGridEx(
             Vector3Add(_planeWorldPos, (Vector3){ 0.0f, 0.05f, 0.0f }), //Adding the offset to prevent Z-fighting 
             _tileGrid.GetWidth()+1, _tileGrid.GetLength()+1, 
             _tileGrid.GetSpacing());
+        rlDrawRenderBatchActive();
 
         //Draw tiles
         _tileGrid.Draw(Vector3Zero(), _layerViewMin, _layerViewMax);
@@ -361,6 +364,7 @@ void PlaceMode::Draw()
         }
         rlDrawRenderBatchActive();
         rlDisableDepthTest();
+        rlSetLineWidth(2.0f);
         DrawCubeWires(
             Vector3Scale(Vector3Add(_cursor.startPosition, _cursor.endPosition), 0.5f), 
             fabs(_cursor.endPosition.x - _cursor.startPosition.x) + _tileGrid.GetSpacing() * _cursor.outlineScale, 
