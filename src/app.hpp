@@ -9,6 +9,7 @@
 class PlaceMode;
 class PickMode;
 class MenuBar;
+class MapMan;
 
 class App
 {
@@ -46,16 +47,22 @@ public:
     Rectangle GetMenuBarRect();
 
     void Update();
+    
+    //General map file operations
+    inline const MapMan &GetMapMan() const { return *_mapMan.get(); }
     void ResetEditorCamera();
+    void NewMap(int width, int height, int length);
+    void ResizeMap(int width, int height, int length, int ofsx, int ofsy, int ofsz);
 private:
     App();
 
     Settings _settings;
     
     std::unique_ptr<MenuBar> _menuBar;
+    std::unique_ptr<MapMan> _mapMan;
 
     std::unique_ptr<PlaceMode> _tilePlaceMode;
-    std::unique_ptr<PlaceMode> _entPlaceMode;
+    //std::unique_ptr<PlaceMode> _entPlaceMode;
     std::unique_ptr<PickMode> _texPickMode;
     std::unique_ptr<PickMode> _shapePickMode;
 

@@ -15,6 +15,7 @@
 #include "menu_bar.hpp"
 #include "place_mode.hpp"
 #include "pick_mode.hpp"
+#include "map_man.hpp"
 
 static App *_appInstance = nullptr;
 
@@ -35,8 +36,9 @@ App::App()
         .mouseSensitivity = 0.5f
     },
     _menuBar       (std::make_unique<MenuBar>(_settings)),
-    _tilePlaceMode (std::make_unique<PlaceMode>(PlaceMode::Mode::TILES)),
-    _entPlaceMode  (std::make_unique<PlaceMode>(PlaceMode::Mode::ENTS)),
+    _mapMan        (std::make_unique<MapMan>()),
+    _tilePlaceMode (std::make_unique<PlaceMode>(*_mapMan.get(), PlaceMode::Mode::TILES)),
+    //_entPlaceMode  (std::make_unique<PlaceMode>(PlaceMode::Mode::ENTS)),
     _texPickMode   (std::make_unique<PickMode>(PickMode::Mode::TEXTURES)),
     _shapePickMode (std::make_unique<PickMode>(PickMode::Mode::SHAPES)),
 
@@ -74,7 +76,7 @@ void App::ChangeEditorMode(const App::Mode newMode)
         break;
         case App::Mode::PLACE_ENT: 
         {
-            _editorMode = _entPlaceMode.get();   
+            //_editorMode = _entPlaceMode.get();   
         }
         break;
     }
@@ -88,8 +90,20 @@ Rectangle App::GetMenuBarRect()
 
 void App::ResetEditorCamera()
 {
-    if (_editorMode == _tilePlaceMode.get())    _tilePlaceMode->ResetCamera();
-    else if (_editorMode == _entPlaceMode.get()) _entPlaceMode->ResetCamera();
+    if (_editorMode == _tilePlaceMode.get())    _tilePlaceMode->Reset();
+    //else if (_editorMode == _entPlaceMode.get()) _entPlaceMode->ResetCamera();
+}
+
+void App::NewMap(int width, int height, int length)
+{
+    _mapMan->NewMap(width, height, length);
+    _tilePlaceMode->Reset();
+}
+
+void App::ResizeMap(int width, int height, int length, int ofsx, int ofsy, int ofsz)
+{
+    _mapMan->ResizeMap(width, height, length, ofsx, ofsy, ofsz);
+    _tilePlaceMode->Reset();
 }
 
 void App::Update()
@@ -154,6 +168,8 @@ int main(int argc, char **argv)
     GuiSetStyle(SCROLLBAR, SCROLL_SPEED, 64);
     GuiSetStyle(LISTVIEW, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
     GuiSetStyle(VALUEBOX, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
+
+    App::Get()->NewMap(100, 5, 100);
 
     //Main loop
 	SetTargetFPS(300);

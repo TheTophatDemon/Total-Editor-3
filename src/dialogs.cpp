@@ -4,6 +4,8 @@
 #include "extras/raygui.h"
 
 #include "math_stuff.hpp"
+#include "app.hpp"
+#include "map_man.hpp"
 
 Rectangle DialogRec(float w, float h)
 {
@@ -12,13 +14,12 @@ Rectangle DialogRec(float w, float h)
 
 NewMapDialog::NewMapDialog()
 {
-    _width = _length = 100;
-    _height = 5;
-}
+    const TileGrid &map = App::Get()->GetMapMan().Map();
+    _width = map.GetWidth();
+    _height = map.GetHeight();
+    _length = map.GetLength();
 
-NewMapDialog::NewMapDialog(int width, int height, int length)
-    : _width(width), _height(height), _length(length)
-{    
+    for (int i = 0; i < NUM_SPINNERS; ++i) _spinnerActive[i] = false;
 }
 
 bool NewMapDialog::Draw()
@@ -49,7 +50,7 @@ bool NewMapDialog::Draw()
             .width = SPINNER_W, 
             .height = SPINNER_H
         };
-        if (GuiSpinner(spRec, "", spinnerPtrs[i], 0, 1000, _spinnerActive[i]))
+        if (GuiSpinner(spRec, "", spinnerPtrs[i], 1, 1000, _spinnerActive[i]))
         {
             _spinnerActive[i] = !_spinnerActive[i];
         }
@@ -59,6 +60,7 @@ bool NewMapDialog::Draw()
     //Confirm button
     if (GuiButton(CenteredRect(dRect.x + DHW, dRect.y + DH - MARGIN - SPINNER_HH, 128.0f, SPINNER_H), "CREATE"))
     {
+        App::Get()->NewMap(_width, _height, _length);
         return false;
     }
 

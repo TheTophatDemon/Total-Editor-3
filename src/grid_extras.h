@@ -10,13 +10,13 @@ extern "C" {            // Prevents name mangling of functions
 //Draw a grid centered at the given Vector3 `position`, with a rectangular size given by `slicesX` and `slicesZ`.
 void DrawGridEx(Vector3 position, int slicesX, int slicesZ, float spacing)
 {
-    int halfSlicesX = slicesX/2;
-    int halfSlicesZ = slicesZ/2;
+    const float RADIUS_X = spacing * (float)(slicesX - 1) / 2.0f;
+    const float RADIUS_Z = spacing * (float)(slicesZ - 1) / 2.0f;
 
     rlCheckRenderBatchLimit((slicesX + slicesZ + 4)*2);
 
     rlBegin(RL_LINES);
-        for (int i = -halfSlicesX; i <= halfSlicesX; i++)
+        for (int i = 0; i < slicesX; i++)
         {
             if (i == 0)
             {
@@ -29,11 +29,11 @@ void DrawGridEx(Vector3 position, int slicesX, int slicesZ, float spacing)
                 rlColor3f(0.75f, 0.75f, 0.75f);
             }
 
-            rlVertex3f(position.x + (float)i*spacing, position.y, position.z + (float)-halfSlicesZ*spacing);
-            rlVertex3f(position.x + (float)i*spacing, position.y, position.z + (float)halfSlicesZ*spacing);
+            rlVertex3f(position.x - RADIUS_X + (float)i*spacing, position.y, position.z - RADIUS_Z);
+            rlVertex3f(position.x - RADIUS_X + (float)i*spacing, position.y, position.z + RADIUS_Z);
         }
 
-        for (int j = -halfSlicesZ; j <= halfSlicesZ; j++) 
+        for (int j = 0; j < slicesZ; j++) 
         {
             if (j == 0)
             {
@@ -46,8 +46,8 @@ void DrawGridEx(Vector3 position, int slicesX, int slicesZ, float spacing)
                 rlColor3f(0.75f, 0.75f, 0.75f);
             }
 
-            rlVertex3f(position.x + (float)-halfSlicesX*spacing, position.y, position.z + (float)j*spacing);
-            rlVertex3f(position.x + (float)halfSlicesX*spacing, position.y, position.z + (float)j*spacing);
+            rlVertex3f(position.x - RADIUS_X, position.y, position.z - RADIUS_Z + (float)j*spacing);
+            rlVertex3f(position.x + RADIUS_X, position.y, position.z - RADIUS_Z + (float)j*spacing);
         }
     rlEnd();
 }

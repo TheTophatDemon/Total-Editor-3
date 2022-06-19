@@ -28,7 +28,8 @@ typedef struct Tile {
 bool operator==(const Tile &lhs, const Tile &rhs);
 bool operator!=(const Tile &lhs, const Tile &rhs);
 
-class TileGrid {
+class TileGrid 
+{
 public:
     //Constructs a blank TileGrid with no size
     TileGrid();
@@ -37,40 +38,44 @@ public:
     //Constructs a TileGrid filled with the given tile.
     TileGrid(size_t width, size_t height, size_t length, float spacing, Tile filler);
 
-    inline Vector3 WorldToGridPos(Vector3 worldPos) const {
-        return Vector3{ floorf(worldPos.x / _spacing) + (_width / 2), floorf(worldPos.y / _spacing) + (_height / 2), floorf(worldPos.z / _spacing) + (_length / 2) };
+    inline Vector3 WorldToGridPos(Vector3 worldPos) const 
+    {
+        return Vector3{ floorf(worldPos.x / _spacing), floorf(worldPos.y / _spacing) , floorf(worldPos.z / _spacing)};
     }
 
     //Converts (whole number) grid cel coordinates to world coordinates.
     //If `center` is true, then the world coordinate will be in the center of the cel instead of the corner.
-    inline Vector3 GridToWorldPos(Vector3 gridPos, bool center) const {
-        if (center) {
-            return Vector3{
-                (gridPos.x * _spacing) + (_spacing / 2.0f) - (_width * _spacing / 2.0f),
-                (gridPos.y * _spacing) + (_spacing / 2.0f) - (_height * _spacing / 2.0f),
-                (gridPos.z * _spacing) + (_spacing / 2.0f) - (_length * _spacing / 2.0f),
+    inline Vector3 GridToWorldPos(Vector3 gridPos, bool center) const 
+    {
+        if (center) 
+        {
+            return (Vector3) {
+                (gridPos.x * _spacing) + (_spacing / 2.0f),
+                (gridPos.y * _spacing) + (_spacing / 2.0f),
+                (gridPos.z * _spacing) + (_spacing / 2.0f),
             };
-        } else {
-            return Vector3{
-                (gridPos.x * _spacing) - (_width * _spacing / 2.0f),
-                (gridPos.y * _spacing) - (_height * _spacing / 2.0f),
-                (gridPos.z * _spacing) - (_length * _spacing / 2.0f),
-            };
+        } 
+        else 
+        {
+            return Vector3{ gridPos.x * _spacing, gridPos.y * _spacing, gridPos.z * _spacing };
         }
     }
 
-    inline Vector3 SnapToCelCenter(Vector3 worldPos) const {
+    inline Vector3 SnapToCelCenter(Vector3 worldPos) const 
+    {
         worldPos.x = (floorf(worldPos.x / _spacing) * _spacing) + (_spacing / 2.0f);
         worldPos.y = (floorf(worldPos.y / _spacing) * _spacing) + (_spacing / 2.0f);
         worldPos.z = (floorf(worldPos.z / _spacing) * _spacing) + (_spacing / 2.0f);
         return worldPos;
     }
 
-    inline size_t FlatIndex(int i, int j, int k) const {
+    inline size_t FlatIndex(int i, int j, int k) const 
+    {
         return i + (k * _width) + (j * _width * _length);
     }
 
-    inline Vector3 UnflattenIndex(size_t idx) const {
+    inline Vector3 UnflattenIndex(size_t idx) const 
+    {
         return Vector3{
             (float)(idx % _width),
             (float)(idx / (_width * _length)),
@@ -78,7 +83,8 @@ public:
         };
     }
 
-    inline void SetTile(int i, int j, int k, const Tile& tile) {
+    inline void SetTile(int i, int j, int k, const Tile& tile) 
+    {
         _grid[FlatIndex(i, j, k)] = tile;
         _regenBatches = true;
     }
@@ -130,11 +136,13 @@ public:
         _regenBatches = true;
     }
 
-    inline Tile GetTile(int i, int j, int k) {
+    inline Tile GetTile(int i, int j, int k) const 
+    {
         return _grid[FlatIndex(i, j, k)];
     }
 
-    inline void UnsetTile(int i, int j, int k) {
+    inline void UnsetTile(int i, int j, int k) 
+    {
         _grid[FlatIndex(i, j, k)].shape = nullptr;
         _regenBatches = true;
     }
@@ -144,14 +152,19 @@ public:
     inline size_t GetLength() const { return _length; }
     inline float GetSpacing() const { return _spacing; }
 
-    inline Vector3 GetMinCorner() const {
-        return Vector3{ -((int)_width / 2) * _spacing, -((int)_height / 2) * _spacing, -((int)_length / 2) * _spacing };
+    inline Vector3 GetMinCorner() const 
+    {
+        return Vector3Zero();
     }
-    inline Vector3 GetMaxCorner() const {
-        return Vector3{ +((int)_width / 2) * _spacing, +((int)_height / 2) * _spacing, +((int)_length / 2) * _spacing };
+    
+    inline Vector3 GetMaxCorner() const 
+    {
+        return (Vector3) { (float)_width * _spacing, (float)_height * _spacing, (float)_length * _spacing };
     }
-    inline Vector3 GetCenterOffset() const {
-        return (Vector3) { (float)_width * _spacing / 2.0f, (float)_height * _spacing / 2.0f, (float) _length * _spacing / 2.0f };
+
+    inline Vector3 GetCenterPos() const 
+    {
+        return (Vector3) { (float)_width * _spacing / 2.0f, (float)_height * _spacing / 2.0f, (float)_length * _spacing / 2.0f };
     }
 
     //Returns a smaller TileGrid with a copy of the tile data in the rectangle defined by coordinates (i, j, k) and size (w, h, l).
@@ -162,6 +175,7 @@ public:
     void Draw(Vector3 position);
 
 protected:
+    //Calculates lists of transformations for each tile, separated by texture and shape, to be drawn as instances.
     void _RegenBatches();
 
     size_t _width, _height, _length;

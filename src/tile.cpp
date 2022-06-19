@@ -4,6 +4,8 @@
 
 #include "assets.hpp"
 
+#define TILE_SPACING_DEFAULT 2.0f
+
 float AngleDegrees(Angle angle) 
 {
     return (float)(((int)angle) * 90);
@@ -43,33 +45,17 @@ bool operator!=(const Tile &lhs, const Tile &rhs)
     return !(lhs == rhs);
 }
 
-TileGrid::TileGrid()
+//Create an empty, zero-size tile grid.
+TileGrid::TileGrid() : TileGrid(0, 0, 0, TILE_SPACING_DEFAULT)
 {
-    _width = 0;
-    _height = 0;
-    _length = 0;
-    _spacing = 0.0f;
-    _regenBatches = false;
 }
 
-TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing) 
+//Creates a tile grid that is empty
+TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing) : TileGrid(width, height, length, spacing, (Tile){ nullptr, ANGLE_0, nullptr }) 
 {
-    _width = width;
-    _height = height;
-    _length = length;
-    _spacing = spacing;
-    _grid.resize(width * height * length);
-    
-    //Make sure the grid is full of empty tiles
-    for (Tile& tile : _grid) 
-    {
-        tile.shape = nullptr;
-        tile.texture = nullptr;
-    }
-
-    _regenBatches = false;
 }
 
+//Create a tile grid filled with the given tile.
 TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing, Tile filler) 
 {
     _width = width;
@@ -84,6 +70,9 @@ TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing, Ti
     }
 
     _regenBatches = true;
+    _batchFromY = 0;
+    _batchToY = height - 1;
+    _batchPosition = Vector3Zero();
 }
 
 void TileGrid::_RegenBatches()

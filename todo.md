@@ -28,11 +28,14 @@
 [x] Embed font and shaders
 [x] Implement View menu
 [x] Modal windows
-[ ] Implement New Map
+[x] Implement New Map
+[x] Extract tile grid from picker mode.
+[x] Fix odd map size problems
 [ ] Implement Resize Map
 [ ] Reinstate Hidden Layer Message
 [ ] Entity placement
 [ ] Entity configuration
+[ ] Flip tiles vertically?
 [ ] File operations, .TI3
 [ ] Import TI2
 [ ] Are you sure you want to exit?

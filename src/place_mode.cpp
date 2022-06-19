@@ -13,10 +13,10 @@
 #define CAMERA_MOVE_SPEED_MAX   64.0f
 #define CAMERA_ACCELERATION     16.0f
 
-PlaceMode::PlaceMode(PlaceMode::Mode mode) 
-    : _mode(mode),
-      _tileGrid(100, 5, 100, 2.0f),
-      _layerViewMax(_tileGrid.GetHeight() - 1),
+PlaceMode::PlaceMode(MapMan &mapMan, PlaceMode::Mode mode) 
+    : _mapMan(mapMan),
+      _mode(mode),
+      _layerViewMax(mapMan.Map().GetHeight() - 1),
       _layerViewMin(0)
 {
     //Setup camera
@@ -24,9 +24,6 @@ PlaceMode::PlaceMode(PlaceMode::Mode mode)
 	_camera.up = VEC3_UP;
 	_camera.fovy = 70.0f;
 	_camera.projection = CAMERA_PERSPECTIVE;
-
-    _cameraYaw = 0.0f;
-    _cameraPitch = PI / 4.0f;
     _cameraMoveSpeed = CAMERA_MOVE_SPEED_MIN;
 
     //Setup cursor
@@ -35,16 +32,12 @@ PlaceMode::PlaceMode(PlaceMode::Mode mode)
         .angle = ANGLE_0,
         .texture = Assets::GetTexture("assets/textures/brickwall.png")
     };
-    _cursor.brush = TileGrid(1, 1, 1, _tileGrid.GetSpacing());
+    _cursor.brush = TileGrid(1, 1, 1, mapMan.Map().GetSpacing());
     _cursor.brushMode = false;
     _cursor.startPosition = _cursor.endPosition = Vector3Zero();
-    _cursor.outlineScale = 1.0f;
-
-    //Editor grid and plane
-    _planeGridPos = (Vector3){(float)_tileGrid.GetWidth() / 2, 0, (float)_tileGrid.GetLength() / 2};
-    _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
-
     _cursor.outlineScale = 1.125f;
+
+    Reset();
 }
 
 void PlaceMode::OnEnter() 
@@ -56,12 +49,19 @@ void PlaceMode::OnExit()
 {
 }
 
-void PlaceMode::ResetCamera()
+void PlaceMode::Reset()
 {
-    _camera.position = Vector3Zero();
-    _camera.target = VEC3_FORWARD;
+    _camera.position = _mapMan.Map().GetCenterPos();
+    _camera.target = Vector3Add(_camera.position, VEC3_FORWARD);
     _cameraYaw = 0.0f;
     _cameraPitch = 0.0f;
+    _cursor.startPosition = _cursor.endPosition = Vector3Zero();
+
+    //Editor grid and plane
+    _planeGridPos = (Vector3){ (float)_mapMan.Map().GetWidth() / 2.0f, 0, (float)_mapMan.Map().GetLength() / 2.0f };
+    _planeWorldPos = _mapMan.Map().GridToWorldPos(_planeGridPos, false);
+    _layerViewMin = 0;
+    _layerViewMax = _mapMan.Map().GetHeight() - 1;
 }
 
 void PlaceMode::MoveCamera() 
@@ -134,8 +134,8 @@ void PlaceMode::UpdateCursor()
 
     //Position cursor
     Ray pickRay = GetMouseRay(GetMousePosition(), _camera);
-    Vector3 gridMin = _tileGrid.GetMinCorner();
-    Vector3 gridMax = _tileGrid.GetMaxCorner();
+    Vector3 gridMin = _mapMan.Map().GetMinCorner();
+    Vector3 gridMax = _mapMan.Map().GetMaxCorner();
     RayCollision col = GetRayCollisionQuad(pickRay, 
         (Vector3){ gridMin.x, _planeWorldPos.y, gridMin.z }, 
         (Vector3){ gridMax.x, _planeWorldPos.y, gridMin.z }, 
@@ -143,8 +143,8 @@ void PlaceMode::UpdateCursor()
         (Vector3){ gridMin.x, _planeWorldPos.y, gridMax.z });
     if (col.hit)
     {
-        _cursor.endPosition = _tileGrid.SnapToCelCenter(col.point);
-        _cursor.endPosition.y = _planeWorldPos.y + _tileGrid.GetSpacing() / 2.0f;
+        _cursor.endPosition = _mapMan.Map().SnapToCelCenter(col.point);
+        _cursor.endPosition.y = _planeWorldPos.y + _mapMan.Map().GetSpacing() / 2.0f;
     }
     
     bool multiSelect = false;
@@ -161,8 +161,8 @@ void PlaceMode::UpdateCursor()
     }
 
     //Perform Tile operations
-    Vector3 cursorStartGridPos = _tileGrid.WorldToGridPos(_cursor.startPosition);
-    Vector3 cursorEndGridPos = _tileGrid.WorldToGridPos(_cursor.endPosition);
+    Vector3 cursorStartGridPos = _mapMan.Map().WorldToGridPos(_cursor.startPosition);
+    Vector3 cursorEndGridPos = _mapMan.Map().WorldToGridPos(_cursor.endPosition);
     Vector3 gridPosMin = Vector3Min(cursorStartGridPos, cursorEndGridPos);
     Vector3 gridPosMax = Vector3Max(cursorStartGridPos, cursorEndGridPos);
     size_t i = (size_t)gridPosMin.x; 
@@ -171,13 +171,13 @@ void PlaceMode::UpdateCursor()
     size_t w = (size_t)gridPosMax.x - i + 1;
     size_t h = (size_t)gridPosMax.y - j + 1;
     size_t l = (size_t)gridPosMax.z - k + 1;
-    Tile underTile = _tileGrid.GetTile(i, j, k); // * hi. my name's sans undertile...you get it?
+    Tile underTile = _mapMan.Map().GetTile(i, j, k); // * hi. my name's sans undertile...you get it?
 
     //Press Shift+B to enter brush mode, copying the currently selected rectangle of tiles.
     if (!_cursor.brushMode && IsKeyPressed(KEY_B) && IsKeyDown(KEY_LEFT_SHIFT))
     {
         _cursor.brushMode = true;
-        _cursor.brush = _tileGrid.Subsection(i, j, k, w, h, l);
+        _cursor.brush = _mapMan.Map().Subsection(i, j, k, w, h, l);
     }
 
     if (_cursor.brushMode)
@@ -189,11 +189,9 @@ void PlaceMode::UpdateCursor()
         };
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            DoAction(
-                QueueTileAction(i, j, k, w, h, l, _cursor.brush)
-            );
+            _mapMan.ExecuteTileAction(i, j, k, w, h, l, _cursor.brush);
         }
-        else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+        else if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT))
         {
             _cursor.brushMode = false;
         }
@@ -204,40 +202,26 @@ void PlaceMode::UpdateCursor()
             //Place tiles
             if (underTile != _cursor.tile)
             {
-                DoAction(
-                    QueueTileAction(i, j, k, 1, 1, 1, _cursor.tile)
-                );
+                _mapMan.ExecuteTileAction(i, j, k, 1, 1, 1, _cursor.tile);
             }
         }
         else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && multiSelect)
         {
             //Place tiles rectangle
-            DoAction(
-                QueueTileAction(i, j, k, w, h, l, _cursor.tile)
-            );
+            _mapMan.ExecuteTileAction(i, j, k, w, h, l, _cursor.tile);
         }
         else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && !multiSelect) 
         {
             //Remove tiles
             if (underTile.shape != nullptr || underTile.texture != nullptr)
             {
-                DoAction(
-                    QueueTileAction(
-                        i, j, k, 1, 1, 1,
-                        (Tile) {nullptr, ANGLE_0, nullptr}
-                    )
-                );
+                _mapMan.ExecuteTileAction(i, j, k, 1, 1, 1, (Tile) {nullptr, ANGLE_0, nullptr});
             }
         } 
         else if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && multiSelect)
         {
             //Remove tiles RECTANGLE
-            DoAction(
-                QueueTileAction(
-                    i, j, k, w, h, l,
-                    (Tile) {nullptr, ANGLE_0, nullptr}
-                )
-            );
+            _mapMan.ExecuteTileAction(i, j, k, w, h, l, (Tile) {nullptr, ANGLE_0, nullptr});
         }
         else if (IsKeyDown(KEY_G) && !multiSelect) 
         {
@@ -266,7 +250,7 @@ void PlaceMode::Update()
     //Move editing plane
     if (GetMouseWheelMove() > EPSILON || GetMouseWheelMove() < -EPSILON) 
     {
-        _planeGridPos.y = Clamp(_planeGridPos.y + Sign(GetMouseWheelMove()), 0.0f, _tileGrid.GetHeight() - 1);
+        _planeGridPos.y = Clamp(_planeGridPos.y + Sign(GetMouseWheelMove()), 0.0f, _mapMan.Map().GetHeight() - 1);
 
         //Reveal hidden layers when the grid is over them and holding H
         if (IsKeyDown(KEY_H))
@@ -281,19 +265,19 @@ void PlaceMode::Update()
             _planeGridPos.y = Clamp(_planeGridPos.y, _layerViewMin, _layerViewMax);
         }
     }
-    _planeWorldPos = _tileGrid.GridToWorldPos(_planeGridPos, false);
+    _planeWorldPos = _mapMan.Map().GridToWorldPos(_planeGridPos, false);
 
     //Layer hiding
     if (IsKeyPressed(KEY_H))
     {
-        if (_layerViewMin == 0 && _layerViewMax == _tileGrid.GetHeight() - 1)
+        if (_layerViewMin == 0 && _layerViewMax == _mapMan.Map().GetHeight() - 1)
         {
             _layerViewMax = _layerViewMin = (int) _planeGridPos.y;
         }
         else
         {
             _layerViewMin = 0;
-            _layerViewMax = _tileGrid.GetHeight() - 1;
+            _layerViewMax = _mapMan.Map().GetHeight() - 1;
         }
     }
 
@@ -306,22 +290,8 @@ void PlaceMode::Update()
     //Undo and redo
     if (IsKeyDown(KEY_LEFT_CONTROL))
     {
-        if (IsKeyPressed(KEY_Z) && !_undoHistory.empty())
-        {
-            //Undo (Ctrl + Z)
-            TileAction &action = _undoHistory.back();
-            UndoAction(action);
-            _redoHistory.push_back(action);
-            _undoHistory.pop_back();
-        }
-        else if (IsKeyPressed(KEY_Y) && !_redoHistory.empty())
-        {
-            //Redo (Ctrl + Y)
-            TileAction &action = _redoHistory.back();
-            DoAction(action);
-            _undoHistory.push_back(action);
-            _redoHistory.pop_back();
-        }
+        if (IsKeyPressed(KEY_Z)) _mapMan.Undo();
+        else if (IsKeyPressed(KEY_Y)) _mapMan.Redo();
     }
 }
 
@@ -334,12 +304,12 @@ void PlaceMode::Draw()
         rlSetLineWidth(1.0f);
         DrawGridEx(
             Vector3Add(_planeWorldPos, (Vector3){ 0.0f, 0.05f, 0.0f }), //Adding the offset to prevent Z-fighting 
-            _tileGrid.GetWidth()+1, _tileGrid.GetLength()+1, 
-            _tileGrid.GetSpacing());
+            _mapMan.Map().GetWidth()+1, _mapMan.Map().GetLength()+1, 
+            _mapMan.Map().GetSpacing());
         rlDrawRenderBatchActive();
 
         //Draw tiles
-        _tileGrid.Draw(Vector3Zero(), _layerViewMin, _layerViewMax);
+        _mapMan.DrawMap(Vector3Zero(), _layerViewMin, _layerViewMax);
 
         //Draw cursor
         if (!IsKeyDown(KEY_LEFT_SHIFT) && _cursor.tile.shape && _cursor.tile.texture) {
@@ -349,7 +319,7 @@ void PlaceMode::Draw()
             
             if (_cursor.brushMode)
             {
-                Vector3 brushOffset = Vector3Add(Vector3Min(_cursor.startPosition, _cursor.endPosition), _cursor.brush.GetCenterOffset());
+                Vector3 brushOffset = Vector3Min(_cursor.startPosition, _cursor.endPosition);
                 brushOffset.x -= _cursor.brush.GetSpacing() / 2.0f;
                 brushOffset.y -= _cursor.brush.GetSpacing() / 2.0f;
                 brushOffset.z -= _cursor.brush.GetSpacing() / 2.0f;
@@ -367,9 +337,9 @@ void PlaceMode::Draw()
         rlSetLineWidth(2.0f);
         DrawCubeWires(
             Vector3Scale(Vector3Add(_cursor.startPosition, _cursor.endPosition), 0.5f), 
-            fabs(_cursor.endPosition.x - _cursor.startPosition.x) + _tileGrid.GetSpacing() * _cursor.outlineScale, 
-            fabs(_cursor.endPosition.y - _cursor.startPosition.y) + _tileGrid.GetSpacing() * _cursor.outlineScale, 
-            fabs(_cursor.endPosition.z - _cursor.startPosition.z) + _tileGrid.GetSpacing() * _cursor.outlineScale, 
+            fabs(_cursor.endPosition.x - _cursor.startPosition.x) + _mapMan.Map().GetSpacing() * _cursor.outlineScale, 
+            fabs(_cursor.endPosition.y - _cursor.startPosition.y) + _mapMan.Map().GetSpacing() * _cursor.outlineScale, 
+            fabs(_cursor.endPosition.z - _cursor.startPosition.z) + _mapMan.Map().GetSpacing() * _cursor.outlineScale, 
             MAGENTA);
 
         DrawAxes3D((Vector3){ 1.0f, 1.0f, 1.0f }, 10.0f);
@@ -377,54 +347,4 @@ void PlaceMode::Draw()
         rlEnableDepthTest();
     }
     EndMode3D();
-}
-
-PlaceMode::TileAction &PlaceMode::QueueTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile)
-{
-    _undoHistory.push_back((TileAction){
-        .i = i, 
-        .j = j, 
-        .k = k, 
-        .prevState = _tileGrid.Subsection(i, j, k, w, h, l),
-        .newState = TileGrid(w, h, l, _tileGrid.GetSpacing(), newTile) 
-    });
-    if (_undoHistory.size() > App::Get()->GetUndoMax()) _undoHistory.pop_front();
-    _redoHistory.clear();
-
-    return _undoHistory.back();
-}
-
-PlaceMode::TileAction &PlaceMode::QueueTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, TileGrid brush)
-{
-    const TileGrid prevState = _tileGrid.Subsection(
-            i, j, k, 
-            Min(w, _tileGrid.GetWidth() - i),  //Cut off parts that go beyond map boundaries
-            Min(h, _tileGrid.GetHeight() - j), 
-            Min(l, _tileGrid.GetLength() - k)
-        );
-
-    TileGrid newState = prevState; //Copy the old state and merge the brush into it
-    newState.CopyTiles(0, 0, 0, brush, true);
-
-    _undoHistory.push_back((TileAction){
-        .i = i, 
-        .j = j, 
-        .k = k, 
-        .prevState = prevState,
-        .newState = newState
-    });
-    if (_undoHistory.size() > App::Get()->GetUndoMax()) _undoHistory.pop_front();
-    _redoHistory.clear();
-
-    return _undoHistory.back();
-}
-
-void PlaceMode::DoAction(TileAction &action)
-{
-    _tileGrid.CopyTiles(action.i, action.j, action.k, action.newState);
-}
-
-void PlaceMode::UndoAction(TileAction &action)
-{
-    _tileGrid.CopyTiles(action.i, action.j, action.k, action.prevState);
 }
