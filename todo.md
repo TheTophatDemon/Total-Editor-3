@@ -33,9 +33,9 @@
 [x] Fix odd map size problems
 [x] Implement Resize Map
 [x] Reinstate Hidden Layer Message
+[x] Flip tiles vertically?
 [ ] Entity placement
 [ ] Entity configuration
-[ ] Flip tiles vertically?
 [ ] File operations, .TI3
 [ ] Import TI2
 [ ] Are you sure you want to exit?

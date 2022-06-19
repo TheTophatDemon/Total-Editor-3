@@ -37,7 +37,7 @@ Matrix AngleMatrix(Angle angle)
 
 bool operator==(const Tile &lhs, const Tile &rhs)
 {
-    return (lhs.shape == rhs.shape) && (lhs.texture == rhs.texture) && (lhs.angle == rhs.angle);
+    return (lhs.shape == rhs.shape) && (lhs.texture == rhs.texture) && (lhs.angle == rhs.angle) && (lhs.flipped == rhs.flipped);
 }
 
 bool operator!=(const Tile &lhs, const Tile &rhs)
@@ -51,7 +51,7 @@ TileGrid::TileGrid() : TileGrid(0, 0, 0, TILE_SPACING_DEFAULT)
 }
 
 //Creates a tile grid that is empty
-TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing) : TileGrid(width, height, length, spacing, (Tile){ nullptr, ANGLE_0, nullptr }) 
+TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing) : TileGrid(width, height, length, spacing, (Tile){ nullptr, ANGLE_0, nullptr, false }) 
 {
 }
 
@@ -90,7 +90,7 @@ void TileGrid::_RegenBatches()
                 Vector3 gridPos = UnflattenIndex(t);
                 Vector3 worldPos = Vector3Add(_batchPosition, GridToWorldPos(gridPos, true));
                 Matrix matrix = MatrixMultiply(
-                    AngleMatrix(tile.angle), 
+                    TileRotationMatrix(tile), 
                     MatrixTranslate(worldPos.x, worldPos.y, worldPos.z));
 
                 for (size_t m = 0; m < tile.shape->meshCount; ++m) {

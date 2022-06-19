@@ -25,10 +25,17 @@ typedef struct Tile {
     Model* shape;
     Angle angle;
     Texture2D* texture;
+    bool flipped; //True if flipped vertically
 } Tile;
 
 bool operator==(const Tile &lhs, const Tile &rhs);
 bool operator!=(const Tile &lhs, const Tile &rhs);
+
+inline Matrix TileRotationMatrix(const Tile &tile)
+{
+    return MatrixMultiply( 
+        MatrixRotateX(tile.flipped ? PI : 0.0f), AngleMatrix(tile.flipped ? AngleForward(tile.angle) : tile.angle));
+}
 
 class TileGrid 
 {

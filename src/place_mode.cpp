@@ -30,7 +30,8 @@ PlaceMode::PlaceMode(MapMan &mapMan, PlaceMode::Mode mode)
     _cursor.tile = (Tile) {
         .shape = Assets::GetShape("assets/models/shapes/cube.obj"),
         .angle = ANGLE_0,
-        .texture = Assets::GetTexture("assets/textures/brickwall.png")
+        .texture = Assets::GetTexture("assets/textures/brickwall.png"),
+        false
     };
     _cursor.brush = TileGrid(1, 1, 1, mapMan.Map().GetSpacing());
     _cursor.brushMode = false;
@@ -137,6 +138,17 @@ void PlaceMode::UpdateCursor()
     {
         _cursor.tile.angle = AngleForward(_cursor.tile.angle);
     }
+    //Flip
+    if (IsKeyPressed(KEY_F))
+    {
+        _cursor.tile.flipped = !_cursor.tile.flipped;
+    }
+    //Reset tile orientation
+    if (IsKeyPressed(KEY_R))
+    {
+        _cursor.tile.angle = ANGLE_0;
+        _cursor.tile.flipped = false;
+    }
 
     //Position cursor
     Ray pickRay = GetMouseRay(GetMousePosition(), _camera);
@@ -221,13 +233,13 @@ void PlaceMode::UpdateCursor()
             //Remove tiles
             if (underTile.shape != nullptr || underTile.texture != nullptr)
             {
-                _mapMan.ExecuteTileAction(i, j, k, 1, 1, 1, (Tile) {nullptr, ANGLE_0, nullptr});
+                _mapMan.ExecuteTileAction(i, j, k, 1, 1, 1, (Tile) {nullptr, ANGLE_0, nullptr, false});
             }
         } 
         else if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && multiSelect)
         {
             //Remove tiles RECTANGLE
-            _mapMan.ExecuteTileAction(i, j, k, w, h, l, (Tile) {nullptr, ANGLE_0, nullptr});
+            _mapMan.ExecuteTileAction(i, j, k, w, h, l, (Tile) {nullptr, ANGLE_0, nullptr, false});
         }
         else if (IsKeyDown(KEY_G) && !multiSelect) 
         {
@@ -325,7 +337,7 @@ void PlaceMode::Draw()
         //Draw cursor
         if (!IsKeyDown(KEY_LEFT_SHIFT) && _cursor.tile.shape && _cursor.tile.texture) {
             Matrix cursorTransform = MatrixMultiply(
-                MatrixRotateY(AngleRadians(_cursor.tile.angle)), 
+                TileRotationMatrix(_cursor.tile), 
                 MatrixTranslate(_cursor.endPosition.x, _cursor.endPosition.y, _cursor.endPosition.z));
             
             if (_cursor.brushMode)
