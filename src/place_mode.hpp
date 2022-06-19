@@ -25,7 +25,8 @@ public:
     inline void SetCursorShape(Model *shape) { _cursor.tile.shape = shape; }
     inline void SetCursorTexture(Texture2D *tex) { _cursor.tile.texture = tex; }
 
-    void Reset();
+    void ResetCamera();
+    void ResetGrid();
 protected:
     struct Cursor {
         Tile tile;

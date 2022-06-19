@@ -1,6 +1,8 @@
 #ifndef DIALOGS_H
 #define DIALOGS_H
 
+#include "tile.hpp"
+
 class Dialog 
 { 
 public:
@@ -20,6 +22,18 @@ protected:
     int _height;
     int _length;
     bool _spinnerActive[NUM_SPINNERS];
+};
+
+class ExpandMapDialog: public Dialog
+{
+public:
+    ExpandMapDialog();
+    virtual bool Draw() override;
+protected:
+    bool _chooserActive;
+    bool _spinnerActive;
+    int _amount;
+    Direction _direction;
 };
 
 #endif

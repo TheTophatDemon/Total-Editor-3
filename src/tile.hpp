@@ -11,6 +11,8 @@
 
 #include "math_stuff.hpp"
 
+enum class Direction { Z_POS, Z_NEG, X_POS, X_NEG, Y_POS, Y_NEG };
+
 typedef enum Angle { ANGLE_0, ANGLE_90, ANGLE_180, ANGLE_270, ANGLE_COUNT } Angle;
 
 float AngleDegrees(Angle angle);

@@ -37,7 +37,8 @@ PlaceMode::PlaceMode(MapMan &mapMan, PlaceMode::Mode mode)
     _cursor.startPosition = _cursor.endPosition = Vector3Zero();
     _cursor.outlineScale = 1.125f;
 
-    Reset();
+    ResetCamera();
+    ResetGrid();
 }
 
 void PlaceMode::OnEnter() 
@@ -49,14 +50,17 @@ void PlaceMode::OnExit()
 {
 }
 
-void PlaceMode::Reset()
+void PlaceMode::ResetCamera()
 {
     _camera.position = _mapMan.Map().GetCenterPos();
-    _camera.target = Vector3Add(_camera.position, VEC3_FORWARD);
+    _camera.target = _camera.position;
     _cameraYaw = 0.0f;
-    _cameraPitch = 0.0f;
+    _cameraPitch = PI / 4.0f;
     _cursor.startPosition = _cursor.endPosition = Vector3Zero();
+}
 
+void PlaceMode::ResetGrid()
+{
     //Editor grid and plane
     _planeGridPos = (Vector3){ (float)_mapMan.Map().GetWidth() / 2.0f, 0, (float)_mapMan.Map().GetLength() / 2.0f };
     _planeWorldPos = _mapMan.Map().GridToWorldPos(_planeGridPos, false);

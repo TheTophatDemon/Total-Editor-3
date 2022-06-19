@@ -18,11 +18,12 @@ MenuBar::MenuBar(App::Settings &settings)
         (Menu) {
             .name = "MAP",
             .items = {
-                (Item) { "NEW",     [&](){ _activeDialog.reset(new NewMapDialog()); } },
-                (Item) { "OPEN",    [&](){ _activeDialog = nullptr; } },
-                (Item) { "SAVE",    [&](){ _activeDialog = nullptr; } },
-                (Item) { "SAVE AS", [&](){ _activeDialog = nullptr; } },
-                (Item) { "RESIZE",  [&](){ _activeDialog = nullptr; } },
+                (Item) { "NEW",          [&](){ _activeDialog.reset(new NewMapDialog()); } },
+                (Item) { "OPEN",         [&](){ _activeDialog = nullptr; } },
+                (Item) { "SAVE",         [&](){ _activeDialog = nullptr; } },
+                (Item) { "SAVE AS",      [&](){ _activeDialog = nullptr; } },
+                (Item) { "EXPAND GRID",  [&](){ _activeDialog.reset(new ExpandMapDialog()); } },
+                (Item) { "SHRINK GRID",  [&](){ _activeDialog = nullptr; } },
             }
         },
         (Menu) {
@@ -33,6 +34,7 @@ MenuBar::MenuBar(App::Settings &settings)
                 (Item) { "SHAPE PICKER",   [](){ App::Get()->ChangeEditorMode(App::Mode::PICK_SHAPE); } },
                 (Item) { "THINGS",         [](){ App::Get()->ChangeEditorMode(App::Mode::PLACE_ENT); } },
                 (Item) { "RESET CAMERA",   [](){ App::Get()->ResetEditorCamera(); } },
+                (Item) { "TOGGLE GRID",    [](){ ; } },
             }
         },
         (Menu) {

@@ -30,31 +30,30 @@ public:
         _tileGrid.Draw(pos, fromY, toY);
     }
 
-    //Returns true if changing the size of the tile grid to the given size could not erase any existing tile data.
-    inline bool ResizeSafe(int width, int height, int length)
+    //Regenerates the map, extending one of the grid's dimensions on the given axis. Returns false if the change would result in an invalid map size.
+    inline void ExpandMap(Direction axis, int amount)
     {
-        return (width >= _tileGrid.GetWidth() && height >= _tileGrid.GetHeight() && length >= _tileGrid.GetLength());
-    }
+        int newWidth  = _tileGrid.GetWidth();
+        int newHeight = _tileGrid.GetHeight();
+        int newLength = _tileGrid.GetLength();
+        int ofsx, ofsy, ofsz;
+        ofsx = ofsy = ofsz = 0;
 
-    inline void ResizeMap(int width, int height, int length, int ofsx, int ofsy, int ofsz)
-    {
+        switch (axis)
+        {
+            case Direction::Z_NEG: newLength += amount; ofsz += amount; break;
+            case Direction::Z_POS: newLength += amount; break;
+            case Direction::X_NEG: newWidth += amount; ofsx += amount; break;
+            case Direction::X_POS: newWidth += amount; break;
+            case Direction::Y_NEG: newHeight += amount; ofsy += amount; break;
+            case Direction::Y_POS: newHeight += amount; break;
+        }
+
         _undoHistory.clear();
         _redoHistory.clear();
-
-        // TileGrid oldGrid = _tileGrid;
-        // _tileGrid = TileGrid(width, height, length, _tileGrid.GetSpacing());
-        // if (!ResizeSafe(width, height, length))
-        // {
-        //     //Cut off the section that goes outside of the new boundaries.
-        //     oldGrid = oldGrid.Subsection(
-        //         ofsx < 0 ? -ofsx : 0, 
-        //         ofsy < 0 ? -ofsy : 0, 
-        //         ofsz < 0 ? -ofsz : 0, 
-        //         oldGrid.GetWidth() + (ofsx < 0 ? ofsx : 0), 
-        //         oldGrid.GetHeight() + ofsy, 
-        //         oldGrid.GetLength() + ofsz);
-        // }
-        // _tileGrid.CopyTiles(ofsx, ofsy, ofsz, oldGrid, false);
+        TileGrid oldGrid = _tileGrid;
+        _tileGrid = TileGrid(newWidth, newHeight, newLength, _tileGrid.GetSpacing());       
+        _tileGrid.CopyTiles(ofsx, ofsy, ofsz, oldGrid, false);
     }
 
     //Executes a tile action for filling an area with one tile

@@ -6,6 +6,8 @@
 #include <string>
 #include <memory>
 
+#include "tile.hpp"
+
 class PlaceMode;
 class PickMode;
 class MenuBar;
@@ -52,7 +54,7 @@ public:
     inline const MapMan &GetMapMan() const { return *_mapMan.get(); }
     void ResetEditorCamera();
     void NewMap(int width, int height, int length);
-    void ResizeMap(int width, int height, int length, int ofsx, int ofsy, int ofsz);
+    void ExpandMap(Direction axis, int amount);
 private:
     App();
 

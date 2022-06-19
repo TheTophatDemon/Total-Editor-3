@@ -83,29 +83,6 @@ void App::ChangeEditorMode(const App::Mode newMode)
     _editorMode->OnEnter();
 }
 
-Rectangle App::GetMenuBarRect()
-{
-    return _menuBar->GetTopBar();
-}
-
-void App::ResetEditorCamera()
-{
-    if (_editorMode == _tilePlaceMode.get())    _tilePlaceMode->Reset();
-    //else if (_editorMode == _entPlaceMode.get()) _entPlaceMode->ResetCamera();
-}
-
-void App::NewMap(int width, int height, int length)
-{
-    _mapMan->NewMap(width, height, length);
-    _tilePlaceMode->Reset();
-}
-
-void App::ResizeMap(int width, int height, int length, int ofsx, int ofsy, int ofsz)
-{
-    _mapMan->ResizeMap(width, height, length, ofsx, ofsy, ofsz);
-    _tilePlaceMode->Reset();
-}
-
 void App::Update()
 {
     _menuBar->Update();
@@ -168,6 +145,7 @@ int main(int argc, char **argv)
     GuiSetStyle(SCROLLBAR, SCROLL_SPEED, 64);
     GuiSetStyle(LISTVIEW, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
     GuiSetStyle(VALUEBOX, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
+    GuiSetStyle(DROPDOWNBOX, TEXT_COLOR_NORMAL, ColorToInt(BLACK));
 
     App::Get()->NewMap(100, 5, 100);
 
@@ -184,4 +162,24 @@ int main(int argc, char **argv)
 	CloseWindow();
 
 	return 0;
+}
+
+Rectangle App::GetMenuBarRect() { return _menuBar->GetTopBar(); }
+
+void App::ResetEditorCamera()
+{
+    if (_editorMode == _tilePlaceMode.get()) _tilePlaceMode->ResetCamera();
+}
+
+void App::NewMap(int width, int height, int length)
+{
+    _mapMan->NewMap(width, height, length);
+    _tilePlaceMode->ResetCamera();
+    _tilePlaceMode->ResetGrid();
+}
+
+void App::ExpandMap(Direction axis, int amount)
+{
+    _mapMan->ExpandMap(axis, amount);
+    _tilePlaceMode->ResetGrid();
 }
