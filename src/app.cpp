@@ -166,9 +166,18 @@ int main(int argc, char **argv)
 
 Rectangle App::GetMenuBarRect() { return _menuBar->GetTopBar(); }
 
+void App::DisplayStatusMessage(std::string message, float durationSeconds, int priority)
+{
+    _menuBar->DisplayStatusMessage(message, durationSeconds, priority);
+}
+
 void App::ResetEditorCamera()
 {
-    if (_editorMode == _tilePlaceMode.get()) _tilePlaceMode->ResetCamera();
+    if (_editorMode == _tilePlaceMode.get()) 
+    {
+        _tilePlaceMode->ResetCamera();
+        _tilePlaceMode->ResetGrid();
+    }
 }
 
 void App::NewMap(int width, int height, int length)
@@ -182,4 +191,11 @@ void App::ExpandMap(Direction axis, int amount)
 {
     _mapMan->ExpandMap(axis, amount);
     _tilePlaceMode->ResetGrid();
+}
+
+void App::ShrinkMap()
+{
+    _mapMan->ShrinkMap();
+    _tilePlaceMode->ResetGrid();
+    _tilePlaceMode->ResetCamera();
 }

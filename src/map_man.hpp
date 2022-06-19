@@ -2,6 +2,7 @@
 #define MAP_MAN_H
 
 #include <deque>
+#include <cstdint>
 
 #include "tile.hpp"
 
@@ -54,6 +55,42 @@ public:
         TileGrid oldGrid = _tileGrid;
         _tileGrid = TileGrid(newWidth, newHeight, newLength, _tileGrid.GetSpacing());       
         _tileGrid.CopyTiles(ofsx, ofsy, ofsz, oldGrid, false);
+    }
+
+    //Reduces the size of the grid until it fits perfectly around all the non-empty tiles in the map.
+    inline void ShrinkMap()
+    {
+        size_t minX, minY, minZ;
+        size_t maxX, maxY, maxZ;
+        minX = minY = minZ = UINT64_MAX;
+        maxX = maxY = maxZ = 0;
+        for (size_t x = 0; x < _tileGrid.GetWidth(); ++x)
+        {
+            for (size_t y = 0; y < _tileGrid.GetHeight(); ++y)
+            {
+                for (size_t z = 0; z < _tileGrid.GetLength(); ++z)
+                {
+                    if (_tileGrid.GetTile(x, y, z).shape != nullptr)
+                    {
+                        if (x < minX) minX = x;
+                        if (y < minY) minY = y;
+                        if (z < minZ) minZ = z;
+                        if (x > maxX) maxX = x;
+                        if (y > maxY) maxY = y;
+                        if (z > maxZ) maxZ = z;
+                    }
+                }
+            }
+        }
+        if (minX > maxX || minY > maxY || minZ > maxZ)
+        {
+            //If there aren't any tiles, just make it 1x1x1.
+            _tileGrid = TileGrid(1, 1, 1, _tileGrid.GetSpacing());
+        }
+        else
+        {
+            _tileGrid = _tileGrid.Subsection(minX, minY, minZ, maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1);
+        }
     }
 
     //Executes a tile action for filling an area with one tile

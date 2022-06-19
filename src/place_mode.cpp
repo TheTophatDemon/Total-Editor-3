@@ -66,6 +66,8 @@ void PlaceMode::ResetGrid()
     _planeWorldPos = _mapMan.Map().GridToWorldPos(_planeGridPos, false);
     _layerViewMin = 0;
     _layerViewMax = _mapMan.Map().GetHeight() - 1;
+    _cursor.startPosition = _cursor.endPosition = Vector3Zero();
+    _cursor.brushMode = false;
 }
 
 void PlaceMode::MoveCamera() 
@@ -283,6 +285,11 @@ void PlaceMode::Update()
             _layerViewMin = 0;
             _layerViewMax = _mapMan.Map().GetHeight() - 1;
         }
+    }
+
+    if (_layerViewMin > 0 || _layerViewMax < _mapMan.Map().GetHeight() - 1)
+    {
+        App::Get()->DisplayStatusMessage("PRESS H TO UNHIDE LAYERS", 0.25f, 1);
     }
 
     //Update cursor

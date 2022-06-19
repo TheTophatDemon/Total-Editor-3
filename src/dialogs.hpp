@@ -36,4 +36,10 @@ protected:
     Direction _direction;
 };
 
+class ShrinkMapDialog: public Dialog
+{
+public:
+    virtual bool Draw() override;
+};
+
 #endif

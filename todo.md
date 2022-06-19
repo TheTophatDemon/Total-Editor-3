@@ -31,8 +31,8 @@
 [x] Implement New Map
 [x] Extract tile grid from picker mode.
 [x] Fix odd map size problems
-[ ] Implement Resize Map
-[ ] Reinstate Hidden Layer Message
+[x] Implement Resize Map
+[x] Reinstate Hidden Layer Message
 [ ] Entity placement
 [ ] Entity configuration
 [ ] Flip tiles vertically?

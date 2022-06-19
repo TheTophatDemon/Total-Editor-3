@@ -23,7 +23,7 @@ MenuBar::MenuBar(App::Settings &settings)
                 (Item) { "SAVE",         [&](){ _activeDialog = nullptr; } },
                 (Item) { "SAVE AS",      [&](){ _activeDialog = nullptr; } },
                 (Item) { "EXPAND GRID",  [&](){ _activeDialog.reset(new ExpandMapDialog()); } },
-                (Item) { "SHRINK GRID",  [&](){ _activeDialog = nullptr; } },
+                (Item) { "SHRINK GRID",  [&](){ _activeDialog.reset(new ShrinkMapDialog()); } },
             }
         },
         (Menu) {
@@ -58,6 +58,11 @@ MenuBar::MenuBar(App::Settings &settings)
 void MenuBar::Update()
 {
     _topBar = (Rectangle) { 0, 0, (float)GetScreenWidth(), 32 };
+
+    if (_messageTimer > 0.0f)
+    {
+        _messageTimer -= GetFrameTime();
+    }
 
     if (_activeMenu)
     {
@@ -97,10 +102,10 @@ void MenuBar::Draw()
     DrawRectangleGradientV(_topBar.x, _topBar.y, _topBar.width, _topBar.height, GRAY, DARKGRAY);
     const Rectangle MENU_BOUNDS = (Rectangle) { _topBar.x, _topBar.y, _topBar.width / 2.0f, _topBar.height };
     
-    // if (_layerViewMin > 0 || _layerViewMax < _tileGrid.GetHeight() - 1)
-    // {
-    //     DrawTextEx(*Assets::GetFont(), "PRESS H TO UNHIDE LAYERS", (Vector2) { MENU_BAR_RECT.x + MENU_BAR_RECT.width + 4, 2 }, 24, 0.0f, WHITE);
-    // }
+    if (_messageTimer > 0.0f)
+    {
+        DrawTextEx(*Assets::GetFont(), _statusMessage.c_str(), (Vector2) { MENU_BOUNDS.x + MENU_BOUNDS.width + 4, 2 }, 24, 0.0f, WHITE);
+    }
 
     const float BUTTON_WIDTH = (MENU_BOUNDS.width / _menus.size()) - (BUTTON_MARGIN * 2.0f);
 

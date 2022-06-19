@@ -47,6 +47,7 @@ public:
     inline std::string GetShapesDir() { return _settings.shapesDir; } 
 
     Rectangle GetMenuBarRect();
+    void DisplayStatusMessage(std::string message, float durationSeconds, int priority);
 
     void Update();
     
@@ -55,6 +56,7 @@ public:
     void ResetEditorCamera();
     void NewMap(int width, int height, int length);
     void ExpandMap(Direction axis, int amount);
+    void ShrinkMap();
 private:
     App();
 

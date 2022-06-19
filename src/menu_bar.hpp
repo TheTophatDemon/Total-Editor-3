@@ -35,6 +35,15 @@ public:
     inline bool IsMouseOn() const { return _mouseOn; }
     inline bool IsFocused() const { return _focused; }
     inline Rectangle GetTopBar() const { return _topBar; }
+
+    inline void DisplayStatusMessage(std::string message, float durationSeconds, int priority)
+    {
+        if (priority >= _messagePriority)
+        {
+            _statusMessage = message;
+            _messageTimer = durationSeconds;
+        }
+    }
 protected:
     //Turns the menu's item list into a single string of semicolon separated names for use with RayGUI
     std::string _GetMenuString(const Menu &menu) const;
@@ -46,6 +55,10 @@ protected:
     Menu *_activeMenu;
     std::unique_ptr<Dialog> _activeDialog;
     Rectangle _activeMenuBounds;
+
+    std::string _statusMessage;
+    float _messageTimer;
+    int _messagePriority;
 
     bool _focused;
     bool _mouseOn;
