@@ -41,3 +41,4 @@
 [ ] Are you sure you want to exit?
 [ ] Finish instructions, settings
 [ ] Consider generating aggregate meshes instead of instancing
+[ ] Write Windows support into build file
