@@ -2,23 +2,25 @@
 
 #include "app.hpp"
 
-MapMan::TileAction &MapMan::ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile)
+void MapMan::_Execute(std::shared_ptr<Action> action)
 {
-    _undoHistory.push_back((TileAction){
-        .i = i, 
-        .j = j, 
-        .k = k, 
-        .prevState = _tileGrid.Subsection(i, j, k, w, h, l),
-        .newState = TileGrid(w, h, l, _tileGrid.GetSpacing(), newTile) 
-    });
+    _undoHistory.push_back(action);
     if (_undoHistory.size() > App::Get()->GetUndoMax()) _undoHistory.pop_front();
     _redoHistory.clear();
-
-    _DoAction(_undoHistory.back());
-    return _undoHistory.back();
+    _undoHistory.back()->Do(*this);
 }
 
-MapMan::TileAction &MapMan::ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, TileGrid brush)
+void MapMan::ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile)
+{
+    TileGrid prevState = _tileGrid.Subsection(i, j, k, w, h, l);
+    TileGrid newState = TileGrid(w, h, l, _tileGrid.GetSpacing(), newTile);
+
+    _Execute(std::static_pointer_cast<Action>(
+        std::make_shared<TileAction>(i, j, k, prevState, newState)
+    ));
+}
+
+void MapMan::ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, TileGrid brush)
 {
     const TileGrid prevState = _tileGrid.Subsection(
             i, j, k, 
@@ -30,26 +32,24 @@ MapMan::TileAction &MapMan::ExecuteTileAction(size_t i, size_t j, size_t k, size
     TileGrid newState = prevState; //Copy the old state and merge the brush into it
     newState.CopyTiles(0, 0, 0, brush, true);
 
-    _undoHistory.push_back((TileAction){
-        .i = i, 
-        .j = j, 
-        .k = k, 
-        .prevState = prevState,
-        .newState = newState
-    });
-    if (_undoHistory.size() > App::Get()->GetUndoMax()) _undoHistory.pop_front();
-    _redoHistory.clear();
-
-    _DoAction(_undoHistory.back());
-    return _undoHistory.back();
+    _Execute(std::static_pointer_cast<Action>(
+        std::make_shared<TileAction>(i, j, k, prevState, newState)
+    ));
 }
 
-void MapMan::_DoAction(TileAction &action)
+void MapMan::ExecuteEntPlacement(int i, int j, int k, Ent newEnt)
 {
-    _tileGrid.CopyTiles(action.i, action.j, action.k, action.newState);
+    _Execute(std::static_pointer_cast<Action>(
+        std::make_shared<EntAction>(i, j, k, _entGrid.HasEnt(i, k, k), false, _entGrid.GetEnt(i, j, k), newEnt)
+    ));
 }
 
-void MapMan::_UndoAction(TileAction &action)
+void MapMan::ExecuteEntRemoval(int i, int j, int k)
 {
-    _tileGrid.CopyTiles(action.i, action.j, action.k, action.prevState);
+    if (_entGrid.HasEnt(i, k, k))
+    {
+        _Execute(std::static_pointer_cast<Action>(
+            std::make_shared<EntAction>(i, j, k, true, true, _entGrid.GetEnt(i, j, k), (Ent){ 0 })
+        ));
+    }
 }

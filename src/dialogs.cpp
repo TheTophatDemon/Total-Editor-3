@@ -39,7 +39,7 @@ std::vector<Rectangle> ArrangeHorzCentered(Rectangle bounds, std::initializer_li
 
 NewMapDialog::NewMapDialog()
 {
-    const TileGrid &map = App::Get()->GetMapMan().Map();
+    const TileGrid &map = App::Get()->GetMapMan().Tiles();
     _width = map.GetWidth();
     _height = map.GetHeight();
     _length = map.GetLength();

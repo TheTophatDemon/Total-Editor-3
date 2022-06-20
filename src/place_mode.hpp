@@ -7,15 +7,14 @@
 #include <string>
 
 #include "tile.hpp"
+#include "ent.hpp"
 #include "app.hpp"
 #include "menu_bar.hpp"
 #include "map_man.hpp"
 
 class PlaceMode : public App::ModeImpl {
 public:
-    enum class Mode { TILES, ENTS };
-    
-    PlaceMode(MapMan &mapMan, Mode mode);
+    PlaceMode(MapMan &mapMan);
 
     virtual void Update() override;
     virtual void Draw() override;
@@ -31,17 +30,19 @@ protected:
     struct Cursor {
         Tile tile;
         TileGrid brush;
+        Ent ent;
         Vector3 endPosition;
         Vector3 startPosition;
         float outlineScale;
-        bool brushMode;
+        
+        enum class Mode { TILE, BRUSH, ENT };
+        Mode mode;
     };
 
     void MoveCamera();
     void UpdateCursor();
 
     MapMan &_mapMan;
-    Mode _mode;
 
     Camera _camera;
     float _cameraYaw;

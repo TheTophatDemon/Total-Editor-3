@@ -57,28 +57,3 @@ void TileGrid::Draw(Vector3 position, int fromY, int toY)
         DrawMeshInstanced(*pair.second, *Assets::GetMaterialForTexture(pair.first, true), matrices.data(), matrices.size());
     }
 }
-
-TileGrid TileGrid::Subsection(int i, int j, int k, int w, int h, int l) const
-{
-    assert(i >= 0 && j >= 0 && k >= 0);
-    assert(i + w <= _width && j + h <= _height && k + l <= _length);
-
-    TileGrid newGrid(w, h, l, _spacing);
-
-    for (int z = k; z < k + l; ++z) 
-    {
-        for (int y = j; y < j + h; ++y)
-        {
-            size_t ourBase = FlatIndex(0, y, z);
-            size_t theirBase = newGrid.FlatIndex(0, y - j, z - k);
-            for (int x = i; x < i + w; ++x)
-            {
-                newGrid._grid[theirBase + (x - i)] = _grid[ourBase + x];
-            }
-        }
-    }
-
-    newGrid._regenBatches = true;
-
-    return newGrid;
-}

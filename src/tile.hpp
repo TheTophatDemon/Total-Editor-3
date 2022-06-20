@@ -16,12 +16,21 @@
 
 enum class Direction { Z_POS, Z_NEG, X_POS, X_NEG, Y_POS, Y_NEG };
 
-typedef struct Tile {
+struct Tile 
+{
     Model* shape;
     int angle; //In whole number of degrees
     Texture2D* texture;
     bool flipped; //True if flipped vertically
-} Tile;
+
+    inline Tile() : shape(nullptr), angle(0), texture(nullptr), flipped(false) {}
+    inline Tile(Model *s, int a, Texture2D *t, bool f) : shape(s), angle(a), texture(t), flipped(f) {}
+
+    inline operator bool() const
+    {
+        return shape != nullptr && texture != nullptr;
+    }
+};
 
 inline bool operator==(const Tile &lhs, const Tile &rhs)
 {
@@ -44,12 +53,12 @@ class TileGrid : public Grid<Tile>
 public:
     //Constructs a blank TileGrid with no size
     inline TileGrid()
-        : TileGrid(0, 0, 0, TILE_SPACING_DEFAULT)
+        : TileGrid(0, 0, 0)
     {
     }
     //Constructs a TileGrid full of empty tiles.
-    inline TileGrid(size_t width, size_t height, size_t length, float spacing)
-        : TileGrid(width, height, length, spacing, (Tile) { nullptr, 0, nullptr, false })
+    inline TileGrid(size_t width, size_t height, size_t length)
+        : TileGrid(width, height, length, TILE_SPACING_DEFAULT, (Tile) { nullptr, 0, nullptr, false })
     {
     }
     //Constructs a TileGrid filled with the given tile.
@@ -126,7 +135,19 @@ public:
     }
 
     //Returns a smaller TileGrid with a copy of the tile data in the rectangle defined by coordinates (i, j, k) and size (w, h, l).
-    TileGrid Subsection(int i, int j, int k, int w, int h, int l) const;
+    inline TileGrid Subsection(int i, int j, int k, int w, int h, int l) const
+    {
+        assert(i >= 0 && j >= 0 && k >= 0);
+        assert(i + w <= _width && j + h <= _height && k + l <= _length);
+
+        TileGrid newGrid(w, h, l);
+
+        SubsectionCopy(i, j, k, w, h, l, newGrid);
+
+        newGrid._regenBatches = true;
+
+        return newGrid;
+    }
 
     //Draws the tile grid, hiding all layers that are outside of the given y coordinate range.
     void Draw(Vector3 position, int fromY, int toY);

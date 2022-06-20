@@ -42,7 +42,7 @@ inline float ToDegrees(float radians)
 //Ensures that the added degrees stays in the range [0, 360)
 inline int OffsetDegrees(int base, int add)
 {
-    return (base + add >= 0) ? (base + add) % 360 : 360 - (base + add);
+    return (base + add >= 0) ? (base + add) % 360 : (360 + (base + add));
 }
 
 inline Matrix MatrixRotYDeg(int degrees)

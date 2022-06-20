@@ -37,7 +37,7 @@ App::App()
     },
     _menuBar       (std::make_unique<MenuBar>(_settings)),
     _mapMan        (std::make_unique<MapMan>()),
-    _tilePlaceMode (std::make_unique<PlaceMode>(*_mapMan.get(), PlaceMode::Mode::TILES)),
+    _tilePlaceMode (std::make_unique<PlaceMode>(*_mapMan.get())),
     //_entPlaceMode  (std::make_unique<PlaceMode>(PlaceMode::Mode::ENTS)),
     _texPickMode   (std::make_unique<PickMode>(PickMode::Mode::TEXTURES)),
     _shapePickMode (std::make_unique<PickMode>(PickMode::Mode::SHAPES)),

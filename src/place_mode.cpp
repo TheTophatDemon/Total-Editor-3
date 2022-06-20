@@ -4,7 +4,7 @@
 #include "rlgl.h"
 #include "extras/raygui.h"
 
-#include "grid_extras.h"
+#include "draw_extras.h"
 #include "math_stuff.hpp"
 #include "assets.hpp"
 
@@ -13,10 +13,9 @@
 #define CAMERA_MOVE_SPEED_MAX   64.0f
 #define CAMERA_ACCELERATION     16.0f
 
-PlaceMode::PlaceMode(MapMan &mapMan, PlaceMode::Mode mode) 
+PlaceMode::PlaceMode(MapMan &mapMan) 
     : _mapMan(mapMan),
-      _mode(mode),
-      _layerViewMax(mapMan.Map().GetHeight() - 1),
+      _layerViewMax(mapMan.Tiles().GetHeight() - 1),
       _layerViewMin(0)
 {
     //Setup camera
@@ -27,14 +26,9 @@ PlaceMode::PlaceMode(MapMan &mapMan, PlaceMode::Mode mode)
     _cameraMoveSpeed = CAMERA_MOVE_SPEED_MIN;
 
     //Setup cursor
-    _cursor.tile = (Tile) {
-        .shape = Assets::GetShape("assets/models/shapes/cube.obj"),
-        .angle = 0,
-        .texture = Assets::GetTexture("assets/textures/brickwall.png"),
-        false
-    };
-    _cursor.brush = TileGrid(1, 1, 1, mapMan.Map().GetSpacing());
-    _cursor.brushMode = false;
+    _cursor.tile = (Tile) { Assets::GetShape("assets/models/shapes/cube.obj"), 0, Assets::GetTexture("assets/textures/brickwall.png"), false };
+    _cursor.brush = TileGrid(1, 1, 1);
+    _cursor.mode = Cursor::Mode::TILE;
     _cursor.startPosition = _cursor.endPosition = Vector3Zero();
     _cursor.outlineScale = 1.125f;
 
@@ -44,7 +38,7 @@ PlaceMode::PlaceMode(MapMan &mapMan, PlaceMode::Mode mode)
 
 void PlaceMode::OnEnter() 
 {
-    _cursor.brushMode = false;
+    _cursor.mode = Cursor::Mode::TILE;
 }
 
 void PlaceMode::OnExit() 
@@ -53,7 +47,7 @@ void PlaceMode::OnExit()
 
 void PlaceMode::ResetCamera()
 {
-    _camera.position = _mapMan.Map().GetCenterPos();
+    _camera.position = _mapMan.Tiles().GetCenterPos();
     _camera.target = _camera.position;
     _cameraYaw = 0.0f;
     _cameraPitch = PI / 4.0f;
@@ -63,12 +57,12 @@ void PlaceMode::ResetCamera()
 void PlaceMode::ResetGrid()
 {
     //Editor grid and plane
-    _planeGridPos = (Vector3){ (float)_mapMan.Map().GetWidth() / 2.0f, 0, (float)_mapMan.Map().GetLength() / 2.0f };
-    _planeWorldPos = _mapMan.Map().GridToWorldPos(_planeGridPos, false);
+    _planeGridPos = (Vector3){ (float)_mapMan.Tiles().GetWidth() / 2.0f, 0, (float)_mapMan.Tiles().GetLength() / 2.0f };
+    _planeWorldPos = _mapMan.Tiles().GridToWorldPos(_planeGridPos, false);
     _layerViewMin = 0;
-    _layerViewMax = _mapMan.Map().GetHeight() - 1;
+    _layerViewMax = _mapMan.Tiles().GetHeight() - 1;
     _cursor.startPosition = _cursor.endPosition = Vector3Zero();
-    _cursor.brushMode = false;
+    _cursor.mode = Cursor::Mode::TILE;
 }
 
 void PlaceMode::MoveCamera() 
@@ -129,31 +123,10 @@ void PlaceMode::MoveCamera()
 
 void PlaceMode::UpdateCursor()
 {
-    //Rotate cursor
-    if (IsKeyPressed(KEY_Q))
-    {
-        _cursor.tile.angle = OffsetDegrees(_cursor.tile.angle, -90);
-    }
-    else if (IsKeyPressed(KEY_E))
-    {
-        _cursor.tile.angle = OffsetDegrees(_cursor.tile.angle, 90);
-    }
-    //Flip
-    if (IsKeyPressed(KEY_F))
-    {
-        _cursor.tile.flipped = !_cursor.tile.flipped;
-    }
-    //Reset tile orientation
-    if (IsKeyPressed(KEY_R))
-    {
-        _cursor.tile.angle = 0;
-        _cursor.tile.flipped = false;
-    }
-
     //Position cursor
     Ray pickRay = GetMouseRay(GetMousePosition(), _camera);
-    Vector3 gridMin = _mapMan.Map().GetMinCorner();
-    Vector3 gridMax = _mapMan.Map().GetMaxCorner();
+    Vector3 gridMin = _mapMan.Tiles().GetMinCorner();
+    Vector3 gridMax = _mapMan.Tiles().GetMaxCorner();
     RayCollision col = GetRayCollisionQuad(pickRay, 
         (Vector3){ gridMin.x, _planeWorldPos.y, gridMin.z }, 
         (Vector3){ gridMax.x, _planeWorldPos.y, gridMin.z }, 
@@ -161,12 +134,13 @@ void PlaceMode::UpdateCursor()
         (Vector3){ gridMin.x, _planeWorldPos.y, gridMax.z });
     if (col.hit)
     {
-        _cursor.endPosition = _mapMan.Map().SnapToCelCenter(col.point);
-        _cursor.endPosition.y = _planeWorldPos.y + _mapMan.Map().GetSpacing() / 2.0f;
+        _cursor.endPosition = _mapMan.Tiles().SnapToCelCenter(col.point);
+        _cursor.endPosition.y = _planeWorldPos.y + _mapMan.Tiles().GetSpacing() / 2.0f;
     }
     
+    //Handle box selection/fill in tile mode.
     bool multiSelect = false;
-    if (!_cursor.brushMode)
+    if (_cursor.mode == Cursor::Mode::TILE)
     {
         if (!IsKeyDown(KEY_LEFT_SHIFT))
         {
@@ -179,8 +153,8 @@ void PlaceMode::UpdateCursor()
     }
 
     //Perform Tile operations
-    Vector3 cursorStartGridPos = _mapMan.Map().WorldToGridPos(_cursor.startPosition);
-    Vector3 cursorEndGridPos = _mapMan.Map().WorldToGridPos(_cursor.endPosition);
+    Vector3 cursorStartGridPos = _mapMan.Tiles().WorldToGridPos(_cursor.startPosition);
+    Vector3 cursorEndGridPos = _mapMan.Tiles().WorldToGridPos(_cursor.endPosition);
     Vector3 gridPosMin = Vector3Min(cursorStartGridPos, cursorEndGridPos);
     Vector3 gridPosMax = Vector3Max(cursorStartGridPos, cursorEndGridPos);
     size_t i = (size_t)gridPosMin.x; 
@@ -189,16 +163,16 @@ void PlaceMode::UpdateCursor()
     size_t w = (size_t)gridPosMax.x - i + 1;
     size_t h = (size_t)gridPosMax.y - j + 1;
     size_t l = (size_t)gridPosMax.z - k + 1;
-    Tile underTile = _mapMan.Map().GetTile(i, j, k); // * hi. my name's sans undertile...you get it?
+    Tile underTile = _mapMan.Tiles().GetTile(i, j, k); // * hi. my name's sans undertile...you get it?
 
     //Press Shift+B to enter brush mode, copying the currently selected rectangle of tiles.
-    if (!_cursor.brushMode && IsKeyPressed(KEY_B) && IsKeyDown(KEY_LEFT_SHIFT))
+    if (_cursor.mode == Cursor::Mode::TILE && IsKeyPressed(KEY_B) && IsKeyDown(KEY_LEFT_SHIFT))
     {
-        _cursor.brushMode = true;
-        _cursor.brush = _mapMan.Map().Subsection(i, j, k, w, h, l);
+        _cursor.mode = Cursor::Mode::BRUSH;
+        _cursor.brush = _mapMan.Tiles().Subsection(i, j, k, w, h, l);
     }
 
-    if (_cursor.brushMode)
+    if (_cursor.mode == Cursor::Mode::BRUSH)
     {
         _cursor.startPosition = (Vector3) {
             _cursor.endPosition.x + (_cursor.brush.GetWidth()  - 1) * _cursor.brush.GetSpacing(),
@@ -211,12 +185,34 @@ void PlaceMode::UpdateCursor()
         }
         else if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT))
         {
-            _cursor.brushMode = false;
+            _cursor.mode = Cursor::Mode::TILE;
         }
     }
-    else
+    else if (_cursor.mode == Cursor::Mode::TILE)
     {
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !multiSelect) {
+        //Rotate cursor
+        if (IsKeyPressed(KEY_Q))
+        {
+            _cursor.tile.angle = OffsetDegrees(_cursor.tile.angle, -90);
+        }
+        else if (IsKeyPressed(KEY_E))
+        {
+            _cursor.tile.angle = OffsetDegrees(_cursor.tile.angle, 90);
+        }
+        //Flip
+        if (IsKeyPressed(KEY_F))
+        {
+            _cursor.tile.flipped = !_cursor.tile.flipped;
+        }
+        //Reset tile orientation
+        if (IsKeyPressed(KEY_R))
+        {
+            _cursor.tile.angle = 0;
+            _cursor.tile.flipped = false;
+        }
+
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !multiSelect) 
+        {
             //Place tiles
             if (underTile != _cursor.tile)
             {
@@ -259,6 +255,55 @@ void PlaceMode::UpdateCursor()
             }
         }
     }
+    else if (_cursor.mode == Cursor::Mode::ENT)
+    {
+        //Turn entity
+        const int ANGLE_INC = IsKeyDown(KEY_LEFT_SHIFT) ? 15 : 45;
+        if (IsKeyPressed(KEY_Q))
+        {
+            _cursor.ent.yaw = OffsetDegrees(_cursor.ent.yaw, -ANGLE_INC);
+        }
+        else if (IsKeyPressed(KEY_E))
+        {
+            _cursor.ent.yaw = OffsetDegrees(_cursor.ent.yaw, ANGLE_INC);
+        }
+        if (IsKeyPressed(KEY_F))
+        {
+            _cursor.ent.pitch = OffsetDegrees(_cursor.ent.pitch, ANGLE_INC);
+        }
+        else if (IsKeyPressed(KEY_V))
+        {
+            _cursor.ent.pitch = OffsetDegrees(_cursor.ent.pitch, -ANGLE_INC);
+        }
+
+        //Reset ent orientation
+        if (IsKeyPressed(KEY_R))
+        {
+            _cursor.ent.yaw = 0;
+            _cursor.ent.pitch = 0;
+        }
+
+        //Sync ent position with cursor
+        _cursor.ent.position = _cursor.endPosition;
+
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        {
+            //Placement
+        }
+        else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+        {
+            //Removal
+        }
+
+        if (IsKeyPressed(KEY_T) || IsKeyPressed(KEY_G))
+        {
+            //Copy appearance of entity under cursor (properties stay the same)
+        }
+        else if (IsKeyPressed(KEY_I))
+        {
+            //Copy entity (I)nformation, or in other words, its properties.
+        }
+    }
 }
 
 void PlaceMode::Update() 
@@ -268,7 +313,7 @@ void PlaceMode::Update()
     //Move editing plane
     if (GetMouseWheelMove() > EPSILON || GetMouseWheelMove() < -EPSILON) 
     {
-        _planeGridPos.y = Clamp(_planeGridPos.y + Sign(GetMouseWheelMove()), 0.0f, _mapMan.Map().GetHeight() - 1);
+        _planeGridPos.y = Clamp(_planeGridPos.y + Sign(GetMouseWheelMove()), 0.0f, _mapMan.Tiles().GetHeight() - 1);
 
         //Reveal hidden layers when the grid is over them and holding H
         if (IsKeyDown(KEY_H))
@@ -283,23 +328,23 @@ void PlaceMode::Update()
             _planeGridPos.y = Clamp(_planeGridPos.y, _layerViewMin, _layerViewMax);
         }
     }
-    _planeWorldPos = _mapMan.Map().GridToWorldPos(_planeGridPos, false);
+    _planeWorldPos = _mapMan.Tiles().GridToWorldPos(_planeGridPos, false);
 
     //Layer hiding
     if (IsKeyPressed(KEY_H))
     {
-        if (_layerViewMin == 0 && _layerViewMax == _mapMan.Map().GetHeight() - 1)
+        if (_layerViewMin == 0 && _layerViewMax == _mapMan.Tiles().GetHeight() - 1)
         {
             _layerViewMax = _layerViewMin = (int) _planeGridPos.y;
         }
         else
         {
             _layerViewMin = 0;
-            _layerViewMax = _mapMan.Map().GetHeight() - 1;
+            _layerViewMax = _mapMan.Tiles().GetHeight() - 1;
         }
     }
 
-    if (_layerViewMin > 0 || _layerViewMax < _mapMan.Map().GetHeight() - 1)
+    if (_layerViewMin > 0 || _layerViewMax < _mapMan.Tiles().GetHeight() - 1)
     {
         App::Get()->DisplayStatusMessage("PRESS H TO UNHIDE LAYERS", 0.25f, 1);
     }
@@ -327,12 +372,12 @@ void PlaceMode::Draw()
         rlSetLineWidth(1.0f);
         DrawGridEx(
             Vector3Add(_planeWorldPos, (Vector3){ 0.0f, 0.05f, 0.0f }), //Adding the offset to prevent Z-fighting 
-            _mapMan.Map().GetWidth()+1, _mapMan.Map().GetLength()+1, 
-            _mapMan.Map().GetSpacing());
+            _mapMan.Tiles().GetWidth()+1, _mapMan.Tiles().GetLength()+1, 
+            _mapMan.Tiles().GetSpacing());
         rlDrawRenderBatchActive();
 
-        //Draw tiles
-        _mapMan.DrawMap(Vector3Zero(), _layerViewMin, _layerViewMax);
+        //Draw map
+        _mapMan.DrawMap(_camera, _layerViewMin, _layerViewMax);
 
         //Draw cursor
         if (!IsKeyDown(KEY_LEFT_SHIFT) && _cursor.tile.shape && _cursor.tile.texture) {
@@ -340,7 +385,17 @@ void PlaceMode::Draw()
                 TileRotationMatrix(_cursor.tile), 
                 MatrixTranslate(_cursor.endPosition.x, _cursor.endPosition.y, _cursor.endPosition.z));
             
-            if (_cursor.brushMode)
+            switch (_cursor.mode)
+            {
+            case Cursor::Mode::TILE:
+            {
+                for (size_t m = 0; m < _cursor.tile.shape->meshCount; ++m) 
+                {
+                    DrawMesh(_cursor.tile.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.tile.texture, false), cursorTransform);
+                }
+            }
+            break;
+            case Cursor::Mode::BRUSH:
             {
                 Vector3 brushOffset = Vector3Min(_cursor.startPosition, _cursor.endPosition);
                 brushOffset.x -= _cursor.brush.GetSpacing() / 2.0f;
@@ -348,11 +403,12 @@ void PlaceMode::Draw()
                 brushOffset.z -= _cursor.brush.GetSpacing() / 2.0f;
                 _cursor.brush.Draw(brushOffset);
             }
-            else
+            break;
+            case Cursor::Mode::ENT:
             {
-                for (size_t m = 0; m < _cursor.tile.shape->meshCount; ++m) {
-                    DrawMesh(_cursor.tile.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.tile.texture, false), cursorTransform);
-                }
+                _cursor.ent.Draw(_camera);
+            }
+            break;
             }
         }
         rlDrawRenderBatchActive();
@@ -360,9 +416,9 @@ void PlaceMode::Draw()
         rlSetLineWidth(2.0f);
         DrawCubeWires(
             Vector3Scale(Vector3Add(_cursor.startPosition, _cursor.endPosition), 0.5f), 
-            fabs(_cursor.endPosition.x - _cursor.startPosition.x) + _mapMan.Map().GetSpacing() * _cursor.outlineScale, 
-            fabs(_cursor.endPosition.y - _cursor.startPosition.y) + _mapMan.Map().GetSpacing() * _cursor.outlineScale, 
-            fabs(_cursor.endPosition.z - _cursor.startPosition.z) + _mapMan.Map().GetSpacing() * _cursor.outlineScale, 
+            fabs(_cursor.endPosition.x - _cursor.startPosition.x) + _mapMan.Tiles().GetSpacing() * _cursor.outlineScale, 
+            fabs(_cursor.endPosition.y - _cursor.startPosition.y) + _mapMan.Tiles().GetSpacing() * _cursor.outlineScale, 
+            fabs(_cursor.endPosition.z - _cursor.startPosition.z) + _mapMan.Tiles().GetSpacing() * _cursor.outlineScale, 
             MAGENTA);
 
         DrawAxes3D((Vector3){ 1.0f, 1.0f, 1.0f }, 10.0f);

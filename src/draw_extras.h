@@ -3,12 +3,8 @@
 
 #include "rlgl.h"
 
-#if defined(__cplusplus)
-extern "C" {            // Prevents name mangling of functions
-#endif
-
 //Draw a grid centered at the given Vector3 `position`, with a rectangular size given by `slicesX` and `slicesZ`.
-void DrawGridEx(Vector3 position, int slicesX, int slicesZ, float spacing)
+inline void DrawGridEx(Vector3 position, int slicesX, int slicesZ, float spacing)
 {
     const float RADIUS_X = spacing * (float)(slicesX - 1) / 2.0f;
     const float RADIUS_Z = spacing * (float)(slicesZ - 1) / 2.0f;
@@ -52,7 +48,7 @@ void DrawGridEx(Vector3 position, int slicesX, int slicesZ, float spacing)
     rlEnd();
 }
 
-void DrawAxes3D(Vector3 position, float scale)
+inline void DrawAxes3D(Vector3 position, float scale)
 {
     //Draw axes
     rlBegin(RL_LINES);
@@ -83,9 +79,5 @@ void DrawAxes3D(Vector3 position, float scale)
     rlSetLineWidth(2.0f);
     rlEnd();
 }
-
-#if defined(__cplusplus)
-}          
-#endif
 
 #endif

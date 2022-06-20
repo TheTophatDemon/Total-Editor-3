@@ -34,9 +34,10 @@
 [x] Implement Resize Map
 [x] Reinstate Hidden Layer Message
 [x] Flip tiles vertically?
-[ ] Entity placement
-[ ] Entity configuration
+[ ] Entity placement & configuration
+[ ] Preview mode
 [ ] File operations, .TI3
 [ ] Import TI2
 [ ] Are you sure you want to exit?
 [ ] Finish instructions, settings
+[ ] Consider generating aggregate meshes instead of instancing

@@ -5,6 +5,8 @@
 #include <vector>
 #include <assert.h>
 
+#include "math_stuff.hpp"
+
 //Represents a 3 dimensional array of tiles and provides functions for converting coordinates.
 template<class Cel>
 class Grid
@@ -105,6 +107,43 @@ protected:
     inline Cel GetCel(int i, int j, int k) const 
     {
         return _grid[FlatIndex(i, j, k)];
+    }
+
+    inline void CopyCels(int i, int j, int k, const Grid<Cel> &src)
+    {
+        assert(i >= 0 && j >= 0 && k >= 0);
+        int xEnd = Min(i + src._width, _width); 
+        int yEnd = Min(j + src._height, _height);
+        int zEnd = Min(k + src._length, _length);
+        for (int z = k; z < zEnd; ++z) 
+        {
+            for (int y = j; y < yEnd; ++y)
+            {
+                size_t ourBase = FlatIndex(0, y, z);
+                size_t theirBase = src.FlatIndex(0, y - j, z - k);
+                for (int x = i; x < xEnd; ++x)
+                {
+                    const Cel &cel = src._grid[theirBase + (x - i)];
+                    _grid[ourBase + x] = cel;
+                }
+            }
+        }
+    }
+
+    inline void SubsectionCopy(int i, int j, int k, int w, int h, int l, Grid<Cel> &out) const
+    {
+        for (int z = k; z < k + l; ++z) 
+        {
+            for (int y = j; y < j + h; ++y)
+            {
+                size_t ourBase = FlatIndex(0, y, z);
+                size_t theirBase = out.FlatIndex(0, y - j, z - k);
+                for (int x = i; x < i + w; ++x)
+                {
+                    out._grid[theirBase + (x - i)] = _grid[ourBase + x];
+                }
+            }
+        }
     }
 
     std::vector<Cel> _grid;
