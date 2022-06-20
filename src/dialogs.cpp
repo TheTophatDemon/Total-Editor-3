@@ -147,7 +147,7 @@ bool ExpandMapDialog::Draw()
 
 bool ShrinkMapDialog::Draw()
 {
-    int choice = GuiMessageBox(DialogRec(128.0f, 96.0f), "Shrink Grid", "Shrink the grid to fit around the tiles?", "Yes;No");
+    int choice = GuiMessageBox(DialogRec(352.0f, 96.0f), "Shrink Grid", "Shrink the grid to fit around the tiles?", "Yes;No");
     switch (choice)
     {
         case 0:
