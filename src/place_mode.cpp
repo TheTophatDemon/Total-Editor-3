@@ -29,7 +29,7 @@ PlaceMode::PlaceMode(MapMan &mapMan, PlaceMode::Mode mode)
     //Setup cursor
     _cursor.tile = (Tile) {
         .shape = Assets::GetShape("assets/models/shapes/cube.obj"),
-        .angle = ANGLE_0,
+        .angle = 0,
         .texture = Assets::GetTexture("assets/textures/brickwall.png"),
         false
     };
@@ -132,11 +132,11 @@ void PlaceMode::UpdateCursor()
     //Rotate cursor
     if (IsKeyPressed(KEY_Q))
     {
-        _cursor.tile.angle = AngleBack(_cursor.tile.angle);
+        _cursor.tile.angle = OffsetDegrees(_cursor.tile.angle, -90);
     }
     else if (IsKeyPressed(KEY_E))
     {
-        _cursor.tile.angle = AngleForward(_cursor.tile.angle);
+        _cursor.tile.angle = OffsetDegrees(_cursor.tile.angle, 90);
     }
     //Flip
     if (IsKeyPressed(KEY_F))
@@ -146,7 +146,7 @@ void PlaceMode::UpdateCursor()
     //Reset tile orientation
     if (IsKeyPressed(KEY_R))
     {
-        _cursor.tile.angle = ANGLE_0;
+        _cursor.tile.angle = 0;
         _cursor.tile.flipped = false;
     }
 
@@ -233,13 +233,13 @@ void PlaceMode::UpdateCursor()
             //Remove tiles
             if (underTile.shape != nullptr || underTile.texture != nullptr)
             {
-                _mapMan.ExecuteTileAction(i, j, k, 1, 1, 1, (Tile) {nullptr, ANGLE_0, nullptr, false});
+                _mapMan.ExecuteTileAction(i, j, k, 1, 1, 1, (Tile) {nullptr, 0, nullptr, false});
             }
         } 
         else if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && multiSelect)
         {
             //Remove tiles RECTANGLE
-            _mapMan.ExecuteTileAction(i, j, k, w, h, l, (Tile) {nullptr, ANGLE_0, nullptr, false});
+            _mapMan.ExecuteTileAction(i, j, k, w, h, l, (Tile) {nullptr, 0, nullptr, false});
         }
         else if (IsKeyDown(KEY_G) && !multiSelect) 
         {

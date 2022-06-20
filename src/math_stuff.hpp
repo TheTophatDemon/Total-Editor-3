@@ -3,6 +3,8 @@
 #ifndef MATH_STUFF_H
 #define MATH_STUFF_H
 
+#include "raymath.h"
+
 const Vector3 VEC3_UP = (Vector3) { 0.0f, 1.0f, 0.0f };
 const Vector3 VEC3_FORWARD = (Vector3) { 0.0f, 0.0f, -1.0f };
 
@@ -25,6 +27,27 @@ inline int Sign(int a) {
 inline Rectangle CenteredRect(float x, float y, float w, float h)
 {
     return (Rectangle) { x - (w / 2.0f), y - (h / 2.0f), w, h };
+}
+
+inline float ToRadians(float degrees)
+{
+    return degrees * PI / 180.0f;
+}
+
+inline float ToDegrees(float radians)
+{
+    return (radians / PI) * 180.0f;
+}
+
+//Ensures that the added degrees stays in the range [0, 360)
+inline int OffsetDegrees(int base, int add)
+{
+    return (base + add >= 0) ? (base + add) % 360 : 360 - (base + add);
+}
+
+inline Matrix MatrixRotYDeg(int degrees)
+{
+    return MatrixRotateY(ToRadians(degrees));
 }
 
 #endif
