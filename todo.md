@@ -34,8 +34,9 @@
 [x] Implement Resize Map
 [x] Reinstate Hidden Layer Message
 [x] Flip tiles vertically?
+[x] Preview mode
 [ ] Entity placement & configuration
-[ ] Preview mode
+[ ] Make pick modes full-screen dialogs?
 [ ] File operations, .TI3
 [ ] Import TI2
 [ ] Are you sure you want to exit?

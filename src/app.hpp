@@ -34,7 +34,7 @@ public:
         virtual void OnExit() = 0;
     };
 
-    enum class Mode { PLACE_TILE, PLACE_ENT, PICK_TEXTURE, PICK_SHAPE };
+    enum class Mode { PLACE_TILE, PICK_TEXTURE, PICK_SHAPE };
 
     static App *Get();
 
@@ -45,6 +45,11 @@ public:
     inline size_t      GetUndoMax() { return _settings.undoMax; }
     inline std::string GetTexturesDir() { return _settings.texturesDir; };
     inline std::string GetShapesDir() { return _settings.shapesDir; } 
+
+    //Indicates if rendering should be done in "preview mode", i.e. without editor widgets being drawn.
+    inline bool IsPreviewing() const { return _previewDraw; }
+    inline void SetPreviewing(bool p) { _previewDraw = p; }
+    inline void TogglePreviewing() { _previewDraw = !_previewDraw; }
 
     Rectangle GetMenuBarRect();
     void DisplayStatusMessage(std::string message, float durationSeconds, int priority);
@@ -66,11 +71,12 @@ private:
     std::unique_ptr<MapMan> _mapMan;
 
     std::unique_ptr<PlaceMode> _tilePlaceMode;
-    //std::unique_ptr<PlaceMode> _entPlaceMode;
     std::unique_ptr<PickMode> _texPickMode;
     std::unique_ptr<PickMode> _shapePickMode;
 
     ModeImpl *_editorMode;
+
+    bool _previewDraw;
 };
 
 #endif

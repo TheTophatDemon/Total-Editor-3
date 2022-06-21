@@ -4,8 +4,9 @@
 #include "raylib.h"
 #include "raymath.h"
 
-#include <map>
+#include <vector>
 #include <string>
+#include <map>
 
 #include "grid.hpp"
 #include "math_stuff.hpp"
@@ -17,11 +18,13 @@ struct Ent
 {
     Model *model; //Display model
     Texture2D *sprite; //If there's not a model, it will make a billboard using this texture.
-    //If both model and sprite are nullptr, then a group of axes is drawn instead to represent an "empty" entity.
-    Vector3 position;
+    Color color; //If both model and sprite are nullptr, then a group of axes is drawn instead to represent an "empty" entity, using the given color.
+    Vector3 position; //World space coordinates
     int yaw, pitch; //Degrees angle orientation
-    std::map<std::string, std::string> properties; //Entity properties are key/value pairs. No data types are enforced, values are parsed as strings.
-    
+
+    //Entity properties are key/value pairs. No data types are enforced, values are parsed as strings.
+    std::map<std::string, std::string> properties; 
+
     inline Matrix GetMatrix() const
     {
         return MatrixMultiply(

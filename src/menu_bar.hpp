@@ -26,6 +26,7 @@ public:
     {
         std::string name;
         std::vector<Item> items;
+        size_t longestLength; //Used for calculating the width of the popup list. Manually calculated.
     };
 
     MenuBar(App::Settings &settings);

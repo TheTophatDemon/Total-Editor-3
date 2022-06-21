@@ -2704,7 +2704,7 @@ int GuiListViewEx(Rectangle bounds, const char **text, int count, int *focus, in
                 if (CheckCollisionPointRec(mousePoint, itemBounds))
                 {
                     itemFocused = startIndex + i;
-                    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                    if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
                     {
                         if (itemSelected == (startIndex + i)) itemSelected = -1;
                         else itemSelected = startIndex + i;

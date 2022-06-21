@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <initializer_list>
+#include <cstring>
 
 #include "math_stuff.hpp"
 #include "app.hpp"
@@ -128,7 +129,7 @@ bool ExpandMapDialog::Draw()
     });
 
     //Direction chooser
-    if (GuiDropdownBox(recs[0], "Back (+Z);Front (-Z);Right (+X);Left (-X);TOP (+Y);BOTTOM(-Y)", (int *)&_direction, _chooserActive))
+    if (GuiDropdownBox(recs[0], "Back (+Z);Front (-Z);Right (+X);Left (-X);Top (+Y);Bottom (-Y)", (int *)&_direction, _chooserActive))
     {
         _chooserActive = !_chooserActive;
     }
@@ -158,4 +159,168 @@ bool ShrinkMapDialog::Draw()
             return false;
     }
     return true;
+}
+
+EditEntDialog::EditEntDialog()
+    : EditEntDialog((Ent) {
+        .model = nullptr,
+        .sprite = nullptr,
+        .color = WHITE
+      })
+{
+}
+
+EditEntDialog::EditEntDialog(Ent ent)
+    : _type(Type::EMPTY),
+      _typeChooserActive(false),
+      _propsScroll(Vector2Zero()),
+      _ent(ent),
+      _keyNameEdit(false)
+{
+    memset(&_filePath, 0, TEXT_FIELD_MAX * sizeof(char));
+    memset(&_keyName, 0, TEXT_FIELD_MAX * sizeof(char));
+
+    _ent.properties["name"] = "entity";
+    _ent.properties["type"] = "wraith";
+    _ent.properties["chill factor"] = "0.9";
+    _ent.properties["favorite direction"] = "(1.0, 0.0, 0.0)";
+    _ent.properties["least favorite regexp"] = "s/[Aa]re\\s[Yy]ou\\s\\(.*\\)?/Indeed, I am \\1./";
+    _ent.properties["hingle"] = "12";
+    _ent.properties["dingle"] = "";
+    _ent.properties["shingle"] = "?";
+
+    for (auto [key, value] : _ent.properties)
+    {
+        _propEditing[key] = false;
+        _propBuffers[key] = (char *)malloc(sizeof(char) * TEXT_FIELD_MAX);
+        strcpy(_propBuffers[key], _ent.properties[key].c_str());
+    }
+}
+
+EditEntDialog::~EditEntDialog()
+{
+    for (auto [k, v] : _propBuffers)
+    {
+        free(v);
+    }
+}
+
+bool EditEntDialog::Draw()
+{
+    const Rectangle DRECT = DialogRec(GetScreenWidth(), GetScreenHeight());
+
+    bool clicked = GuiWindowBox(DRECT, "Edit Entity");
+
+    const Rectangle TYPE_CHOOSER_RECT = (Rectangle) { 
+        .x = DRECT.x + 128.0f, 
+        .y = DRECT.y + 32.0f, 
+        .width = DRECT.width - 8.0f - (TYPE_CHOOSER_RECT.x - DRECT.x), 
+        .height = 32.0f 
+    };
+    
+    const Rectangle APPEAR_RECT = (Rectangle) {
+        DRECT.x + 8.0f, TYPE_CHOOSER_RECT.y + TYPE_CHOOSER_RECT.height + 8.0f, DRECT.width - 16.0f, 128
+    };
+
+    //Appearance configuration
+    if (_type == Type::EMPTY)
+    {
+        //Color picker for empty entities.
+        Color newColor = GuiColorPicker((Rectangle) { APPEAR_RECT.x, APPEAR_RECT.y, APPEAR_RECT.width - 32.0f, APPEAR_RECT.height }, "Color", _ent.color);
+        if (!_typeChooserActive) _ent.color = newColor;
+    }
+    else
+    {
+        //File selector for other types.
+
+    }
+
+    //Property list
+    Rectangle SCROLL_RECT = (Rectangle) {
+        DRECT.x + 8.0f, APPEAR_RECT.y + APPEAR_RECT.height + 8.0f, DRECT.width - 16.0f, DRECT.height - 8.0f - (SCROLL_RECT.y - DRECT.y) - 64.0f - 4.0f
+    };
+    const float PROP_HEIGHT = 24.0f;
+
+    //The contents of the list get expanded horizontally according to the longest value string
+    int longestStringLen = 0;
+    for (const auto &[k, v] : _ent.properties)
+    {
+        longestStringLen = Max(longestStringLen, v.length() + 1);
+    }
+
+    Rectangle scissor = GuiScrollPanel(SCROLL_RECT, "Properties", 
+        (Rectangle) { .width = Max((int)SCROLL_RECT.width - 16, DRECT.width / 2 + longestStringLen * 12), .height = (PROP_HEIGHT * _ent.properties.size()) + 8.0f }, 
+        &_propsScroll);
+    
+    BeginScissorMode(scissor.x, scissor.y, scissor.width, scissor.height);
+
+    float y = 4.0f;
+    for (auto [key, val] : _ent.properties)
+    {
+        const Rectangle KEY_RECT = (Rectangle) { scissor.x + 4.0f + _propsScroll.x, scissor.y + y + _propsScroll.y, (scissor.width - 16.0f) / 2.0f, PROP_HEIGHT };
+        if (GuiLabelButton(KEY_RECT, key.c_str()))
+        {
+            //Copy key name field when a key is clicked in the list.
+            strcpy(_keyName, key.c_str());
+        }
+        const Rectangle VAL_RECT = (Rectangle) { KEY_RECT.x + KEY_RECT.width + 4.0f, KEY_RECT.y, Max(KEY_RECT.width, longestStringLen * 12), PROP_HEIGHT };
+        if (GuiTextBox(VAL_RECT, _propBuffers[key], TEXT_FIELD_MAX, _propEditing[key]))
+        {
+            _propEditing[key] = !_propEditing[key];
+        }
+        _ent.properties[key] = std::string(_propBuffers[key]);
+        y += PROP_HEIGHT;
+    }
+
+    EndScissorMode();
+
+    //Key add/remove widgets
+    const Rectangle ADD_KEY_RECT = (Rectangle) { SCROLL_RECT.x, SCROLL_RECT.y + SCROLL_RECT.height, 32, 32 };
+    const Rectangle REM_KEY_RECT = (Rectangle) { ADD_KEY_RECT.x + ADD_KEY_RECT.width + 4.0f, ADD_KEY_RECT.y, 32, 32 };
+    if (GuiButton(ADD_KEY_RECT, "+"))
+    {
+        //Add key
+        if (strlen(_keyName) > 0 && _ent.properties.find(_keyName) == _ent.properties.end())
+        {
+            _ent.properties[_keyName] = "";
+            _propBuffers[_keyName] = (char *)malloc(sizeof(char) * TEXT_FIELD_MAX);
+            memset(_propBuffers[_keyName], 0, sizeof(char) * TEXT_FIELD_MAX);
+            _propEditing[_keyName] = false;
+        }
+    }
+    else if (GuiButton(REM_KEY_RECT, "-"))
+    {
+        if (strlen(_keyName) > 0 && _ent.properties.find(_keyName) != _ent.properties.end())
+        {
+            _ent.properties.erase(_keyName);
+            free(_propBuffers[_keyName]);
+            _propBuffers.erase(_keyName);
+            _propEditing.erase(_keyName);
+        }
+    }
+    //Key name input field
+    const Rectangle KEY_NAME_RECT = (Rectangle) { REM_KEY_RECT.x + REM_KEY_RECT.width + 4.0f, REM_KEY_RECT.y, DRECT.width - (KEY_NAME_RECT.x - DRECT.x) - 8.0f, 32.0f };
+    if (GuiTextBox(KEY_NAME_RECT, _keyName, TEXT_FIELD_MAX, _keyNameEdit))
+    {
+        _keyNameEdit = !_keyNameEdit;
+    }
+
+    //Confirm button
+    std::vector<Rectangle> recs = ArrangeHorzCentered((Rectangle) { DRECT.x, DRECT.y + DRECT.height - 32.0f - 6.0f, DRECT.width, 32.0f }, 
+        { (Rectangle) { .width = 128.0f, .height = 32.0f } });
+
+    if (GuiButton(recs[0], "Place"))
+    {
+        //TODO: Put entity
+        return false;
+    }
+
+    //Type chooser
+    GuiLabel((Rectangle) { DRECT.x + 4.0f, TYPE_CHOOSER_RECT.y + 16.0f }, "Display-Type");
+    if (GuiDropdownBox(TYPE_CHOOSER_RECT, "Empty;Sprite;Model", (int *)&_type, _typeChooserActive))
+    {
+        _typeChooserActive = !_typeChooserActive;
+    }
+    
+    return !clicked;
 }

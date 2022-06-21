@@ -367,63 +367,67 @@ void PlaceMode::Draw()
 {
     BeginMode3D(_camera);
     {
-        //Grid
-        rlDrawRenderBatchActive();
-        rlSetLineWidth(1.0f);
-        DrawGridEx(
-            Vector3Add(_planeWorldPos, (Vector3){ 0.0f, 0.05f, 0.0f }), //Adding the offset to prevent Z-fighting 
-            _mapMan.Tiles().GetWidth()+1, _mapMan.Tiles().GetLength()+1, 
-            _mapMan.Tiles().GetSpacing());
-        rlDrawRenderBatchActive();
-
         //Draw map
         _mapMan.DrawMap(_camera, _layerViewMin, _layerViewMax);
 
-        //Draw cursor
-        if (!IsKeyDown(KEY_LEFT_SHIFT) && _cursor.tile.shape && _cursor.tile.texture) {
-            Matrix cursorTransform = MatrixMultiply(
-                TileRotationMatrix(_cursor.tile), 
-                MatrixTranslate(_cursor.endPosition.x, _cursor.endPosition.y, _cursor.endPosition.z));
-            
-            switch (_cursor.mode)
-            {
-            case Cursor::Mode::TILE:
-            {
-                for (size_t m = 0; m < _cursor.tile.shape->meshCount; ++m) 
+        if (!App::Get()->IsPreviewing())
+        {
+            //Grid
+            rlDrawRenderBatchActive();
+            rlSetLineWidth(1.0f);
+            DrawGridEx(
+                Vector3Add(_planeWorldPos, (Vector3){ 0.0f, 0.05f, 0.0f }), //Adding the offset to prevent Z-fighting 
+                _mapMan.Tiles().GetWidth()+1, _mapMan.Tiles().GetLength()+1, 
+                _mapMan.Tiles().GetSpacing());
+            rlDrawRenderBatchActive();
+
+            //Draw cursor
+            if (!IsKeyDown(KEY_LEFT_SHIFT) && _cursor.tile.shape && _cursor.tile.texture) {
+                Matrix cursorTransform = MatrixMultiply(
+                    TileRotationMatrix(_cursor.tile), 
+                    MatrixTranslate(_cursor.endPosition.x, _cursor.endPosition.y, _cursor.endPosition.z));
+                
+                switch (_cursor.mode)
                 {
-                    DrawMesh(_cursor.tile.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.tile.texture, false), cursorTransform);
+                case Cursor::Mode::TILE:
+                {
+                    for (size_t m = 0; m < _cursor.tile.shape->meshCount; ++m) 
+                    {
+                        DrawMesh(_cursor.tile.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.tile.texture, false), cursorTransform);
+                    }
+                }
+                break;
+                case Cursor::Mode::BRUSH:
+                {
+                    Vector3 brushOffset = Vector3Min(_cursor.startPosition, _cursor.endPosition);
+                    brushOffset.x -= _cursor.brush.GetSpacing() / 2.0f;
+                    brushOffset.y -= _cursor.brush.GetSpacing() / 2.0f;
+                    brushOffset.z -= _cursor.brush.GetSpacing() / 2.0f;
+                    _cursor.brush.Draw(brushOffset);
+                }
+                break;
+                case Cursor::Mode::ENT:
+                {
+                    _cursor.ent.Draw(_camera);
+                }
+                break;
                 }
             }
-            break;
-            case Cursor::Mode::BRUSH:
-            {
-                Vector3 brushOffset = Vector3Min(_cursor.startPosition, _cursor.endPosition);
-                brushOffset.x -= _cursor.brush.GetSpacing() / 2.0f;
-                brushOffset.y -= _cursor.brush.GetSpacing() / 2.0f;
-                brushOffset.z -= _cursor.brush.GetSpacing() / 2.0f;
-                _cursor.brush.Draw(brushOffset);
-            }
-            break;
-            case Cursor::Mode::ENT:
-            {
-                _cursor.ent.Draw(_camera);
-            }
-            break;
-            }
-        }
-        rlDrawRenderBatchActive();
-        rlDisableDepthTest();
-        rlSetLineWidth(2.0f);
-        DrawCubeWires(
-            Vector3Scale(Vector3Add(_cursor.startPosition, _cursor.endPosition), 0.5f), 
-            fabs(_cursor.endPosition.x - _cursor.startPosition.x) + _mapMan.Tiles().GetSpacing() * _cursor.outlineScale, 
-            fabs(_cursor.endPosition.y - _cursor.startPosition.y) + _mapMan.Tiles().GetSpacing() * _cursor.outlineScale, 
-            fabs(_cursor.endPosition.z - _cursor.startPosition.z) + _mapMan.Tiles().GetSpacing() * _cursor.outlineScale, 
-            MAGENTA);
 
-        DrawAxes3D((Vector3){ 1.0f, 1.0f, 1.0f }, 10.0f);
-        rlDrawRenderBatchActive();
-        rlEnableDepthTest();
+            rlDrawRenderBatchActive();
+            rlDisableDepthTest();
+            rlSetLineWidth(2.0f);
+            DrawCubeWires(
+                Vector3Scale(Vector3Add(_cursor.startPosition, _cursor.endPosition), 0.5f), 
+                fabs(_cursor.endPosition.x - _cursor.startPosition.x) + _mapMan.Tiles().GetSpacing() * _cursor.outlineScale, 
+                fabs(_cursor.endPosition.y - _cursor.startPosition.y) + _mapMan.Tiles().GetSpacing() * _cursor.outlineScale, 
+                fabs(_cursor.endPosition.z - _cursor.startPosition.z) + _mapMan.Tiles().GetSpacing() * _cursor.outlineScale, 
+                MAGENTA);
+
+            DrawAxes3D((Vector3){ 1.0f, 1.0f, 1.0f }, 10.0f);
+            rlDrawRenderBatchActive();
+            rlEnableDepthTest();
+        }
     }
     EndMode3D();
 }

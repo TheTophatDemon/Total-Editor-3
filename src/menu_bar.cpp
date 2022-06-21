@@ -24,7 +24,17 @@ MenuBar::MenuBar(App::Settings &settings)
                 (Item) { "SAVE AS",      [&](){ _activeDialog = nullptr; } },
                 (Item) { "EXPAND GRID",  [&](){ _activeDialog.reset(new ExpandMapDialog()); } },
                 (Item) { "SHRINK GRID",  [&](){ _activeDialog.reset(new ShrinkMapDialog()); } },
-            }
+            },
+            .longestLength = 12
+        },
+        (Menu) {
+            .name = "ENTITIES",
+            .items = {
+                (Item) { "ADD",          [&](){ _activeDialog.reset(new EditEntDialog()); } },
+                (Item) { "COPY",          [&](){} },
+                (Item) { "REMOVE",          [&](){} }
+            },
+            .longestLength = 12
         },
         (Menu) {
             .name = "VIEW",
@@ -32,17 +42,18 @@ MenuBar::MenuBar(App::Settings &settings)
                 (Item) { "MAP EDITOR",     [](){ App::Get()->ChangeEditorMode(App::Mode::PLACE_TILE); } },
                 (Item) { "TEXTURE PICKER", [](){ App::Get()->ChangeEditorMode(App::Mode::PICK_TEXTURE); } },
                 (Item) { "SHAPE PICKER",   [](){ App::Get()->ChangeEditorMode(App::Mode::PICK_SHAPE); } },
-                (Item) { "THINGS",         [](){ App::Get()->ChangeEditorMode(App::Mode::PLACE_ENT); } },
                 (Item) { "RESET CAMERA",   [](){ App::Get()->ResetEditorCamera(); } },
-                (Item) { "TOGGLE GRID",    [](){ ; } },
-            }
+                (Item) { "TOGGLE PREVIEW",    [](){ App::Get()->TogglePreviewing(); } },
+            },
+            .longestLength = 16
         },
         (Menu) {
             .name = "CONFIG",
             .items = {
                 (Item) { "ASSET PATHS", [](){} },
                 (Item) { "SETTINGS",    [](){} },
-            }
+            },
+            .longestLength = 12
         },
         (Menu) {
             .name = "INFO",
@@ -50,7 +61,8 @@ MenuBar::MenuBar(App::Settings &settings)
                 (Item) { "ABOUT",        [](){} },
                 (Item) { "SHORTCUTS",    [](){} },
                 (Item) { "INSTRUCTIONS", [](){} },
-            }
+            },
+            .longestLength = 12
         }
     };
 }
@@ -114,8 +126,11 @@ void MenuBar::Draw()
     {
         const Rectangle BUTT_RECT = (Rectangle) { MENU_BOUNDS.x + x, MENU_BOUNDS.y, BUTTON_WIDTH, MENU_BOUNDS.height }; //Heehee! Butt!
 
-        GuiButton(BUTT_RECT, menu.name.c_str());
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), BUTT_RECT))
+        std::string name = menu.name;
+        //Abbreviate tab names when window is too small.
+        if (GetScreenWidth() < 928) name = name.substr(0, 4);
+        GuiButton(BUTT_RECT, name.c_str());
+        if (!_activeDialog.get() && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), BUTT_RECT))
         {
             if (_activeMenu == &menu) 
             {
@@ -133,8 +148,8 @@ void MenuBar::Draw()
             Rectangle listBounds = (Rectangle) { 
                 .x = BUTT_RECT.x, 
                 .y = BUTT_RECT.y + BUTT_RECT.height, 
-                .width = Max(BUTT_RECT.width, GetStringWidth(*Assets::GetFont(), list) + BUTTON_MARGIN), 
-                .height = BUTT_RECT.height * menu.items.size() };
+                .width = Max(BUTT_RECT.width, (menu.longestLength * 12.0f) + BUTTON_MARGIN), 
+                .height = 28.0f * menu.items.size() };
                 
             _activeMenuBounds = (Rectangle) {
                 .x = listBounds.x, 
@@ -157,6 +172,7 @@ void MenuBar::Draw()
     //Draw modal dialogs
     if (_activeDialog.get())
     {
+        _activeMenu = nullptr;
         if (!_activeDialog->Draw()) _activeDialog.reset(nullptr);
     }
 }

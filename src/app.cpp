@@ -38,11 +38,10 @@ App::App()
     _menuBar       (std::make_unique<MenuBar>(_settings)),
     _mapMan        (std::make_unique<MapMan>()),
     _tilePlaceMode (std::make_unique<PlaceMode>(*_mapMan.get())),
-    //_entPlaceMode  (std::make_unique<PlaceMode>(PlaceMode::Mode::ENTS)),
     _texPickMode   (std::make_unique<PickMode>(PickMode::Mode::TEXTURES)),
     _shapePickMode (std::make_unique<PickMode>(PickMode::Mode::SHAPES)),
-
-    _editorMode(_tilePlaceMode.get())
+    _editorMode(_tilePlaceMode.get()),
+    _previewDraw(false)
 {
 }
 
@@ -72,11 +71,6 @@ void App::ChangeEditorMode(const App::Mode newMode)
                 _tilePlaceMode->SetCursorShape(_shapePickMode->GetPickedShape());
             }
             _editorMode = _tilePlaceMode.get(); 
-        }
-        break;
-        case App::Mode::PLACE_ENT: 
-        {
-            //_editorMode = _entPlaceMode.get();   
         }
         break;
     }
@@ -120,7 +114,7 @@ void App::Update()
     _editorMode->Draw();
     _menuBar->Draw();
 
-    DrawFPS(4, GetScreenHeight() - 24);
+    if (!_previewDraw) DrawFPS(4, GetScreenHeight() - 24);
 
 	EndDrawing();
 }
@@ -144,8 +138,11 @@ int main(int argc, char **argv)
     GuiSetStyle(LABEL, TEXT_COLOR_PRESSED, ColorToInt(LIGHTGRAY));
     GuiSetStyle(SCROLLBAR, SCROLL_SPEED, 64);
     GuiSetStyle(LISTVIEW, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
+    GuiSetStyle(LISTVIEW, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     GuiSetStyle(VALUEBOX, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
     GuiSetStyle(DROPDOWNBOX, TEXT_COLOR_NORMAL, ColorToInt(BLACK));
+    GuiSetStyle(TEXTBOX, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
+    GuiSetStyle(TEXTBOX, BACKGROUND_COLOR, ColorToInt(DARKGRAY));
 
     App::Get()->NewMap(100, 5, 100);
 
