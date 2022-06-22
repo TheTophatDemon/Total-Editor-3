@@ -15,6 +15,7 @@
 #include "menu_bar.hpp"
 #include "place_mode.hpp"
 #include "pick_mode.hpp"
+#include "ent_mode.hpp"
 #include "map_man.hpp"
 
 static App *_appInstance = nullptr;
@@ -40,6 +41,7 @@ App::App()
     _tilePlaceMode (std::make_unique<PlaceMode>(*_mapMan.get())),
     _texPickMode   (std::make_unique<PickMode>(PickMode::Mode::TEXTURES)),
     _shapePickMode (std::make_unique<PickMode>(PickMode::Mode::SHAPES)),
+    _entMode       (std::make_unique<EntMode>()),
     _editorMode(_tilePlaceMode.get()),
     _previewDraw(false)
 {
@@ -70,7 +72,17 @@ void App::ChangeEditorMode(const App::Mode newMode)
             {
                 _tilePlaceMode->SetCursorShape(_shapePickMode->GetPickedShape());
             }
+            else if (_editorMode == _entMode.get())
+            {
+                if (_entMode->IsChangeConfirmed()) _tilePlaceMode->SetCursorEnt(_entMode->GetEnt());
+            }
             _editorMode = _tilePlaceMode.get(); 
+        }
+        break;
+        case App::Mode::EDIT_ENT:
+        {
+            if (_editorMode == _tilePlaceMode.get()) _entMode->SetEnt(_tilePlaceMode->GetCursorEnt());
+            _editorMode = _entMode.get();
         }
         break;
     }
@@ -102,6 +114,11 @@ void App::Update()
                 else ChangeEditorMode(Mode::PLACE_TILE);
             }
         }
+        if (IsKeyPressed(KEY_E) && IsKeyDown(KEY_LEFT_CONTROL))
+        {
+            if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::EDIT_ENT);
+            else if (_editorMode == _entMode.get()) ChangeEditorMode(Mode::PLACE_TILE);
+        }
         
         _editorMode->Update();
     }
@@ -132,7 +149,7 @@ int main(int argc, char **argv)
 
     //RayGUI Styling
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(DARKGRAY));
-    GuiSetFont(*Assets::GetFont());
+    GuiSetFont(Assets::GetFont());
     GuiSetStyle(LABEL, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
     GuiSetStyle(LABEL, TEXT_COLOR_FOCUSED, ColorToInt(YELLOW));
     GuiSetStyle(LABEL, TEXT_COLOR_PRESSED, ColorToInt(LIGHTGRAY));
@@ -143,6 +160,7 @@ int main(int argc, char **argv)
     GuiSetStyle(DROPDOWNBOX, TEXT_COLOR_NORMAL, ColorToInt(BLACK));
     GuiSetStyle(TEXTBOX, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
     GuiSetStyle(TEXTBOX, BACKGROUND_COLOR, ColorToInt(DARKGRAY));
+    GuiSetStyle(SLIDER, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
 
     App::Get()->NewMap(100, 5, 100);
 

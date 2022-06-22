@@ -7,6 +7,7 @@
 #include "assets.hpp"
 
 #define BUTTON_MARGIN 4.0f
+#define MENUBAR_FONT_SIZE 24.0f
 
 MenuBar::MenuBar(App::Settings &settings)
     : _settings(settings),
@@ -25,16 +26,6 @@ MenuBar::MenuBar(App::Settings &settings)
                 (Item) { "EXPAND GRID",  [&](){ _activeDialog.reset(new ExpandMapDialog()); } },
                 (Item) { "SHRINK GRID",  [&](){ _activeDialog.reset(new ShrinkMapDialog()); } },
             },
-            .longestLength = 12
-        },
-        (Menu) {
-            .name = "ENTITIES",
-            .items = {
-                (Item) { "ADD",          [&](){ _activeDialog.reset(new EditEntDialog()); } },
-                (Item) { "COPY",          [&](){} },
-                (Item) { "REMOVE",          [&](){} }
-            },
-            .longestLength = 12
         },
         (Menu) {
             .name = "VIEW",
@@ -42,10 +33,10 @@ MenuBar::MenuBar(App::Settings &settings)
                 (Item) { "MAP EDITOR",     [](){ App::Get()->ChangeEditorMode(App::Mode::PLACE_TILE); } },
                 (Item) { "TEXTURE PICKER", [](){ App::Get()->ChangeEditorMode(App::Mode::PICK_TEXTURE); } },
                 (Item) { "SHAPE PICKER",   [](){ App::Get()->ChangeEditorMode(App::Mode::PICK_SHAPE); } },
+                (Item) { "ENTITY EDITOR",  [](){ App::Get()->ChangeEditorMode(App::Mode::EDIT_ENT); } },
                 (Item) { "RESET CAMERA",   [](){ App::Get()->ResetEditorCamera(); } },
-                (Item) { "TOGGLE PREVIEW",    [](){ App::Get()->TogglePreviewing(); } },
+                (Item) { "TOGGLE PREVIEW", [](){ App::Get()->TogglePreviewing(); } },
             },
-            .longestLength = 16
         },
         (Menu) {
             .name = "CONFIG",
@@ -53,7 +44,6 @@ MenuBar::MenuBar(App::Settings &settings)
                 (Item) { "ASSET PATHS", [](){} },
                 (Item) { "SETTINGS",    [](){} },
             },
-            .longestLength = 12
         },
         (Menu) {
             .name = "INFO",
@@ -62,9 +52,18 @@ MenuBar::MenuBar(App::Settings &settings)
                 (Item) { "SHORTCUTS",    [](){} },
                 (Item) { "INSTRUCTIONS", [](){} },
             },
-            .longestLength = 12
         }
     };
+
+    for (Menu &menu : _menus)
+    {
+        std::string longestString;
+        for (const Item &item : menu.items)
+        {
+            if (item.name.size() > longestString.size()) longestString = item.name;
+        }
+        menu.width = GetStringWidth(Assets::GetFont(), MENUBAR_FONT_SIZE, longestString);
+    }
 }
 
 void MenuBar::Update()
@@ -116,7 +115,7 @@ void MenuBar::Draw()
     
     if (_messageTimer > 0.0f)
     {
-        DrawTextEx(*Assets::GetFont(), _statusMessage.c_str(), (Vector2) { MENU_BOUNDS.x + MENU_BOUNDS.width + 4, 2 }, 24, 0.0f, WHITE);
+        DrawTextEx(Assets::GetFont(), _statusMessage.c_str(), (Vector2) { MENU_BOUNDS.x + MENU_BOUNDS.width + 4, 2 }, MENUBAR_FONT_SIZE, 0.0f, WHITE);
     }
 
     const float BUTTON_WIDTH = (MENU_BOUNDS.width / _menus.size()) - (BUTTON_MARGIN * 2.0f);
@@ -148,7 +147,7 @@ void MenuBar::Draw()
             Rectangle listBounds = (Rectangle) { 
                 .x = BUTT_RECT.x, 
                 .y = BUTT_RECT.y + BUTT_RECT.height, 
-                .width = Max(BUTT_RECT.width, (menu.longestLength * 12.0f) + BUTTON_MARGIN), 
+                .width = Max(BUTT_RECT.width, menu.width + BUTTON_MARGIN), 
                 .height = 28.0f * menu.items.size() };
                 
             _activeMenuBounds = (Rectangle) {

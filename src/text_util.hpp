@@ -18,27 +18,35 @@ inline std::string BuildPath(std::initializer_list<std::string> components) {
 }
 
 //Returns the approximate width, in pixels, of a string written in the given font.
-inline int GetStringWidth(Font font, const std::string &string)
+//Based off of Raylib's DrawText functions
+inline int GetStringWidth(Font font, float fontSize, const std::string &string)
 {
-    int width = 0;
-    for (const char c : string)
+    float scaleFactor = fontSize / font.baseSize;
+    int maxWidth = 0;
+    int lineWidth = 0;
+    for (int i = 0; i < string.size();)
     {
-        int g = 0;
-        for (g = 0; g < font.glyphCount; ++g)
+        int codepointByteCount = 0;
+        int codepoint = GetCodepoint(&string[i], &codepointByteCount);
+        int g = GetGlyphIndex(font, codepoint);
+
+        if (codepoint == 0x3f) codepointByteCount = 1;
+
+        if (codepoint == '\n')
         {
-            if (font.glyphs[g].value == (int) c)
-            {
-                width += font.glyphs[g].offsetX + font.glyphs[g].advanceX;
-                break;
-            }
+            maxWidth = Max(lineWidth, maxWidth);
+            lineWidth = 0;
         }
-        if (g == font.glyphCount)
+        else 
         {
-            //Unknown glyph
-            width += font.baseSize;
+            if (font.glyphs[g].advanceX == 0) lineWidth += ((float)font.recs[g].width*scaleFactor);
+            else lineWidth += ((float)font.glyphs[g].advanceX*scaleFactor);
         }
+
+        i += codepointByteCount;
     }
-    return width;
+    maxWidth = Max(lineWidth, maxWidth);
+    return maxWidth;
 }
 
 #endif

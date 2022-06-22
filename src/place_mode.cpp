@@ -28,6 +28,12 @@ PlaceMode::PlaceMode(MapMan &mapMan)
     //Setup cursor
     _cursor.tile = (Tile) { Assets::GetShape("assets/models/shapes/cube.obj"), 0, Assets::GetTexture("assets/textures/brickwall.png"), false };
     _cursor.brush = TileGrid(1, 1, 1);
+    _cursor.ent = (Ent) {
+        .color = WHITE,
+        .radius = 1.0f
+    };
+    _cursor.ent.properties["name"] = "entity";
+
     _cursor.mode = Cursor::Mode::TILE;
     _cursor.startPosition = _cursor.endPosition = Vector3Zero();
     _cursor.outlineScale = 1.125f;
@@ -38,7 +44,6 @@ PlaceMode::PlaceMode(MapMan &mapMan)
 
 void PlaceMode::OnEnter() 
 {
-    _cursor.mode = Cursor::Mode::TILE;
 }
 
 void PlaceMode::OnExit() 
@@ -123,6 +128,11 @@ void PlaceMode::MoveCamera()
 
 void PlaceMode::UpdateCursor()
 {
+    if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_BACKSPACE))
+    {
+        _cursor.mode = Cursor::Mode::TILE;
+    }
+
     //Position cursor
     Ray pickRay = GetMouseRay(GetMousePosition(), _camera);
     Vector3 gridMin = _mapMan.Tiles().GetMinCorner();
@@ -150,6 +160,10 @@ void PlaceMode::UpdateCursor()
         {
             multiSelect = true;
         }
+    }
+    else if (_cursor.mode == Cursor::Mode::ENT)
+    {
+        _cursor.startPosition = _cursor.endPosition;
     }
 
     //Perform Tile operations
@@ -185,7 +199,7 @@ void PlaceMode::UpdateCursor()
         }
         else if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT))
         {
-            _cursor.mode = Cursor::Mode::TILE;
+            //_cursor.mode = Cursor::Mode::TILE;
         }
     }
     else if (_cursor.mode == Cursor::Mode::TILE)
@@ -227,7 +241,7 @@ void PlaceMode::UpdateCursor()
         else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && !multiSelect) 
         {
             //Remove tiles
-            if (underTile.shape != nullptr || underTile.texture != nullptr)
+            if (underTile)
             {
                 _mapMan.ExecuteTileAction(i, j, k, 1, 1, 1, (Tile) {nullptr, 0, nullptr, false});
             }
@@ -289,19 +303,24 @@ void PlaceMode::UpdateCursor()
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
             //Placement
+            _mapMan.ExecuteEntPlacement(i, j, k, _cursor.ent);
         }
         else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
         {
             //Removal
+            if (_mapMan.Ents().HasEnt(i, j, k))
+            {
+                _mapMan.ExecuteEntRemoval(i, j, k);
+            }
         }
 
         if (IsKeyPressed(KEY_T) || IsKeyPressed(KEY_G))
         {
-            //Copy appearance of entity under cursor (properties stay the same)
-        }
-        else if (IsKeyPressed(KEY_I))
-        {
-            //Copy entity (I)nformation, or in other words, its properties.
+            //Copy the entity under the cursor
+            if (_mapMan.Ents().HasEnt(i, j, k))
+            {
+                _cursor.ent = _mapMan.Ents().GetEnt(i, j, k);
+            }
         }
     }
 }
@@ -368,7 +387,7 @@ void PlaceMode::Draw()
     BeginMode3D(_camera);
     {
         //Draw map
-        _mapMan.DrawMap(_camera, _layerViewMin, _layerViewMax);
+        _mapMan.DrawMap(_layerViewMin, _layerViewMax);
 
         if (!App::Get()->IsPreviewing())
         {
@@ -408,7 +427,7 @@ void PlaceMode::Draw()
                 break;
                 case Cursor::Mode::ENT:
                 {
-                    _cursor.ent.Draw(_camera);
+                    _cursor.ent.Draw();
                 }
                 break;
                 }
@@ -430,4 +449,6 @@ void PlaceMode::Draw()
         }
     }
     EndMode3D();
+
+    _mapMan.Draw2DElements(_camera, _layerViewMin, _layerViewMax);
 }

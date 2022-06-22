@@ -16,9 +16,8 @@
 //This is short for "entity", because "entity" is difficult to type.
 struct Ent
 {
-    Model *model; //Display model
-    Texture2D *sprite; //If there's not a model, it will make a billboard using this texture.
-    Color color; //If both model and sprite are nullptr, then a group of axes is drawn instead to represent an "empty" entity, using the given color.
+    Color color;
+    float radius;
     Vector3 position; //World space coordinates
     int yaw, pitch; //Degrees angle orientation
 
@@ -35,12 +34,18 @@ struct Ent
             MatrixTranslate(position.x, position.y, position.z));
     }
 
-    void Draw(Camera &camera) const;
+    //Entity is considered empty if the radius is zero;
+    inline operator bool() const
+    {
+        return radius != 0.0f;
+    }
+
+    void Draw() const;
 };
 
 //This represents a grid of entities. 
 //Instead of the grid storing entities directly, it stores iterators into the `_ents` array to save on memory.
-class EntGrid : public Grid<const Ent *>
+class EntGrid : public Grid<Ent>
 {
 public:
     //Creates an empty entgrid of zero size
@@ -51,43 +56,30 @@ public:
 
     //Creates ent grid of given dimensions, default spacing.
     inline EntGrid(size_t width, size_t height, size_t length)
-        : Grid<const Ent *>(width, height, length, ENT_SPACING_DEFAULT, nullptr) //Nullptr means no entity in the cel
+        : Grid<Ent>(width, height, length, ENT_SPACING_DEFAULT, (Ent) { 0 }) //Nullptr means no entity in the cel
     {
     }
 
     //Will set the given ent to occupy the grid space, replacing any existing entity in that space.
     inline void AddEnt(int i, int j, int k, const Ent &ent)
     {
-        RemoveEnt(i, j, k);
-        _ents.push_back(ent);
-        SetCel(i, j, k, &_ents.back());
+        SetCel(i, j, k, ent);
     }
 
     inline void RemoveEnt(int i, int j, int k)
     {
-        if (const Ent *oldEnt = GetCel(i, j, k); oldEnt != nullptr)
-        {
-            for (auto e = _ents.cbegin(); e != _ents.cend(); ++e) 
-            {
-                if (e.base() == oldEnt)
-                {
-                    _ents.erase(e);
-                    break;
-                }
-            }
-            SetCel(i, j, k, nullptr);
-        }
+        SetCel(i, j, k, (Ent) { 0 });
     }
     
     inline bool HasEnt(int i, int j, int k) const
     {
-        return GetCel(i, j, k) != nullptr;
+        return GetCel(i, j, k);
     }
 
     inline Ent GetEnt(int i, int j, int k) const
     {
         assert(HasEnt(i, j, k));
-        return *GetCel(i, j, k);
+        return GetCel(i, j, k);
     }
 
     inline void CopyEnts(int i, int j, int k, const EntGrid &src)
@@ -108,9 +100,8 @@ public:
         return newGrid;
     }
 
-    void Draw(Camera &camera, int fromY, int toY);
-protected:
-    std::vector<Ent> _ents; //This is a continuous list of active entities, that is updated as the grid is modified.
+    void Draw(int fromY, int toY);
+    void DrawLabels(Camera &camera, int fromY, int toY);
 };
 
 #endif

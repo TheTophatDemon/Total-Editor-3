@@ -93,10 +93,15 @@ public:
     inline const TileGrid& Tiles() const { return _tileGrid; }
     inline const EntGrid& Ents() const { return _entGrid; }
 
-    inline void DrawMap(Camera &camera, int fromY, int toY) 
+    inline void DrawMap(int fromY, int toY) 
     {
         _tileGrid.Draw(Vector3Zero(), fromY, toY);
-        _entGrid.Draw(camera, fromY, toY);
+        _entGrid.Draw(fromY, toY);
+    }
+
+    inline void Draw2DElements(Camera &camera, int fromY, int toY)
+    {
+        _entGrid.DrawLabels(camera, fromY, toY);
     }
 
     //Regenerates the map, extending one of the grid's dimensions on the given axis. Returns false if the change would result in an invalid map size.

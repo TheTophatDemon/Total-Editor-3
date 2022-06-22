@@ -35,11 +35,12 @@
 [x] Reinstate Hidden Layer Message
 [x] Flip tiles vertically?
 [x] Preview mode
-[ ] Entity placement & configuration
-[ ] Make pick modes full-screen dialogs?
+[x] Entity placement & configuration
 [ ] File operations, .TI3
 [ ] Import TI2
 [ ] Are you sure you want to exit?
 [ ] Finish instructions, settings
 [ ] Consider generating aggregate meshes instead of instancing
-[ ] Write Windows support into build file
+[ ] Consider replacing RayGUI with ImGUI
+[ ] Consider giving entities billboard / model viewing modes
+[ ] Test Windows OS

@@ -39,17 +39,15 @@ void MapMan::ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h,
 
 void MapMan::ExecuteEntPlacement(int i, int j, int k, Ent newEnt)
 {
+    Ent prevEnt = _entGrid.HasEnt(i, j, k) ? _entGrid.GetEnt(i, j, k) : (Ent) { 0 };
     _Execute(std::static_pointer_cast<Action>(
-        std::make_shared<EntAction>(i, j, k, _entGrid.HasEnt(i, k, k), false, _entGrid.GetEnt(i, j, k), newEnt)
+        std::make_shared<EntAction>(i, j, k, _entGrid.HasEnt(i, j, k), false, prevEnt, newEnt)
     ));
 }
 
 void MapMan::ExecuteEntRemoval(int i, int j, int k)
 {
-    if (_entGrid.HasEnt(i, k, k))
-    {
-        _Execute(std::static_pointer_cast<Action>(
-            std::make_shared<EntAction>(i, j, k, true, true, _entGrid.GetEnt(i, j, k), (Ent){ 0 })
-        ));
-    }
+    _Execute(std::static_pointer_cast<Action>(
+        std::make_shared<EntAction>(i, j, k, true, true, _entGrid.GetEnt(i, j, k), (Ent){ 0 })
+    ));
 }

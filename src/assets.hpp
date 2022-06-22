@@ -19,7 +19,7 @@ namespace Assets {
     Model *GetShape(const std::string modelPath);
     Texture2D *GetShapeIcon(const Model *shape);
     void DrawShapeIcon(const RenderTexture2D& target, const Model *shape);
-    Font *GetFont();
+    const Font &GetFont();
     Shader *GetMapShader();
 
 };

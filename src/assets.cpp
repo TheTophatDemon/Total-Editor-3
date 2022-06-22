@@ -159,9 +159,9 @@ void Assets::DrawShapeIcon(const RenderTexture2D& target, const Model *shape)
     EndTextureMode();
 }
 
-Font *Assets::GetFont() 
+const Font &Assets::GetFont() 
 {
-    return &_font;
+    return _font;
 }
 
 Shader *Assets::GetMapShader() 

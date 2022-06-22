@@ -10,6 +10,7 @@
 
 class PlaceMode;
 class PickMode;
+class EntMode;
 class MenuBar;
 class MapMan;
 
@@ -28,13 +29,14 @@ public:
     class ModeImpl 
     {
     public:
+        inline virtual ~ModeImpl() {}
         virtual void Update() = 0;
         virtual void Draw() = 0;
         virtual void OnEnter() = 0;
         virtual void OnExit() = 0;
     };
 
-    enum class Mode { PLACE_TILE, PICK_TEXTURE, PICK_SHAPE };
+    enum class Mode { PLACE_TILE, PICK_TEXTURE, PICK_SHAPE, EDIT_ENT };
 
     static App *Get();
 
@@ -73,6 +75,7 @@ private:
     std::unique_ptr<PlaceMode> _tilePlaceMode;
     std::unique_ptr<PickMode> _texPickMode;
     std::unique_ptr<PickMode> _shapePickMode;
+    std::unique_ptr<EntMode> _entMode;
 
     ModeImpl *_editorMode;
 
