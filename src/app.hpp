@@ -5,6 +5,8 @@
 
 #include <string>
 #include <memory>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 #include "tile.hpp"
 
@@ -52,6 +54,7 @@ public:
     inline bool IsPreviewing() const { return _previewDraw; }
     inline void SetPreviewing(bool p) { _previewDraw = p; }
     inline void TogglePreviewing() { _previewDraw = !_previewDraw; }
+    inline fs::path GetLastSavedPath() const { return _lastSavedPath; }
 
     Rectangle GetMenuBarRect();
     void DisplayStatusMessage(std::string message, float durationSeconds, int priority);
@@ -64,6 +67,8 @@ public:
     void NewMap(int width, int height, int length);
     void ExpandMap(Direction axis, int amount);
     void ShrinkMap();
+    void TryOpenMap(fs::path path);
+    void TrySaveMap(fs::path path);
 private:
     App();
 
@@ -79,6 +84,7 @@ private:
 
     ModeImpl *_editorMode;
 
+    fs::path _lastSavedPath;
     bool _previewDraw;
 };
 

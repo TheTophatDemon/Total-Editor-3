@@ -1,5 +1,7 @@
 #include "tile.hpp"
 
+#include "cppcodec/base64_default_rfc4648.hpp"
+
 #include <assert.h>
 
 #include "assets.hpp"
@@ -56,4 +58,37 @@ void TileGrid::Draw(Vector3 position, int fromY, int toY)
     for (auto& [pair, matrices] : _drawBatches) {
         DrawMeshInstanced(*pair.second, *Assets::GetMaterialForTexture(pair.first, true), matrices.data(), matrices.size());
     }
+}
+
+struct EncodedTile {
+    int shapeID;
+    int textureID;
+    int angle;
+    bool flipped;
+};
+
+std::string TileGrid::GetTileDataBase64() const 
+{
+    //Hmm this is going to be difficult
+    std::vector<EncodedTile> data;
+
+    for (size_t t = 0; t < _grid.size(); ++t)
+    {
+        data.push_back(EncodedTile {});
+    }
+
+    return base64::encode(data);
+}
+
+void to_json(nlohmann::json& j, const TileGrid &grid)
+{
+    j["width"] = grid.GetWidth();
+    j["height"] = grid.GetHeight();
+    j["length"] = grid.GetLength();
+    j["data"] = grid.GetTileDataBase64();
+}
+
+void from_json(const nlohmann::json& j, TileGrid &grid)
+{
+    //use at()!
 }

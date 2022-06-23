@@ -41,6 +41,7 @@
 [ ] Are you sure you want to exit?
 [ ] Finish instructions, settings
 [ ] Consider generating aggregate meshes instead of instancing
+[ ] Make tile flipping not change yaw orientation
 [ ] Consider replacing RayGUI with ImGUI
 [ ] Consider giving entities billboard / model viewing modes
 [ ] Test Windows OS

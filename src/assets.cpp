@@ -8,6 +8,15 @@
 #include <iostream>
 #include <unordered_map>
 #include <fstream>
+#include <filesystem>
+namespace fs = std::filesystem;
+
+template<class R>
+struct Entry 
+{
+    fs::path path;
+    R resource;
+};
 
 static std::unordered_map<Texture2D *, Material> _normalMaterials;
 static std::unordered_map<Texture2D *, Material> _instancedMaterials;
@@ -167,4 +176,25 @@ const Font &Assets::GetFont()
 Shader *Assets::GetMapShader() 
 {
     return &_mapShader;
+}
+
+template<typename D>
+static std::vector<std::string> GetAssetList(const std::unordered_map<std::string, D> &map) 
+{
+    std::vector<std::string> out;
+    for (const auto &[key, val] : map)
+    {
+        out.push_back(key);
+    }
+    return out;
+}
+
+std::vector<std::string> GetTexturePathList()
+{
+    return GetAssetList(_textures);
+}
+
+std::vector<std::string> GetShapePathList()
+{
+    return GetAssetList(_shapes);
 }

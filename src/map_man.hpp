@@ -4,6 +4,8 @@
 #include <deque>
 #include <cstdint>
 #include <memory>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 #include "tile.hpp"
 #include "ent.hpp"
@@ -170,6 +172,9 @@ public:
             _entGrid = _entGrid.Subsection(minX, minY, minZ, maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1);
         }
     }
+
+    //Saves the map as a .te3 file at the given path. Returns false if there was an error.
+    bool SaveTE3Map(fs::path filePath);
 
     //Executes a undoable tile action for filling an area with one tile
     void ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile);

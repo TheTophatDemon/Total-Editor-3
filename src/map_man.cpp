@@ -1,6 +1,11 @@
 #include "map_man.hpp"
 
+#include "json.hpp"
+
+#include <fstream>
+
 #include "app.hpp"
+#include "assets.hpp"
 
 void MapMan::_Execute(std::shared_ptr<Action> action)
 {
@@ -50,4 +55,19 @@ void MapMan::ExecuteEntRemoval(int i, int j, int k)
     _Execute(std::static_pointer_cast<Action>(
         std::make_shared<EntAction>(i, j, k, true, true, _entGrid.GetEnt(i, j, k), (Ent){ 0 })
     ));
+}
+
+bool MapMan::SaveTE3Map(fs::path filePath)
+{
+    using namespace nlohmann;
+
+    json jData;
+    // jData["textures"] = Assets::GetTexturePathList();
+    // jData["shapes"] = Assets::GetShapePathList();
+    jData["tiles"] = _tileGrid;
+
+    std::ofstream file(filePath);
+    file << to_string(jData);
+
+    return true;
 }

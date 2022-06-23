@@ -4,6 +4,7 @@
 #include "raylib.h"
 
 #include <string>
+#include <vector>
 
 namespace Assets {
 
@@ -21,6 +22,9 @@ namespace Assets {
     void DrawShapeIcon(const RenderTexture2D& target, const Model *shape);
     const Font &GetFont();
     Shader *GetMapShader();
+
+    std::vector<std::string> GetTexturePathList();
+    std::vector<std::string> GetShapePathList();
 
 };
 

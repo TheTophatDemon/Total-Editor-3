@@ -36,14 +36,15 @@ App::App()
         .undoMax = 30UL,
         .mouseSensitivity = 0.5f
     },
-    _menuBar       (std::make_unique<MenuBar>(_settings)),
     _mapMan        (std::make_unique<MapMan>()),
     _tilePlaceMode (std::make_unique<PlaceMode>(*_mapMan.get())),
     _texPickMode   (std::make_unique<PickMode>(PickMode::Mode::TEXTURES)),
     _shapePickMode (std::make_unique<PickMode>(PickMode::Mode::SHAPES)),
     _entMode       (std::make_unique<EntMode>()),
-    _editorMode(_tilePlaceMode.get()),
-    _previewDraw(false)
+    _editorMode    (_tilePlaceMode.get()),
+    _previewDraw   (false),
+    _lastSavedPath (),
+    _menuBar       (std::make_unique<MenuBar>(_settings))
 {
 }
 
@@ -213,4 +214,55 @@ void App::ShrinkMap()
     _mapMan->ShrinkMap();
     _tilePlaceMode->ResetGrid();
     _tilePlaceMode->ResetCamera();
+}
+
+void App::TryOpenMap(fs::path path)
+{
+    fs::directory_entry entry {path};
+    if (entry.exists() && entry.is_regular_file())
+    {
+        if (path.extension() == ".te3") 
+        {
+            DisplayStatusMessage("Loaded .te3 map.", 5.0f, 100);
+        }
+        else if (path.extension() == ".ti")
+        {
+            DisplayStatusMessage("Loaded .ti map.", 5.0f, 100);
+        }
+        else
+        {
+            DisplayStatusMessage("ERROR: Invalid file extension.", 5.0f, 100);
+        }
+    }
+    else
+    {
+        DisplayStatusMessage("ERROR: Invalid file path.", 5.0f, 100);
+    }
+}
+
+void App::TrySaveMap(fs::path path)
+{
+    //Add correct extension if no extension is given.
+    if (path.extension().empty())
+    {
+        path += ".te3";
+    }
+
+    fs::directory_entry entry {path};
+
+    if (path.extension() == ".te3") 
+    {
+        if (_mapMan->SaveTE3Map(path))
+        {
+            DisplayStatusMessage("Saved .te3 map.", 5.0f, 100);
+        }
+        else
+        {
+            DisplayStatusMessage("ERROR: Map could not be saved.", 5.0f, 100);
+        }
+    }
+    else
+    {
+        DisplayStatusMessage("ERROR: Invalid file extension.", 5.0f, 100);
+    }
 }

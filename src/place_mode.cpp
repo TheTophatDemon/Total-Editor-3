@@ -412,7 +412,8 @@ void PlaceMode::Draw()
                 {
                     for (size_t m = 0; m < _cursor.tile.shape->meshCount; ++m) 
                     {
-                        DrawMesh(_cursor.tile.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.tile.texture, false), cursorTransform);
+                        //Drawing as an instanced mesh of length 1 so that the shader continues to function properly.
+                        DrawMeshInstanced(_cursor.tile.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.tile.texture, true), &cursorTransform, 1);
                     }
                 }
                 break;

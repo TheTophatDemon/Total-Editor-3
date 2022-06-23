@@ -3,6 +3,7 @@
 
 #include "raylib.h"
 #include "raymath.h"
+#include "json.hpp"
 
 #include <stdlib.h>
 #include <vector>
@@ -45,7 +46,7 @@ inline bool operator!=(const Tile &lhs, const Tile &rhs)
 inline Matrix TileRotationMatrix(const Tile &tile)
 {
     return MatrixMultiply( 
-        MatrixRotateX(tile.flipped ? PI : 0.0f), MatrixRotYDeg(tile.flipped ? OffsetDegrees(tile.angle, 90) : tile.angle));
+        MatrixRotateX(tile.flipped ? PI : 0.0f), MatrixRotYDeg(tile.angle));
 }
 
 class TileGrid : public Grid<Tile>
@@ -153,6 +154,8 @@ public:
     void Draw(Vector3 position, int fromY, int toY);
     void Draw(Vector3 position);
 
+    std::string GetTileDataBase64() const;
+
 protected:
     //Calculates lists of transformations for each tile, separated by texture and shape, to be drawn as instances.
     void _RegenBatches();
@@ -163,5 +166,8 @@ protected:
     int _batchFromY;
     int _batchToY;
 };
+
+void to_json(nlohmann::json& j, const TileGrid &grid);
+void from_json(const nlohmann::json& j, TileGrid &grid);
 
 #endif

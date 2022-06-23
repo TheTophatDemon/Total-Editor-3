@@ -5,7 +5,7 @@
 
 #include <vector>
 #include <initializer_list>
-#include <cstring>
+#include <map>
 
 #include "assets.hpp"
 #include "math_stuff.hpp"
@@ -161,4 +161,115 @@ bool ShrinkMapDialog::Draw()
             return false;
     }
     return true;
+}
+
+bool FileDialog::Draw()
+{
+    const Rectangle DRECT = DialogRec(512.0f, 400.0f);
+    bool clicked = GuiWindowBox(DRECT, _title.c_str());
+
+    const Rectangle FILE_ENTRY_RECT = (Rectangle) { 
+        .x = DRECT.x + 4.0f, 
+        .y = DRECT.y + DRECT.height - 24.0f, 
+        .width = DRECT.width - 64.0f - 8.0f, 
+        .height = 20.0f
+    };
+
+    const Rectangle FILES_RECT = (Rectangle) {
+        .x = DRECT.x + 4.0f,
+        .y = DRECT.y + 28.0f,
+        .width = DRECT.width - 8.0f,
+        .height = DRECT.height - (FILES_RECT.y - DRECT.y) - FILE_ENTRY_RECT.height - 8.0f
+    };
+
+    //Collect file information to display on the screen
+    Rectangle content = (Rectangle) { .width = FILES_RECT.width - 8.0f, .height = 8.0f };
+    std::map<const fs::directory_entry, Rectangle> fileRects;
+
+    const float FILE_RECT_HEIGHT = 16.0f;
+
+    float y = 4.0f;
+    //Add the parent directory to the list of files as [parent folder]
+    if (_currentDir.has_parent_path())
+    {
+        fileRects[fs::directory_entry(_currentDir.parent_path())] = (Rectangle) { 4.0f, y, content.width - 8.0f, FILE_RECT_HEIGHT };
+        y += FILE_RECT_HEIGHT;
+        content.height += FILE_RECT_HEIGHT;
+    }
+
+    //Calculate rectangles and total height for all the files
+    for (auto const& entry : fs::directory_iterator{_currentDir})
+    {
+        if (entry.is_directory() || 
+            (entry.is_regular_file() && _extensions.find(entry.path().extension()) != _extensions.end()))
+        {
+            Rectangle fileRect = (Rectangle) {
+                .x = 4.0f,
+                .y = y,
+                .width = content.width - 8.0f,
+                .height = FILE_RECT_HEIGHT,
+            };
+            fileRects[entry] = fileRect;
+            y += fileRect.height;
+            content.height += fileRect.height;
+        }
+    }
+
+    //Directory view drawing
+    Rectangle scissor = GuiScrollPanel(FILES_RECT, NULL, content, &_scroll);
+    BeginScissorMode(scissor.x, scissor.y, scissor.width, scissor.height);
+
+    for (auto const& [entry, rect] : fileRects)
+    {
+        std::string name;
+        if (_currentDir.has_parent_path() && entry.path() == _currentDir.parent_path())
+        {
+            name = "[parent directory]";
+        }
+        else
+        {
+            name = entry.path().filename();
+        }
+
+        const Rectangle BUTT_RECT = (Rectangle) { 
+            .x = scissor.x + rect.x + _scroll.x, 
+            .y = scissor.y + rect.y + _scroll.y, 
+            .width = rect.width, 
+            .height = rect.height 
+        };
+
+        if (GuiLabelButton(BUTT_RECT, name.c_str()))
+        {
+            if (entry.is_directory()) _currentDir = entry.path();
+            else strcpy(_fileNameBuffer, entry.path().filename().c_str());
+        }
+    }
+
+    EndScissorMode();
+
+    //File name entry
+
+    if (GuiTextBox(FILE_ENTRY_RECT, _fileNameBuffer, 16, _fileNameEdit))
+    {
+        _fileNameEdit = !_fileNameEdit;
+    }
+
+    //Select button
+    const Rectangle SELECT_BUTT_RECT = (Rectangle) {
+        .x = FILE_ENTRY_RECT.x + FILE_ENTRY_RECT.width + 4.0f,
+        .y = FILE_ENTRY_RECT.y,
+        .width = DRECT.width - (SELECT_BUTT_RECT.x - DRECT.x) - 4.0f,
+        .height = FILE_ENTRY_RECT.height
+    }; 
+
+    if (GuiButton(SELECT_BUTT_RECT, "Select"))
+    {
+        if (strlen(_fileNameBuffer) > 0)
+        {
+            _callback(_currentDir.append(_fileNameBuffer));
+            return false;
+        }
+    }
+
+    return !clicked;
 }

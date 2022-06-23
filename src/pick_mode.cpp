@@ -23,6 +23,7 @@ PickMode::PickMode(Mode mode)
       _view(mode == Mode::TEXTURES ? View::GRID : View::LIST),
       _longestLabelLength(0)
 {
+    memset(_searchFilterBuffer, 0, sizeof(char) * SEARCH_BUFFER_SIZE);
 }
 
 void PickMode::_GetFrames(std::string rootDir)

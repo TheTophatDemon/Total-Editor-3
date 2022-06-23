@@ -2,6 +2,9 @@
 
 #include "extras/raygui.h"
 
+#include <filesystem>
+namespace fs = std::filesystem;
+
 #include "math_stuff.hpp"
 #include "text_util.hpp"
 #include "assets.hpp"
@@ -15,14 +18,35 @@ MenuBar::MenuBar(App::Settings &settings)
       _activeMenu(nullptr),
       _activeDialog(nullptr)
 {
+    auto doSaveDialog = [this](){
+        auto callback = [](fs::path path){ App::Get()->TrySaveMap(path); };
+        this->_activeDialog.reset(new FileDialog("Save Map (*.te3)", { ".te3" }, callback)); 
+    };
+
     _menus = {
         (Menu) {
             .name = "MAP",
             .items = {
                 (Item) { "NEW",          [&](){ _activeDialog.reset(new NewMapDialog()); } },
-                (Item) { "OPEN",         [&](){ _activeDialog = nullptr; } },
-                (Item) { "SAVE",         [&](){ _activeDialog = nullptr; } },
-                (Item) { "SAVE AS",      [&](){ _activeDialog = nullptr; } },
+                (Item) { "OPEN",         [&]()
+                    { 
+                        auto callback = [](fs::path path){ App::Get()->TryOpenMap(path); };
+                        _activeDialog.reset(new FileDialog("Open Map (*.te3, *.ti)", { ".te3", ".ti" }, callback)); 
+                    } 
+                },
+                (Item) { "SAVE",         [this, doSaveDialog]()
+                    { 
+                        if (!App::Get()->GetLastSavedPath().empty())
+                        {
+                            App::Get()->TrySaveMap(App::Get()->GetLastSavedPath());
+                        }
+                        else
+                        {
+                            doSaveDialog();
+                        }
+                    } 
+                },
+                (Item) { "SAVE AS",      doSaveDialog },
                 (Item) { "EXPAND GRID",  [&](){ _activeDialog.reset(new ExpandMapDialog()); } },
                 (Item) { "SHRINK GRID",  [&](){ _activeDialog.reset(new ShrinkMapDialog()); } },
             },
