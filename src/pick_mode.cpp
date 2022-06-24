@@ -52,16 +52,17 @@ void PickMode::_GetFrames(std::string rootDir)
             else if (_mode == Mode::TEXTURES && IsFileExtension(files[f], ".png"))
             {
                 Frame frame = {
-                    .tex = Assets::GetTexture(fullPath),
-                    .shape = nullptr,
-                    .label = fullPath};
+                    .tex = Assets::TexIDFromPath(fullPath),
+                    .shape = NO_MODEL,
+                    .label = fullPath
+                };
                 _frames.push_back(frame);
             }
             else if (_mode == Mode::SHAPES && IsFileExtension(files[f], ".obj"))
             {
-                Model *shape = Assets::GetShape(fullPath);
+                ModelID shape = Assets::ModelIDFromPath(fullPath);
                 Frame frame = {
-                    .tex = Assets::GetShapeIcon(shape),
+                    .tex = NO_TEX,
                     .shape = shape,
                     .label = fullPath};
                 _frames.push_back(frame);
@@ -186,7 +187,16 @@ void PickMode::_DrawFrame(Frame *frame, Rectangle rect)
 
     Rectangle outline = (Rectangle){rect.x - 2, rect.y - 2, rect.width + 4, rect.height + 4};
     DrawRectangle(outline.x, outline.y, outline.width, outline.height, BLACK); //Black background
-    DrawTextureQuad(*(frame->tex), Vector2One(), Vector2Zero(), rect, WHITE); //Texture
+    //Texture
+    if (frame->tex >= 0)
+    {
+        DrawTextureQuad(Assets::TexFromID(frame->tex), Vector2One(), Vector2Zero(), rect, WHITE);
+    }
+    else if (frame->shape >= 0)
+    {
+        const Texture2D &icon = Assets::GetShapeIcon(frame->shape);
+        DrawTextureQuad(icon, Vector2One(), Vector2Zero(), rect, WHITE);
+    }
     if (_selectedFrame == frame) DrawRectangleLinesEx(outline, 2.0f, WHITE); //White selection outline
 }
 

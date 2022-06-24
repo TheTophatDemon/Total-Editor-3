@@ -14,8 +14,8 @@
 class PickMode : public App::ModeImpl {
 public:
     struct Frame {
-        Texture2D *tex;
-        Model *shape;
+        TexID tex;
+        ModelID shape;
         std::string label;
     };
 
@@ -32,17 +32,17 @@ public:
     inline Mode GetMode() const { return _mode; }
     inline View GetView() const { return _view; }
 
-    inline Texture2D *GetPickedTexture() const
+    inline TexID GetPickedTexture() const
     { 
         assert(_mode == Mode::TEXTURES);
-        if (!_selectedFrame) return nullptr;
+        if (!_selectedFrame) return NO_TEX;
         return _selectedFrame->tex;
     }
 
-    inline Model *GetPickedShape() const
+    inline ModelID GetPickedShape() const
     {
         assert(_mode == Mode::SHAPES);
-        if (!_selectedFrame) return nullptr;
+        if (!_selectedFrame) return NO_MODEL;
         return _selectedFrame->shape;
     }
 

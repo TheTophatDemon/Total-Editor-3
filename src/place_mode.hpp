@@ -21,9 +21,11 @@ public:
     virtual void OnEnter() override;
     virtual void OnExit() override;
 
-    inline void SetCursorShape(Model *shape) { _cursor.tile.shape = shape; _cursor.mode = Cursor::Mode::TILE; }
-    inline void SetCursorTexture(Texture2D *tex) { _cursor.tile.texture = tex; _cursor.mode = Cursor::Mode::TILE; }
+    inline void SetCursorShape(ModelID shape) { _cursor.tile.shape = shape; _cursor.mode = Cursor::Mode::TILE; }
+    inline void SetCursorTexture(TexID tex) { _cursor.tile.texture = tex; _cursor.mode = Cursor::Mode::TILE; }
     inline void SetCursorEnt(const Ent &ent) { _cursor.ent = ent; _cursor.mode = Cursor::Mode::ENT; }
+    inline ModelID GetCursorShape() const { return _cursor.tile.shape; }
+    inline TexID GetCursorTexture() const { return _cursor.tile.texture; }
     inline const Ent &GetCursorEnt() const { return _cursor.ent; }
 
     void ResetCamera();

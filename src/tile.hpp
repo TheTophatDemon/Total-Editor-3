@@ -12,6 +12,7 @@
 
 #include "grid.hpp"
 #include "math_stuff.hpp"
+#include "assets.hpp"
 
 #define TILE_SPACING_DEFAULT 2.0f
 
@@ -19,17 +20,17 @@ enum class Direction { Z_POS, Z_NEG, X_POS, X_NEG, Y_POS, Y_NEG };
 
 struct Tile 
 {
-    Model* shape;
+    ModelID shape;
     int angle; //In whole number of degrees
-    Texture2D* texture;
+    TexID texture;
     bool flipped; //True if flipped vertically
 
-    inline Tile() : shape(nullptr), angle(0), texture(nullptr), flipped(false) {}
-    inline Tile(Model *s, int a, Texture2D *t, bool f) : shape(s), angle(a), texture(t), flipped(f) {}
+    inline Tile() : shape(NO_MODEL), angle(0), texture(NO_TEX), flipped(false) {}
+    inline Tile(ModelID s, int a, TexID t, bool f) : shape(s), angle(a), texture(t), flipped(f) {}
 
     inline operator bool() const
     {
-        return shape != nullptr && texture != nullptr;
+        return shape != NO_MODEL && texture != NO_TEX;
     }
 };
 
@@ -59,7 +60,7 @@ public:
     }
     //Constructs a TileGrid full of empty tiles.
     inline TileGrid(size_t width, size_t height, size_t length)
-        : TileGrid(width, height, length, TILE_SPACING_DEFAULT, (Tile) { nullptr, 0, nullptr, false })
+        : TileGrid(width, height, length, TILE_SPACING_DEFAULT, (Tile) { NO_MODEL, 0, NO_TEX, false })
     {
     }
     //Constructs a TileGrid filled with the given tile.
@@ -114,7 +115,7 @@ public:
                 for (int x = i; x < xEnd; ++x)
                 {
                     const Tile &tile = src._grid[theirBase + (x - i)];
-                    if (!ignoreEmpty || tile.shape != nullptr)
+                    if (!ignoreEmpty || tile)
                     {
                         _grid[ourBase + x] = tile;
                     }
@@ -131,7 +132,7 @@ public:
 
     inline void UnsetTile(int i, int j, int k) 
     {
-        _grid[FlatIndex(i, j, k)].shape = nullptr;
+        _grid[FlatIndex(i, j, k)].shape = NO_MODEL;
         _regenBatches = true;
     }
 
@@ -160,7 +161,7 @@ protected:
     //Calculates lists of transformations for each tile, separated by texture and shape, to be drawn as instances.
     void _RegenBatches();
 
-    std::map<std::pair<Texture2D*, Mesh*>, std::vector<Matrix>> _drawBatches;
+    std::map<std::pair<TexID, Mesh*>, std::vector<Matrix>> _drawBatches;
     Vector3 _batchPosition;
     bool _regenBatches;
     int _batchFromY;

@@ -16,7 +16,7 @@ void TileGrid::_RegenBatches()
     {
         for (size_t t = y * layerArea; t < (y + 1) * layerArea; ++t) {
             const Tile& tile = _grid[t];
-            if (tile.texture && tile.shape) {
+            if (tile) {
                 //Calculate world space matrix for the tile
                 Vector3 gridPos = UnflattenIndex(t);
                 Vector3 worldPos = Vector3Add(_batchPosition, GridToWorldPos(gridPos, true));
@@ -24,9 +24,10 @@ void TileGrid::_RegenBatches()
                     TileRotationMatrix(tile), 
                     MatrixTranslate(worldPos.x, worldPos.y, worldPos.z));
 
-                for (size_t m = 0; m < tile.shape->meshCount; ++m) {
+                const Model &shape = Assets::ModelFromID(tile.shape);
+                for (size_t m = 0; m < shape.meshCount; ++m) {
                     //Add the tile's transform to the instance arrays for each mesh
-                    auto pair = std::make_pair(tile.texture, &tile.shape->meshes[m]);
+                    auto pair = std::make_pair(tile.texture, &shape.meshes[m]);
                     if (_drawBatches.find(pair) == _drawBatches.end()) {
                         //Put in a vector for this pair if there hasn't been one already
                         _drawBatches[pair] = std::vector<Matrix>();
@@ -56,28 +57,13 @@ void TileGrid::Draw(Vector3 position, int fromY, int toY)
 
     //Call DrawMeshInstanced for each combination of material and mesh.
     for (auto& [pair, matrices] : _drawBatches) {
-        DrawMeshInstanced(*pair.second, *Assets::GetMaterialForTexture(pair.first, true), matrices.data(), matrices.size());
+        DrawMeshInstanced(*pair.second, Assets::GetMaterialForTexture(pair.first, true), matrices.data(), matrices.size());
     }
 }
 
-struct EncodedTile {
-    int shapeID;
-    int textureID;
-    int angle;
-    bool flipped;
-};
-
 std::string TileGrid::GetTileDataBase64() const 
 {
-    //Hmm this is going to be difficult
-    std::vector<EncodedTile> data;
-
-    for (size_t t = 0; t < _grid.size(); ++t)
-    {
-        data.push_back(EncodedTile {});
-    }
-
-    return base64::encode(data);
+    return base64::encode(_grid);
 }
 
 void to_json(nlohmann::json& j, const TileGrid &grid)
@@ -90,5 +76,5 @@ void to_json(nlohmann::json& j, const TileGrid &grid)
 
 void from_json(const nlohmann::json& j, TileGrid &grid)
 {
-    //use at()!
+    
 }

@@ -26,7 +26,12 @@ PlaceMode::PlaceMode(MapMan &mapMan)
     _cameraMoveSpeed = CAMERA_MOVE_SPEED_MIN;
 
     //Setup cursor
-    _cursor.tile = (Tile) { Assets::GetShape("assets/models/shapes/cube.obj"), 0, Assets::GetTexture("assets/textures/brickwall.png"), false };
+    _cursor.tile = Tile();
+    _cursor.tile.shape = Assets::ModelIDFromPath("assets/models/shapes/cube.obj");
+    _cursor.tile.angle = 0;
+    _cursor.tile.texture = Assets::TexIDFromPath("assets/textures/brickwall.png");
+    _cursor.tile.flipped = false;
+
     _cursor.brush = TileGrid(1, 1, 1);
     _cursor.ent = (Ent) {
         .color = WHITE,
@@ -243,18 +248,18 @@ void PlaceMode::UpdateCursor()
             //Remove tiles
             if (underTile)
             {
-                _mapMan.ExecuteTileAction(i, j, k, 1, 1, 1, (Tile) {nullptr, 0, nullptr, false});
+                _mapMan.ExecuteTileAction(i, j, k, 1, 1, 1, (Tile) {NO_MODEL, 0, NO_TEX, false});
             }
         } 
         else if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && multiSelect)
         {
             //Remove tiles RECTANGLE
-            _mapMan.ExecuteTileAction(i, j, k, w, h, l, (Tile) {nullptr, 0, nullptr, false});
+            _mapMan.ExecuteTileAction(i, j, k, w, h, l, (Tile) {NO_MODEL, 0, NO_TEX, false});
         }
         else if (IsKeyDown(KEY_G) && !multiSelect) 
         {
             //(G)rab the shape from the tile under the cursor
-            if (underTile.shape) 
+            if (underTile) 
             {
                 _cursor.tile.shape = underTile.shape;
                 _cursor.tile.angle = underTile.angle;
@@ -263,7 +268,7 @@ void PlaceMode::UpdateCursor()
         else if (IsKeyDown(KEY_T) && !multiSelect) 
         {
             //Pick the (T)exture from the tile under the cursor.
-            if (underTile.texture) 
+            if (underTile) 
             {
                 _cursor.tile.texture = underTile.texture;
             }
@@ -401,7 +406,7 @@ void PlaceMode::Draw()
             rlDrawRenderBatchActive();
 
             //Draw cursor
-            if (!IsKeyDown(KEY_LEFT_SHIFT) && _cursor.tile.shape && _cursor.tile.texture) {
+            if (!IsKeyDown(KEY_LEFT_SHIFT) && _cursor.tile) {
                 Matrix cursorTransform = MatrixMultiply(
                     TileRotationMatrix(_cursor.tile), 
                     MatrixTranslate(_cursor.endPosition.x, _cursor.endPosition.y, _cursor.endPosition.z));
@@ -410,10 +415,10 @@ void PlaceMode::Draw()
                 {
                 case Cursor::Mode::TILE:
                 {
-                    for (size_t m = 0; m < _cursor.tile.shape->meshCount; ++m) 
+                    const Model &shape = Assets::ModelFromID(_cursor.tile.shape);
+                    for (size_t m = 0; m < shape.meshCount; ++m) 
                     {
-                        //Drawing as an instanced mesh of length 1 so that the shader continues to function properly.
-                        DrawMeshInstanced(_cursor.tile.shape->meshes[m], *Assets::GetMaterialForTexture(_cursor.tile.texture, true), &cursorTransform, 1);
+                        DrawMesh(shape.meshes[m], Assets::GetMaterialForTexture(_cursor.tile.texture, false), cursorTransform);
                     }
                 }
                 break;

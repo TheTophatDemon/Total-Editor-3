@@ -1,6 +1,7 @@
 #include "assets.hpp"
 
 #include "raymath.h"
+#include "rlgl.h"
 
 #include "assets/shaders/map_shader.hpp"
 #include "assets/fonts/font_dejavu.h"
@@ -8,193 +9,197 @@
 #include <iostream>
 #include <unordered_map>
 #include <fstream>
-#include <filesystem>
-namespace fs = std::filesystem;
 
-template<class R>
-struct Entry 
-{
-    fs::path path;
-    R resource;
+#define SHAPE_ICON_SIZE 64
+
+static Assets *_instance = nullptr;
+
+Assets *Assets::_Get() {
+    if (!_instance)
+    {
+        _instance = new Assets();
+    }
+    return _instance;
 };
 
-static std::unordered_map<Texture2D *, Material> _normalMaterials;
-static std::unordered_map<Texture2D *, Material> _instancedMaterials;
-static std::unordered_map<std::string, Texture2D> _textures;
-static Shader _mapShader;
-
-static std::unordered_map<std::string, Model> _shapes;
-static std::unordered_map<const Model *, RenderTexture2D> _shapeIcons;
-static Camera _iconCamera;
-
-static Font _font;
-
-static Shader LoadShaderText(const char *vSrc, const char *fSrc)
+Assets::Assets() 
 {
-    Shader shader = { 0 };
-    shader = LoadShaderFromMemory(vSrc, fSrc);
-    return shader;
-}
+    //Generate missing texture image
+    Image texImg = { 0 };
+    texImg.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
+    texImg.width = 64;
+    texImg.height = 64;
+    texImg.mipmaps = 1;
+    char *pixels = (char *) malloc(3 * texImg.width * texImg.height);
+    texImg.data = (void *) pixels;
+    const int BLOCK_SIZE = 32;
+    for (int x = 0; x < texImg.width; ++x)
+    {
+        for (int y = 0; y < texImg.height; ++y)
+        {
+            int base = 3 * (x + y * texImg.width);
+            if ((((x / BLOCK_SIZE) % 2) == 0 && ((y / BLOCK_SIZE) % 2) == 0) ||
+                (((x / BLOCK_SIZE) % 2) == 1 && ((y / BLOCK_SIZE) % 2) == 1) )
+            {
+                pixels[base] = 0xFF;
+                pixels[base + 1] = 0x00;
+                pixels[base + 2] = 0xFF;
+            }
+            else
+            {
+                pixels[base] = pixels[base + 1] = pixels[base + 2] = 0x00;
+            }
+        }
+    }
+    _missingTexture = LoadTextureFromImage(texImg);
+    free(texImg.data);
+    
+    //Assign missing model as a cube
+    _missingModel = LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f));
 
-void Assets::Initialize() 
-{
     //Initialize instanced shader for map geometry
-    _mapShader = LoadShaderText(MAP_SHADER_V_SRC, MAP_SHADER_F_SRC);
+    _mapShader = LoadShaderFromMemory(MAP_SHADER_V_SRC, MAP_SHADER_F_SRC);
     _mapShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(_mapShader, "mvp");
     _mapShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(_mapShader, "viewPos");
     _mapShader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(_mapShader, "instanceTransform");
 
     _font = LoadFont_Dejavu();
-
-    _iconCamera = { 0 };
-    _iconCamera.up = (Vector3){ 0.0f, -1.0f, 0.0f };
-    _iconCamera.fovy = 45.0f;
-    _iconCamera.projection = CAMERA_PERSPECTIVE;
-    //SetCameraMode(_iconCamera, CAMERA_ORBITAL);
-    _iconCamera.position = (Vector3){ 4.0f, 4.0f, 4.0f };
-    _iconCamera.target = Vector3Zero();
 }
 
-void Assets::Update() 
+TexID Assets::TexIDFromPath(fs::path texturePath) 
 {
-    //UpdateCamera(&_iconCamera);
-
-    for (const auto& [model, target] : _shapeIcons) 
+    Assets *a = _Get();
+    for (const auto &[id, pair] : a->_textures)
     {
-        DrawShapeIcon(target, model);
+        if (pair.first == texturePath) return id;
+    }
+    TexID id = a->_textures.size();
+    a->_textures[id] = std::pair(texturePath, LoadTexture(texturePath.c_str()));
+    return id;
+}
+
+const Texture &Assets::TexFromID(TexID texID)
+{
+    Assets *a = _Get();
+    if (texID != NO_TEX && a->_textures.find(texID) != a->_textures.end())
+    {
+        return a->_textures[texID].second;
+    }
+    else
+    {
+        return a->_missingTexture;
     }
 }
 
-void Assets::Unload() 
+const Material &Assets::GetMaterialForTexture(TexID texID, bool instanced) 
 {
-    for (const auto& [model, target] : _shapeIcons) 
+    Assets *a = _Get();
+    auto &map = instanced ? a->_instancedMaterials : a->_materials;
+
+    auto matIter = map.find(texID);
+    if (matIter == map.end()) 
     {
-        UnloadRenderTexture(target);
+        Material mat = LoadMaterialDefault();
+        SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, a->_textures[texID].second);
+        if (instanced) mat.shader = a->_mapShader;
+        map[texID] = mat; 
+        return map[texID];
+    }
+    else
+    {
+        return matIter->second;
     }
 }
 
-Texture *Assets::GetTexture(const std::string texturePath) 
+ModelID Assets::ModelIDFromPath(fs::path modelPath) 
 {
-    if (_textures.find(texturePath) == _textures.end()) 
+    Assets *a = _Get();
+    for (const auto &[id, pair] : a->_models)
     {
-        _textures[texturePath] = LoadTexture(texturePath.c_str());
+        if (pair.first == modelPath) return id;
     }
-    return &_textures[texturePath];
+    ModelID id = a->_models.size();
+    a->_models[id] = std::pair(modelPath, LoadModel(modelPath.c_str()));
+    return id;
 }
 
-Material *Assets::GetMaterialForTexture(const std::string texturePath, bool instanced) 
+const Model &Assets::ModelFromID(ModelID modelID)
 {
-    return GetMaterialForTexture(GetTexture(texturePath), instanced);
-}
-
-Material *Assets::GetMaterialForTexture(Texture2D *texture, bool instanced) 
-{
-    if (instanced) 
+    Assets *a = _Get();
+    if (a->_models.find(modelID) != a->_models.end())
     {
-        if (_instancedMaterials.find(texture) == _instancedMaterials.end()) 
-        {
-            Material mat = LoadMaterialDefault();
-            SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, *texture);
-            mat.shader = _mapShader;
-            _instancedMaterials[texture] = mat; 
-        }
-        return &_instancedMaterials[texture];
-    } 
-    else 
+        return a->_models[modelID].second;
+    }
+    else
     {
-        if (_normalMaterials.find(texture) == _normalMaterials.end()) 
-        {
-            Material mat = LoadMaterialDefault();
-            SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, *texture);
-            _normalMaterials[texture] = mat; 
-        }
-        return &_normalMaterials[texture];
+        return a->_missingModel;
     }
 }
 
-Texture2D *Assets::GetTextureForMaterial(const Material *material) 
+const Texture2D &Assets::GetShapeIcon(ModelID modelID) 
 {
-    for (const auto& [tex, mat] : _instancedMaterials) 
-    {
-        if (&mat == material) 
-        {
-            return tex;
-        }
-    }
-    for (const auto& [tex, mat] : _normalMaterials) 
-    {
-        if (&mat == material) 
-        {
-            return tex;
-        }
-    }
-    return nullptr;
-}
-
-Model *Assets::GetShape(const std::string modelPath) 
-{
-    if (_shapes.find(modelPath) == _shapes.end()) 
-    {
-        _shapes[modelPath] = LoadModel(modelPath.c_str());
-    }
-    return &_shapes[modelPath];
-}
-
-Texture2D *Assets::GetShapeIcon(const Model *shape) 
-{
-    if (!shape) return nullptr;
-
-    if (_shapeIcons.find(shape) == _shapeIcons.end()) 
+    Assets *a = _Get();
+    if (a->_shapeIcons.find(modelID) == a->_shapeIcons.end()) 
     {
         //Generate icon by rendering the shape onto a texture.
-        RenderTexture2D target = LoadRenderTexture(SHAPE_ICON_SIZE, SHAPE_ICON_SIZE);
-
-        DrawShapeIcon(target, shape);
-
-        _shapeIcons[shape] = target;
+        a->_shapeIcons[modelID] = LoadRenderTexture(SHAPE_ICON_SIZE, SHAPE_ICON_SIZE);
+        //Icon will be drawn to later.
     }
-    return &_shapeIcons[shape].texture;
+
+    return a->_shapeIcons[modelID].texture;
 }
 
-void Assets::DrawShapeIcon(const RenderTexture2D& target, const Model *shape) 
+void Assets::RedrawIcons()
 {
-    BeginTextureMode(target);
-    ClearBackground(BLACK);
-    BeginMode3D(_iconCamera);
+    static Camera camera = (Camera) {
+        .position = (Vector3) { 4.0f, 4.0f, 4.0f },
+        .target = Vector3Zero(),
+        .up = (Vector3) { 0.0f, -1.0f, 0.0f },
+        .fovy = 45.0f,
+        .projection = CAMERA_PERSPECTIVE
+    };
 
-    DrawModelWiresEx(*shape, Vector3Zero(), (Vector3){0.0f, 1.0f, 0.0f}, GetTime() * 180.0f, Vector3One(), WHITE);
+    for (const auto &[modelID, target] : _Get()->_shapeIcons)
+    {
+        //Redraw the contents, because it is animated.
+        BeginTextureMode(target);
+        ClearBackground(BLACK);
+        BeginMode3D(camera);
 
-    EndMode3D();
-    EndTextureMode();
+        DrawModelWiresEx(_Get()->ModelFromID(modelID), Vector3Zero(), (Vector3){0.0f, 1.0f, 0.0f}, GetTime() * 180.0f, Vector3One(), GREEN);
+
+        EndMode3D();
+        EndTextureMode();
+    }
 }
 
 const Font &Assets::GetFont() 
 {
-    return _font;
+    return _Get()->_font;
 }
 
-Shader *Assets::GetMapShader() 
+const Shader &Assets::GetMapShader() 
 {
-    return &_mapShader;
+    return _Get()->_mapShader;
 }
 
 template<typename D>
-static std::vector<std::string> GetAssetList(const std::unordered_map<std::string, D> &map) 
+static std::vector<fs::path> GetAssetList(const std::map<int, std::pair<fs::path, D>> &map) 
 {
-    std::vector<std::string> out;
+    std::vector<fs::path> out;
     for (const auto &[key, val] : map)
     {
-        out.push_back(key);
+        out.push_back(val.first);
     }
     return out;
 }
 
-std::vector<std::string> GetTexturePathList()
+std::vector<fs::path> Assets::GetTexturePathList()
 {
-    return GetAssetList(_textures);
+    return GetAssetList(_Get()->_textures);
 }
 
-std::vector<std::string> GetShapePathList()
+std::vector<fs::path> Assets::GetShapePathList()
 {
-    return GetAssetList(_shapes);
+    return GetAssetList(_Get()->_models);
 }

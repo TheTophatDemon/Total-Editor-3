@@ -67,11 +67,17 @@ void App::ChangeEditorMode(const App::Mode newMode)
         {
             if (_editorMode == _texPickMode.get() && _texPickMode->GetPickedTexture()) 
             {
-                _tilePlaceMode->SetCursorTexture(_texPickMode->GetPickedTexture());
+                if (_texPickMode->GetPickedTexture() != NO_TEX)
+                {
+                    _tilePlaceMode->SetCursorTexture(_texPickMode->GetPickedTexture());
+                }
             }
             else if (_editorMode == _shapePickMode.get() && _shapePickMode->GetPickedShape()) 
             {
-                _tilePlaceMode->SetCursorShape(_shapePickMode->GetPickedShape());
+                if (_shapePickMode->GetPickedShape() != NO_MODEL)
+                {
+                    _tilePlaceMode->SetCursorShape(_shapePickMode->GetPickedShape());
+                }
             }
             else if (_editorMode == _entMode.get())
             {
@@ -99,20 +105,15 @@ void App::Update()
         //Mode switching hotkeys
         if (IsKeyPressed(KEY_TAB))
         {
-            if (_editorMode == _tilePlaceMode.get())
+            if (IsKeyDown(KEY_LEFT_SHIFT))
             {
-                if (IsKeyDown(KEY_LEFT_SHIFT)) ChangeEditorMode(Mode::PICK_SHAPE);
+                if (_editorMode == _shapePickMode.get()) ChangeEditorMode(Mode::PLACE_TILE);
+                else ChangeEditorMode(Mode::PICK_SHAPE);
+            }
+            else
+            {
+                if (_editorMode == _texPickMode.get()) ChangeEditorMode(Mode::PLACE_TILE);
                 else ChangeEditorMode(Mode::PICK_TEXTURE);
-            }
-            else if (_editorMode == _texPickMode.get())
-            {
-                if (IsKeyDown(KEY_LEFT_SHIFT)) ChangeEditorMode(Mode::PICK_SHAPE);
-                else ChangeEditorMode(Mode::PLACE_TILE);
-            }
-            else if (_editorMode == _shapePickMode.get())
-            {
-                if (IsKeyDown(KEY_LEFT_SHIFT)) ChangeEditorMode(Mode::PICK_TEXTURE);
-                else ChangeEditorMode(Mode::PLACE_TILE);
             }
         }
         if (IsKeyPressed(KEY_E) && IsKeyDown(KEY_LEFT_CONTROL))
@@ -125,6 +126,8 @@ void App::Update()
     }
 
     //Draw
+    Assets::RedrawIcons(); //This must be done before BeginDrawing() for some reason.
+
     BeginDrawing();
     
     ClearBackground(BLACK);
@@ -145,8 +148,6 @@ int main(int argc, char **argv)
     SetWindowState(FLAG_WINDOW_RESIZABLE);
 	InitAudioDevice();
     SetExitKey(KEY_NULL);
-
-    Assets::Initialize();
 
     //RayGUI Styling
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(DARKGRAY));
@@ -169,12 +170,9 @@ int main(int argc, char **argv)
 	SetTargetFPS(300);
 	while (!WindowShouldClose())
 	{
-        Assets::Update();
         App::Get()->Update();
 	}
     
-    //Deinitialization
-    Assets::Unload();
 	CloseWindow();
 
 	return 0;

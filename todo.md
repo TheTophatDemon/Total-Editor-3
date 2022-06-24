@@ -36,12 +36,14 @@
 [x] Flip tiles vertically?
 [x] Preview mode
 [x] Entity placement & configuration
+[x] Blank cursor bug after texture screen
 [ ] File operations, .TI3
 [ ] Import TI2
 [ ] Are you sure you want to exit?
 [ ] Finish instructions, settings
-[ ] Consider generating aggregate meshes instead of instancing
-[ ] Make tile flipping not change yaw orientation
+[ ] Test Windows OS
+# Future prospects
+[ ] Consider generating aggregate meshes instead of instancing in order to fix tiling distortions
 [ ] Consider replacing RayGUI with ImGUI
 [ ] Consider giving entities billboard / model viewing modes
-[ ] Test Windows OS
+[ ] Rewrite it all in Rust!!! (Just kidding I'll rewrite it in Go >;) )
