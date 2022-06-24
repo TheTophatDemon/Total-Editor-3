@@ -63,22 +63,29 @@ void TileGrid::Draw(Vector3 position, int fromY, int toY)
 
 std::string TileGrid::GetTileDataBase64() const 
 {
-    int outSize = 0;
-    char *b64 = EncodeDataBase64((const unsigned char*)_grid.data(), _grid.size() * sizeof(Tile), &outSize);
-    std::string out = std::string(b64);
-    RL_FREE(b64);
-    return out;
+    std::vector<uint8_t> bin;
+    bin.reserve(_grid.size() * sizeof(Tile));
+    for (size_t i = 0; i < _grid.size(); ++i)
+    {
+        //Reinterpret each tile as a series of bytes and push them onto the vector.
+        const char *tileBin = reinterpret_cast<const char *>(&_grid[i]);
+        for (size_t b = 0; b < sizeof(Tile); ++b)
+        {
+            bin.push_back(tileBin[b]);
+        }
+    }
+
+    return base64::encode(bin);
 }
 
 void TileGrid::SetTileDataBase64(std::string data)
 {
-    int outSize = 0;
-    unsigned char *bin = DecodeDataBase64((const unsigned char *)data.c_str(), &outSize);
-    for (size_t i = 0; i < outSize / sizeof(Tile); ++i)
+    std::vector<uint8_t> bin = base64::decode(data);
+    for (size_t i = 0; i < bin.size() / sizeof(Tile) && i < _grid.size(); ++i)
     {
+        //Reinterpret groups of bytes as tiles and place them into the grid.
         _grid[i] = *(reinterpret_cast<Tile *>(&bin[i * sizeof(Tile)]));
     }
-    RL_FREE(bin);
 }
 
 void to_json(nlohmann::json& j, const TileGrid &grid)
