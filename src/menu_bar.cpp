@@ -20,11 +20,6 @@ MenuBar::MenuBar(App::Settings &settings)
       _messageTimer(0.0f),
       _messagePriority(0)
 {
-    auto doSaveDialog = [this](){
-        auto callback = [](fs::path path){ App::Get()->TrySaveMap(path); };
-        this->_activeDialog.reset(new FileDialog("Save Map (*.te3)", { ".te3" }, callback)); 
-    };
-
     _menus = {
         (Menu) {
             .name = "MAP",
@@ -36,7 +31,7 @@ MenuBar::MenuBar(App::Settings &settings)
                         _activeDialog.reset(new FileDialog("Open Map (*.te3, *.ti)", { ".te3", ".ti" }, callback)); 
                     } 
                 },
-                (Item) { "SAVE",         [this, doSaveDialog]()
+                (Item) { "SAVE",         [&]()
                     { 
                         if (!App::Get()->GetLastSavedPath().empty())
                         {
@@ -44,11 +39,11 @@ MenuBar::MenuBar(App::Settings &settings)
                         }
                         else
                         {
-                            doSaveDialog();
+                            OpenSaveMapDialog();
                         }
                     } 
                 },
-                (Item) { "SAVE AS",      doSaveDialog },
+                (Item) { "SAVE AS",      [&](){ OpenSaveMapDialog(); } },
                 (Item) { "EXPAND GRID",  [&](){ _activeDialog.reset(new ExpandMapDialog()); } },
                 (Item) { "SHRINK GRID",  [&](){ _activeDialog.reset(new ShrinkMapDialog()); } },
             },
@@ -90,6 +85,12 @@ MenuBar::MenuBar(App::Settings &settings)
         }
         menu.width = GetStringWidth(Assets::GetFont(), MENUBAR_FONT_SIZE, longestString);
     }
+}
+
+void MenuBar::OpenSaveMapDialog()
+{
+    auto callback = [](fs::path path){ App::Get()->TrySaveMap(path); };
+    _activeDialog.reset(new FileDialog("Save Map (*.te3)", { ".te3" }, callback)); 
 }
 
 void MenuBar::Update()

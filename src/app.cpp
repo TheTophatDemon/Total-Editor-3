@@ -117,6 +117,19 @@ void App::Update()
             if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::EDIT_ENT);
             else if (_editorMode == _entMode.get()) ChangeEditorMode(Mode::PLACE_TILE);
         }
+
+        //Save hotkey
+        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S))
+        {
+            if (!GetLastSavedPath().empty())
+            {
+                TrySaveMap(GetLastSavedPath());
+            }
+            else
+            {
+                _menuBar->OpenSaveMapDialog();
+            }
+        }
         
         _editorMode->Update();
     }

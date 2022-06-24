@@ -32,6 +32,7 @@ public:
     MenuBar(App::Settings &settings);
     void Update();
     void Draw();
+    void OpenSaveMapDialog();
 
     inline bool IsMouseOn() const { return _mouseOn; }
     inline bool IsFocused() const { return _focused; }
