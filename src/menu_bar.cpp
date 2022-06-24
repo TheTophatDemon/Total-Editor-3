@@ -16,7 +16,9 @@ MenuBar::MenuBar(App::Settings &settings)
     : _settings(settings),
       _focused(false),
       _activeMenu(nullptr),
-      _activeDialog(nullptr)
+      _activeDialog(nullptr),
+      _messageTimer(0.0f),
+      _messagePriority(0)
 {
     auto doSaveDialog = [this](){
         auto callback = [](fs::path path){ App::Get()->TrySaveMap(path); };
@@ -97,6 +99,11 @@ void MenuBar::Update()
     if (_messageTimer > 0.0f)
     {
         _messageTimer -= GetFrameTime();
+        if (_messageTimer <= 0.0f)
+        {
+            _messageTimer = 0.0f;
+            _messagePriority = 0;
+        }
     }
 
     if (_activeMenu)

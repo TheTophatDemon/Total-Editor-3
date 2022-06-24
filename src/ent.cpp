@@ -7,6 +7,7 @@
 #include "draw_extras.h"
 #include "text_util.hpp"
 #include "assets.hpp"
+#include "map_man.hpp"
 
 void EntGrid::Draw(int fromY, int toY)
 {
@@ -73,4 +74,23 @@ void Ent::Draw() const
         DrawAxes3D(Vector3Zero(), radius);
         rlPopMatrix();
     }
+}
+
+void to_json(nlohmann::json& j, const Ent &ent)
+{
+    j["radius"] = ent.radius;
+    j["color"] = nlohmann::json::array({ent.color.r, ent.color.g, ent.color.b});
+    j["position"] = nlohmann::json::array({ent.position.x, ent.position.y, ent.position.z});
+    j["angles"] = nlohmann::json::array({ent.pitch, ent.yaw, 0.0f});
+    j["properties"] = ent.properties;
+}
+
+void from_json(const nlohmann::json& j, Ent &ent)
+{
+    ent.radius = j.at("radius");
+    ent.color = (Color) { j.at("color").at(0), j.at("color").at(1), j.at("color").at(2), 255 };
+    ent.position = (Vector3) { j.at("position").at(0), j.at("position").at(1), j.at("position").at(2) };
+    ent.pitch = j.at("angles").at(0);
+    ent.yaw = j.at("angles").at(1);
+    ent.properties = j.at("properties");
 }

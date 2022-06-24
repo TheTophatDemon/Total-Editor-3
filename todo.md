@@ -37,7 +37,8 @@
 [x] Preview mode
 [x] Entity placement & configuration
 [x] Blank cursor bug after texture screen
-[ ] File operations, .TI3
+[x] File operations, .TI3
+[ ] Investigate invalid UTF-8 bug
 [ ] Import TI2
 [ ] Are you sure you want to exit?
 [ ] Finish instructions, settings

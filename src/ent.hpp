@@ -3,6 +3,7 @@
 
 #include "raylib.h"
 #include "raymath.h"
+#include "json.hpp"
 
 #include <vector>
 #include <string>
@@ -42,6 +43,9 @@ struct Ent
 
     void Draw() const;
 };
+
+void to_json(nlohmann::json& j, const Ent &ent);
+void from_json(const nlohmann::json& j, Ent &ent);
 
 //This represents a grid of entities. 
 //Instead of the grid storing entities directly, it stores iterators into the `_ents` array to save on memory.
@@ -98,6 +102,17 @@ public:
         SubsectionCopy(i, j, k, w, h, l, newGrid);
 
         return newGrid;
+    }
+
+    //Returns a continuous array of all active entities.
+    inline std::vector<Ent> GetEntList() const
+    {
+        std::vector<Ent> out;
+        for (const Ent &ent : _grid)
+        {
+            if (ent) out.push_back(ent);
+        }
+        return out;
     }
 
     void Draw(int fromY, int toY);

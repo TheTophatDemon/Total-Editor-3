@@ -64,6 +64,9 @@ Assets::Assets()
     _mapShader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(_mapShader, "instanceTransform");
 
     _font = LoadFont_Dejavu();
+
+    _nextModelID = 0;
+    _nextTexID = 0;
 }
 
 TexID Assets::TexIDFromPath(fs::path texturePath) 
@@ -73,8 +76,9 @@ TexID Assets::TexIDFromPath(fs::path texturePath)
     {
         if (pair.first == texturePath) return id;
     }
-    TexID id = a->_textures.size();
+    TexID id = a->_nextTexID;
     a->_textures[id] = std::pair(texturePath, LoadTexture(texturePath.c_str()));
+    ++a->_nextTexID;
     return id;
 }
 
@@ -118,8 +122,9 @@ ModelID Assets::ModelIDFromPath(fs::path modelPath)
     {
         if (pair.first == modelPath) return id;
     }
-    ModelID id = a->_models.size();
+    ModelID id = a->_nextModelID;
     a->_models[id] = std::pair(modelPath, LoadModel(modelPath.c_str()));
+    ++a->_nextModelID;
     return id;
 }
 
@@ -202,4 +207,59 @@ std::vector<fs::path> Assets::GetTexturePathList()
 std::vector<fs::path> Assets::GetShapePathList()
 {
     return GetAssetList(_Get()->_models);
+}
+
+void Assets::LoadTextureIDs(const std::vector<fs::path> &fileList)
+{
+    for (const fs::path &path : fileList)
+    {
+        TexIDFromPath(path);
+    }
+}
+
+void Assets::LoadShapeIDs(const std::vector<fs::path> &fileList)
+{
+    for (const fs::path &path : fileList)
+    {
+        ModelIDFromPath(path);
+    }
+}   
+
+void Assets::Clear()
+{
+    Assets *a = _Get();
+    for (const auto &[id, pair] : a->_textures)
+    {
+        UnloadTexture(pair.second);
+    }
+    a->_textures.clear();
+
+    for (const auto &[id, pair] : a->_models)
+    {
+        UnloadModel(pair.second);
+    }
+    a->_models.clear();
+
+    for (const auto &[id, mat] : a->_materials)
+    {
+        //Because the materials share textures that we have already freed, we cannot call UnloadMaterial()
+        RL_FREE(mat.maps);
+    }
+    a->_materials.clear();
+
+    for (const auto &[id, mat] : a->_instancedMaterials)
+    {
+        //Because the materials share textures that we have already freed, we cannot call UnloadMaterial()
+        RL_FREE(mat.maps);
+    }
+    a->_instancedMaterials.clear();
+
+    for (const auto &[id, target] : a->_shapeIcons)
+    {
+        UnloadRenderTexture(target);
+    }
+    a->_shapeIcons.clear();
+
+    a->_nextModelID = 0;
+    a->_nextTexID = 0;
 }

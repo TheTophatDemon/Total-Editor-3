@@ -3,6 +3,7 @@
 #include "json.hpp"
 
 #include <fstream>
+#include <iostream>
 
 #include "app.hpp"
 #include "assets.hpp"
@@ -61,13 +62,67 @@ bool MapMan::SaveTE3Map(fs::path filePath)
 {
     using namespace nlohmann;
 
-    json jData;
-    // jData["textures"] = Assets::GetTexturePathList();
-    // jData["shapes"] = Assets::GetShapePathList();
-    jData["tiles"] = _tileGrid;
+    try
+    {
+        json jData;
+        jData["textures"] = Assets::GetTexturePathList();
+        jData["shapes"] = Assets::GetShapePathList();
+        jData["tiles"] = _tileGrid;
+        jData["ents"] = _entGrid.GetEntList();
 
-    std::ofstream file(filePath);
-    file << to_string(jData);
+        std::ofstream file(filePath);
+        file << to_string(jData);
+
+        if (file.fail()) return false;
+    }
+    catch (const std::exception &e)
+    {
+        std::cout << e.what() << std::endl;
+        return false;
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool MapMan::LoadTE3Map(fs::path filePath)
+{
+    _undoHistory.clear();
+    _redoHistory.clear();
+    
+    using namespace nlohmann;
+
+    std::ifstream file(filePath);
+    json jData;
+    file >> jData;
+
+    try
+    {
+        Assets::Clear();
+        Assets::LoadTextureIDs(jData.at("textures"));
+        Assets::LoadShapeIDs(jData.at("shapes"));
+        _tileGrid = jData.at("tiles");
+        _entGrid = EntGrid(_tileGrid.GetWidth(), _tileGrid.GetHeight(), _tileGrid.GetLength());
+        for (const Ent& e : jData.at("ents").get<std::vector<Ent>>())
+        {
+            Vector3 gridPos = _entGrid.WorldToGridPos(e.position);
+            _entGrid.AddEnt((int) gridPos.x, (int) gridPos.y, (int) gridPos.z, e);
+        }
+    }
+    catch (const std::exception &e)
+    {
+        std::cout << e.what() << std::endl;
+        return false;
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    if (file.fail()) return false;
 
     return true;
 }

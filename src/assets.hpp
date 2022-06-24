@@ -34,7 +34,15 @@ public:
     static std::vector<fs::path> GetTexturePathList();
     static std::vector<fs::path> GetShapePathList();
 
+    //Loads new textures from the fileList, in order of increasing texID.
+    static void LoadTextureIDs(const std::vector<fs::path> &fileList);
+    //Loads new models from the fileList, in order of increasing modelID.
+    static void LoadShapeIDs(const std::vector<fs::path> &fileList);
+
     static void RedrawIcons();
+
+    //Releases all memory and ID associations.
+    static void Clear();
 protected:
     std::map<TexID, std::pair<fs::path, Texture2D>>  _textures;
     std::map<TexID, Material>                        _materials; //Materials that use the default shader.
@@ -45,8 +53,11 @@ protected:
     Font _font; //Default application font (dejavu.fnt)
     Texture2D _missingTexture;
     Model _missingModel;
+    TexID _nextTexID;
+    ModelID _nextModelID;
 private:
     Assets();
+    ~Assets();
     static Assets *_Get();
 };
 

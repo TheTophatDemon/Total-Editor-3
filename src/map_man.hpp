@@ -176,6 +176,9 @@ public:
     //Saves the map as a .te3 file at the given path. Returns false if there was an error.
     bool SaveTE3Map(fs::path filePath);
 
+    //Loads a .te3 map from the given path. Returns false if there was an error.
+    bool LoadTE3Map(fs::path filePath);
+
     //Executes a undoable tile action for filling an area with one tile
     void ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile);
     //Executes a undoable tile action for filling an area using a brush

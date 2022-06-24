@@ -51,6 +51,16 @@ App::App()
 void App::ChangeEditorMode(const App::Mode newMode) 
 {
     _editorMode->OnExit();
+
+    if (_editorMode == _texPickMode.get() && _texPickMode->GetPickedTexture() != NO_TEX) 
+    {
+        _tilePlaceMode->SetCursorTexture(_texPickMode->GetPickedTexture());
+    }
+    else if (_editorMode == _shapePickMode.get() && _shapePickMode->GetPickedShape() != NO_MODEL) 
+    {
+        _tilePlaceMode->SetCursorShape(_shapePickMode->GetPickedShape());
+    }
+
     switch (newMode)
     {
         case App::Mode::PICK_SHAPE: 
@@ -65,21 +75,7 @@ void App::ChangeEditorMode(const App::Mode newMode)
         break;
         case App::Mode::PLACE_TILE: 
         {
-            if (_editorMode == _texPickMode.get() && _texPickMode->GetPickedTexture()) 
-            {
-                if (_texPickMode->GetPickedTexture() != NO_TEX)
-                {
-                    _tilePlaceMode->SetCursorTexture(_texPickMode->GetPickedTexture());
-                }
-            }
-            else if (_editorMode == _shapePickMode.get() && _shapePickMode->GetPickedShape()) 
-            {
-                if (_shapePickMode->GetPickedShape() != NO_MODEL)
-                {
-                    _tilePlaceMode->SetCursorShape(_shapePickMode->GetPickedShape());
-                }
-            }
-            else if (_editorMode == _entMode.get())
+            if (_editorMode == _entMode.get())
             {
                 if (_entMode->IsChangeConfirmed()) _tilePlaceMode->SetCursorEnt(_entMode->GetEnt());
             }
@@ -107,13 +103,13 @@ void App::Update()
         {
             if (IsKeyDown(KEY_LEFT_SHIFT))
             {
-                if (_editorMode == _shapePickMode.get()) ChangeEditorMode(Mode::PLACE_TILE);
-                else ChangeEditorMode(Mode::PICK_SHAPE);
+                if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::PICK_SHAPE);
+                else ChangeEditorMode(Mode::PLACE_TILE);
             }
             else
             {
-                if (_editorMode == _texPickMode.get()) ChangeEditorMode(Mode::PLACE_TILE);
-                else ChangeEditorMode(Mode::PICK_TEXTURE);
+                if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::PICK_TEXTURE);
+                else ChangeEditorMode(Mode::PLACE_TILE);
             }
         }
         if (IsKeyPressed(KEY_E) && IsKeyDown(KEY_LEFT_CONTROL))
@@ -221,7 +217,16 @@ void App::TryOpenMap(fs::path path)
     {
         if (path.extension() == ".te3") 
         {
-            DisplayStatusMessage("Loaded .te3 map.", 5.0f, 100);
+            if (_mapMan->LoadTE3Map(path))
+            {
+                DisplayStatusMessage("Loaded .te3 map.", 5.0f, 100);
+            }
+            else
+            {
+                DisplayStatusMessage("ERROR: Failed to load .te3 map. Check the console.", 5.0f, 100);
+            }
+            _tilePlaceMode->ResetCamera();
+            _tilePlaceMode->ResetGrid();
         }
         else if (path.extension() == ".ti")
         {
@@ -252,11 +257,12 @@ void App::TrySaveMap(fs::path path)
     {
         if (_mapMan->SaveTE3Map(path))
         {
+            _lastSavedPath = path;
             DisplayStatusMessage("Saved .te3 map.", 5.0f, 100);
         }
         else
         {
-            DisplayStatusMessage("ERROR: Map could not be saved.", 5.0f, 100);
+            DisplayStatusMessage("ERROR: Map could not be saved. Check the console.", 5.0f, 100);
         }
     }
     else

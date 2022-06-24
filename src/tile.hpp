@@ -63,6 +63,7 @@ public:
         : TileGrid(width, height, length, TILE_SPACING_DEFAULT, (Tile) { NO_MODEL, 0, NO_TEX, false })
     {
     }
+
     //Constructs a TileGrid filled with the given tile.
     inline TileGrid(size_t width, size_t height, size_t length, float spacing, Tile fill)
         : Grid<Tile>(width, height, length, spacing, fill)
@@ -155,7 +156,11 @@ public:
     void Draw(Vector3 position, int fromY, int toY);
     void Draw(Vector3 position);
 
+    //Returns a base64 encoded string with the binary representations of all tiles.
     std::string GetTileDataBase64() const;
+
+    //Assigns tiles based on the binary data encoded in base 64. Assumes that the sizes of the data and the current grid are the same.
+    void SetTileDataBase64(std::string data);
 
 protected:
     //Calculates lists of transformations for each tile, separated by texture and shape, to be drawn as instances.

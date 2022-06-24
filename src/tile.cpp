@@ -63,7 +63,22 @@ void TileGrid::Draw(Vector3 position, int fromY, int toY)
 
 std::string TileGrid::GetTileDataBase64() const 
 {
-    return base64::encode(_grid);
+    int outSize = 0;
+    char *b64 = EncodeDataBase64((const unsigned char*)_grid.data(), _grid.size() * sizeof(Tile), &outSize);
+    std::string out = std::string(b64);
+    RL_FREE(b64);
+    return out;
+}
+
+void TileGrid::SetTileDataBase64(std::string data)
+{
+    int outSize = 0;
+    unsigned char *bin = DecodeDataBase64((const unsigned char *)data.c_str(), &outSize);
+    for (size_t i = 0; i < outSize / sizeof(Tile); ++i)
+    {
+        _grid[i] = *(reinterpret_cast<Tile *>(&bin[i * sizeof(Tile)]));
+    }
+    RL_FREE(bin);
 }
 
 void to_json(nlohmann::json& j, const TileGrid &grid)
@@ -76,5 +91,6 @@ void to_json(nlohmann::json& j, const TileGrid &grid)
 
 void from_json(const nlohmann::json& j, TileGrid &grid)
 {
-    
+    grid = TileGrid(j.at("width"), j.at("height"), j.at("length"), TILE_SPACING_DEFAULT, Tile());
+    grid.SetTileDataBase64(j.at("data"));
 }
