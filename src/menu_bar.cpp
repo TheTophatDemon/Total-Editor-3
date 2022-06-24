@@ -28,7 +28,7 @@ MenuBar::MenuBar(App::Settings &settings)
                 (Item) { "OPEN",         [&]()
                     { 
                         auto callback = [](fs::path path){ App::Get()->TryOpenMap(path); };
-                        _activeDialog.reset(new FileDialog("Open Map (*.te3, *.ti)", { ".te3", ".ti" }, callback)); 
+                        _activeDialog.reset(new FileDialog("Open Map (*.te3)", { ".te3" }, callback)); 
                     } 
                 },
                 (Item) { "SAVE",         [&]()

@@ -78,6 +78,7 @@ TexID Assets::TexIDFromPath(fs::path texturePath)
     }
     TexID id = a->_nextTexID;
     a->_textures[id] = std::pair(texturePath, LoadTexture(texturePath.c_str()));
+    if (a->_textures[id].second.width == 0) a->_textures[id] = std::pair(texturePath, a->_missingTexture);
     ++a->_nextTexID;
     return id;
 }

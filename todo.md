@@ -38,7 +38,9 @@
 [x] Entity placement & configuration
 [x] Blank cursor bug after texture screen
 [x] File operations, .TI3
-[ ] Import TI2
+[x] Import TI2 (Converter written as separate application)
+[ ] Optimize entity rendering
+[ ] Allow transparency with instancedMaterial?
 [ ] Are you sure you want to exit?
 [ ] Finish instructions, settings
 [ ] Test Windows OS

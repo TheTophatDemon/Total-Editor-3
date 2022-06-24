@@ -24,6 +24,7 @@ struct Tile
     int angle; //In whole number of degrees
     TexID texture;
     bool flipped; //True if flipped vertically
+    char padding[3]; //This is here to ensure that the byte layout is consistent across compilers.
 
     inline Tile() : shape(NO_MODEL), angle(0), texture(NO_TEX), flipped(false) {}
     inline Tile(ModelID s, int a, TexID t, bool f) : shape(s), angle(a), texture(t), flipped(f) {}
