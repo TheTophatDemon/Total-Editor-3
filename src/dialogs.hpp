@@ -120,4 +120,19 @@ protected:
     float _sensitivity;
 };
 
+class AboutDialog : public Dialog
+{
+public:
+    virtual bool Draw() override;
+};
+
+class ShortcutsDialog : public Dialog
+{
+public:
+    ShortcutsDialog();
+    virtual bool Draw() override;
+protected:
+    Vector2 _scroll;
+};
+
 #endif

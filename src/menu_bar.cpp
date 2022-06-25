@@ -69,9 +69,9 @@ MenuBar::MenuBar(App::Settings &settings)
         (Menu) {
             .name = "INFO",
             .items = {
-                (Item) { "ABOUT",        [](){} },
-                (Item) { "SHORTCUTS",    [](){} },
-                (Item) { "INSTRUCTIONS", [](){} },
+                (Item) { "ABOUT",          [&](){ _activeDialog.reset(new AboutDialog()); } },
+                (Item) { "KEYS/SHORTCUTS", [&](){ _activeDialog.reset(new ShortcutsDialog()); } },
+                (Item) { "INSTRUCTIONS",   [](){} },
             },
         }
     };

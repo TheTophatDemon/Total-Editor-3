@@ -11,6 +11,7 @@
 #include "math_stuff.hpp"
 #include "app.hpp"
 #include "map_man.hpp"
+#include "text_util.hpp"
 #include "draw_extras.h"
 
 Rectangle DialogRec(float w, float h)
@@ -45,6 +46,23 @@ std::vector<Rectangle> ArrangeVertical(Rectangle area, std::initializer_list<Rec
     int i = 0;;
     for (Rectangle& r : out)
     {
+        r.x += area.x;
+        r.y += area.y + (i * REGION_HEIGHT) + (REGION_HEIGHT / 2.0f) - (r.height / 2.0f);
+        ++i;
+    }
+    return out;
+}
+
+//Takes some rectangles, that are all the same size, and returns copies of them, repositioned to be vertically laid out inside of the `area` rectangle.
+std::vector<Rectangle> ArrangeVertical(Rectangle area, Rectangle templ, int count)
+{
+    const float REGION_HEIGHT = area.height / count;
+
+    std::vector<Rectangle> out(count);
+    int i = 0;
+    for (Rectangle& r : out)
+    {
+        r = templ;
         r.x += area.x;
         r.y += area.y + (i * REGION_HEIGHT) + (REGION_HEIGHT / 2.0f) - (r.height / 2.0f);
         ++i;
@@ -457,6 +475,85 @@ bool SettingsDialog::Draw()
     {
         return false;
     }
+
+    return !clicked;
+}
+
+bool AboutDialog::Draw()
+{
+    const Rectangle DRECT = DialogRec(480.0f, 256.0f);
+
+    bool clicked = GuiWindowBox(DRECT, "About");
+
+    Font font = Assets::GetFont();
+    DrawTextEx(font, "Total Editor 3.0.0", (Vector2) { DRECT.x + 8.0f, DRECT.y + 32.0f }, 32.0f, 0.25f, WHITE);
+
+    DrawTextEx(font, "Written by The Tophat Demon", (Vector2) { DRECT.x + 8.0f, DRECT.y + 70.0f }, font.baseSize, 0.0f, WHITE);
+    DrawTextEx(font, "Source code: \nhttps://github.com/TheTophatDemon/Total-Editor-3", (Vector2) { DRECT.x + 8.0f, DRECT.y + 96.0f }, font.baseSize, 0.0f, WHITE);
+
+    return !clicked;
+}
+
+ShortcutsDialog::ShortcutsDialog()
+    : _scroll(Vector2Zero())
+{
+}
+
+bool ShortcutsDialog::Draw()
+{
+    static const int N_SHORTCUTS = 22;
+    static const char *SHORTCUTS_TEXT[N_SHORTCUTS] = {
+        "W/A/S/D - Move camera",
+        "Middle click - Look around",
+        "Left click - Place tile/entity/brush",
+        "Right click - Remove tile/entity (Does not work in brush mode)",
+        "T (Tile mode) - Select texture of tile under cursor",
+        "G (Tile mode) - Select shape of tile under cursor",
+        "T/G (Entity mode) - Copy entity from under cursor.",
+        "Q - Turn cursor counterclockwise",
+        "E - Turn cursor clockwise",
+        "R - Reset cursor orientation",
+        "F - Flip cursor vertically (Tiles), Turn cursor upwards (Entities)",
+        "V - Turn cursor downwards (Entities)",
+        "TAB - Switch between texture picker and map editor.",
+        "LEFT SHIFT+TAB - Switch between shape picker and map editor.",
+        "LEFT CTRL+TAB - Switch between entity editor and map editor.",
+        "LEFT CTRL+E - Put cursor into entity mode.",
+        "HOLD LEFT SHIFT - Expand cursor to place tiles in bulk.",
+        "LEFT SHIFT+B - Capture tiles under cursor as a brush.",
+        "ESCAPE/BACKSPACE - Return cursor to tile mode.",
+        "LEFT CTRL+S - Save map.",
+        "LEFT CTRL+Z - Undo",
+        "LEFT CTRL+Y - Redo"
+    };
+    
+    const Rectangle DRECT = DialogRec(608.0f, 468.0f);
+
+    bool clicked = GuiWindowBox(DRECT, "Shortcuts");
+
+    Rectangle contentRect = (Rectangle) { 0 };
+    const float TEXT_HEIGHT = 32.0f;
+    contentRect.height = 16.0f;
+    for (int i = 0; i < N_SHORTCUTS; ++i)
+    {
+        std::string str = SHORTCUTS_TEXT[i];
+        float w = (float)GetStringWidth(Assets::GetFont(), Assets::GetFont().baseSize, str);
+        if (contentRect.width < w) contentRect.width = w;
+        contentRect.height += TEXT_HEIGHT;
+    }
+
+    Rectangle scissor = GuiScrollPanel(
+        (Rectangle) { DRECT.x + 8.0f, DRECT.y + 32.0f, DRECT.width - 16.0f, DRECT.height - 40.0f }, 
+        NULL, contentRect, &_scroll);
+
+    BeginScissorMode((int)scissor.x, (int)scissor.y, (int)scissor.width, (int)scissor.height);
+
+    for (int i = 0; i < N_SHORTCUTS; ++i)
+    {
+        GuiLabel((Rectangle) { scissor.x + _scroll.x, scissor.y + _scroll.y + 16.0f + (i * TEXT_HEIGHT) }, SHORTCUTS_TEXT[i]);
+    }
+
+    EndScissorMode();
 
     return !clicked;
 }
