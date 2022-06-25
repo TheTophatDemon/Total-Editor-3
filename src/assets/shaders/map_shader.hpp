@@ -62,8 +62,10 @@ const vec3 lightDir = normalize(vec3(1.0, -1.0, -1.0));
 
 void main()
 {
+
     // Texel color fetching from texture sampler
     vec4 texelColor = texture(texture0, fragTexCoord);
+    if (texelColor.a < 0.9) discard;
 
     float dp = dot(-lightDir, fragNormal);
     float shading = min(1.0, (0.5 + (max(0.0,dp) * 0.5)));

@@ -240,8 +240,15 @@ bool FileDialog::Draw()
 
         if (GuiLabelButton(BUTT_RECT, name.c_str()))
         {
-            if (entry.is_directory()) _currentDir = entry.path();
-            else strcpy(_fileNameBuffer, entry.path().filename().c_str());
+            if (entry.is_directory()) 
+            {
+                _currentDir = entry.path();
+                memset(_fileNameBuffer, 0, sizeof(char) * TEXT_FIELD_MAX);
+            }
+            else 
+            {
+                strcpy(_fileNameBuffer, entry.path().filename().c_str());
+            }
         }
     }
 
@@ -249,7 +256,7 @@ bool FileDialog::Draw()
 
     //File name entry
 
-    if (GuiTextBox(FILE_ENTRY_RECT, _fileNameBuffer, 16, _fileNameEdit))
+    if (GuiTextBox(FILE_ENTRY_RECT, _fileNameBuffer, TEXT_FIELD_MAX, _fileNameEdit))
     {
         _fileNameEdit = !_fileNameEdit;
     }

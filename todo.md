@@ -40,7 +40,7 @@
 [x] File operations, .TI3
 [x] Import TI2 (Converter written as separate application)
 [x] Optimize entity rendering
-[ ] Allow transparency with instancedMaterial?
+[x] Allow transparency with instancedMaterial?
 [ ] Are you sure you want to exit?
 [ ] Finish instructions, settings
 [ ] Test Windows OS
