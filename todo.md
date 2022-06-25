@@ -45,7 +45,7 @@
 [x] Asset path changing
 [x] Settings menu
 [x] Save and load settings
-[ ] Information
+[x] Information
 [ ] Test Windows OS
 # Future prospects
 [ ] Consider generating aggregate meshes instead of instancing in order to fix tiling distortions

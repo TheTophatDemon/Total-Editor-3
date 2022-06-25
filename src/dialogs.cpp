@@ -311,16 +311,17 @@ bool FileDialog::Draw()
     return !clicked;
 }
 
-static const int N_QUIT_MESSAGES = 8;
+static const int N_QUIT_MESSAGES = 9;
 static const char *QUIT_MESSAGES[N_QUIT_MESSAGES] = {
     "Only winners take stretch breaks.", 
     "Did I leave the editor on Nightmare difficulty?", 
     "Remember to eat some clowns.", 
     "Admiring the *cough* robust C++ architecture?", 
-    "Your soul is what really needs saving. ;)",
+    "Your SOUL is what needs saving, not this map file!",
     "Click 'Nah' to meet hot singles in your area!",
     "Whelp...I'm going to Grillby's...",
-    "100% of people who go outside die!"
+    "100% of people who go outside die!",
+    "Да, я тоже не понимаю это приложение."
 };
 
 CloseDialog::CloseDialog()
@@ -554,6 +555,17 @@ bool ShortcutsDialog::Draw()
     }
 
     EndScissorMode();
+
+    return !clicked;
+}
+
+bool InstructionsDialog::Draw()
+{
+    const Rectangle DRECT = DialogRec(512.0f, 128.0f);
+
+    bool clicked = GuiWindowBox(DRECT, "Instructions");
+
+    GuiLabel((Rectangle){ .x = DRECT.x + 8.0f, .y = DRECT.y + 64.0f }, "Please refer to the file \n'instructions.html' included with the application.");
 
     return !clicked;
 }

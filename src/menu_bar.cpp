@@ -71,7 +71,7 @@ MenuBar::MenuBar(App::Settings &settings)
             .items = {
                 (Item) { "ABOUT",          [&](){ _activeDialog.reset(new AboutDialog()); } },
                 (Item) { "KEYS/SHORTCUTS", [&](){ _activeDialog.reset(new ShortcutsDialog()); } },
-                (Item) { "INSTRUCTIONS",   [](){} },
+                (Item) { "INSTRUCTIONS",   [&](){ _activeDialog.reset(new InstructionsDialog()); } },
             },
         }
     };

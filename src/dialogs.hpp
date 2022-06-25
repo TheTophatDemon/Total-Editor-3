@@ -135,4 +135,10 @@ protected:
     Vector2 _scroll;
 };
 
+class InstructionsDialog : public Dialog
+{
+public:
+    virtual bool Draw() override;
+};
+
 #endif
