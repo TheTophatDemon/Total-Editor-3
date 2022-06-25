@@ -41,8 +41,10 @@
 [x] Import TI2 (Converter written as separate application)
 [x] Optimize entity rendering
 [x] Allow transparency with instancedMaterial?
-[ ] Are you sure you want to exit?
-[ ] Finish instructions, settings
+[x] Are you sure you want to exit?
+[ ] Asset path changing
+[ ] Settings
+[ ] Information
 [ ] Test Windows OS
 # Future prospects
 [ ] Consider generating aggregate meshes instead of instancing in order to fix tiling distortions

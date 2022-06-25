@@ -44,7 +44,8 @@ App::App()
     _editorMode    (_tilePlaceMode.get()),
     _previewDraw   (false),
     _lastSavedPath (),
-    _menuBar       (std::make_unique<MenuBar>(_settings))
+    _menuBar       (std::make_unique<MenuBar>(_settings)),
+    _quit          (false)
 {
 }
 
@@ -158,6 +159,10 @@ int main(int argc, char **argv)
 	InitAudioDevice();
     SetExitKey(KEY_NULL);
 
+    //Set random seed based on system time;
+    using std::chrono::high_resolution_clock;
+    SetRandomSeed((int)high_resolution_clock::now().time_since_epoch().count());
+
     //RayGUI Styling
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(DARKGRAY));
     GuiSetFont(Assets::GetFont());
@@ -177,7 +182,7 @@ int main(int argc, char **argv)
 
     //Main loop
 	SetTargetFPS(300);
-	while (!WindowShouldClose())
+	while (!App::Get()->IsQuitting())
 	{
         App::Get()->Update();
 	}

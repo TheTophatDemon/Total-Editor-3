@@ -280,3 +280,34 @@ bool FileDialog::Draw()
 
     return !clicked;
 }
+
+static const int N_QUIT_MESSAGES = 8;
+static const char *QUIT_MESSAGES[N_QUIT_MESSAGES] = {
+    "Only winners take stretch breaks.", 
+    "Did I leave the editor on Nightmare difficulty?", 
+    "Remember to eat some clowns.", 
+    "Admiring the *cough* robust C++ architecture?", 
+    "Your soul is what really needs saving.",
+    "Click 'Nah' to meet hot singles in your area!",
+    "Whelp...I'm going to Grillby's...",
+    "100% of people who go outside die!"
+};
+
+CloseDialog::CloseDialog()
+{
+    _messageIdx = GetRandomValue(0, N_QUIT_MESSAGES - 1);
+}
+
+bool CloseDialog::Draw()
+{
+    switch (GuiMessageBox(DialogRec(480.0f, 160.0f), "Really quit?", QUIT_MESSAGES[_messageIdx], "Quit;Nah"))
+    {
+    case 1:
+        App::Get()->Quit();
+        return false;
+    case -1:
+        return true;
+    default:
+        return false;
+    }
+}

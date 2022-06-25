@@ -85,4 +85,13 @@ protected:
     bool _fileNameEdit;
 };
 
+class CloseDialog : public Dialog
+{
+public:
+    CloseDialog();
+    virtual bool Draw() override;
+protected:
+    int _messageIdx;
+};
+
 #endif

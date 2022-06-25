@@ -56,6 +56,9 @@ public:
     inline void TogglePreviewing() { _previewDraw = !_previewDraw; }
     inline fs::path GetLastSavedPath() const { return _lastSavedPath; }
 
+    inline bool IsQuitting() const { return _quit; }
+    inline void Quit() { _quit = true; }
+
     Rectangle GetMenuBarRect();
     void DisplayStatusMessage(std::string message, float durationSeconds, int priority);
 
@@ -86,6 +89,8 @@ private:
 
     fs::path _lastSavedPath;
     bool _previewDraw;
+
+    bool _quit;
 };
 
 #endif

@@ -107,6 +107,12 @@ void MenuBar::Update()
         }
     }
 
+    //Show exit confirmation dialog
+    if (WindowShouldClose()) 
+    {
+        _activeDialog.reset(new CloseDialog());
+    }
+
     if (_activeMenu)
     {
         _focused = true;
