@@ -2,6 +2,7 @@
 #define APP_HPP
 
 #include "raylib.h"
+#include "json.hpp"
 
 #include <string>
 #include <memory>
@@ -26,6 +27,7 @@ public:
         size_t undoMax;
         float mouseSensitivity;
     };
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Settings, texturesDir, shapesDir, undoMax, mouseSensitivity);
 
     //Mode implementation
     class ModeImpl 
@@ -72,6 +74,11 @@ public:
     void ShrinkMap();
     void TryOpenMap(fs::path path);
     void TrySaveMap(fs::path path);
+
+    //Serializes settings into JSON file and exports.
+    void SaveSettings();
+    //Deserializes settings from JSON file
+    void LoadSettings();
 private:
     App();
 

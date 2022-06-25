@@ -11,6 +11,7 @@ namespace fs = std::filesystem;
 
 #include "tile.hpp"
 #include "ent.hpp"
+#include "app.hpp"
 
 #define TEXT_FIELD_MAX 512
 
@@ -92,6 +93,31 @@ public:
     virtual bool Draw() override;
 protected:
     int _messageIdx;
+};
+
+class AssetPathDialog : public Dialog
+{
+public:
+    AssetPathDialog(App::Settings &settings);
+    virtual bool Draw() override;
+protected:
+    App::Settings &_settings;
+    char _texPathBuffer[TEXT_FIELD_MAX];
+    char _shapePathBuffer[TEXT_FIELD_MAX];
+    bool _texPathEdit;
+    bool _shapePathEdit;
+};
+
+class SettingsDialog : public Dialog
+{
+public:
+    SettingsDialog(App::Settings &settings);
+    virtual bool Draw() override;
+protected:
+    App::Settings &_settings;
+    int _undoMax;
+    bool _undoMaxEdit;
+    float _sensitivity;
 };
 
 #endif

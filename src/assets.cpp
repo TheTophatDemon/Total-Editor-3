@@ -55,7 +55,7 @@ Assets::Assets()
     free(texImg.data);
     
     //Assign missing model as a cube
-    _missingModel = LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f));
+    _missingModel = LoadModelFromMesh(GenMeshCube(2.0f, 2.0f, 2.0f));
 
     _entSphere = LoadModelFromMesh(GenMeshSphere(1.0f, 8, 8));
 

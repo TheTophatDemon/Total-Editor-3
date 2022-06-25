@@ -10,6 +10,9 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <fstream>
+#include <iostream>
+#include <filesystem>
 
 #include "assets.hpp"
 #include "menu_bar.hpp"
@@ -17,6 +20,8 @@
 #include "pick_mode.hpp"
 #include "ent_mode.hpp"
 #include "map_man.hpp"
+
+#define SETTINGS_FILE_PATH "settings.json"
 
 static App *_appInstance = nullptr;
 
@@ -47,6 +52,15 @@ App::App()
     _menuBar       (std::make_unique<MenuBar>(_settings)),
     _quit          (false)
 {
+    std::filesystem::directory_entry entry { SETTINGS_FILE_PATH };
+    if (entry.exists())
+    {
+        LoadSettings();
+    }
+    else
+    {
+        SaveSettings();
+    }
 }
 
 void App::ChangeEditorMode(const App::Mode newMode) 
@@ -286,5 +300,35 @@ void App::TrySaveMap(fs::path path)
     else
     {
         DisplayStatusMessage("ERROR: Invalid file extension.", 5.0f, 100);
+    }
+}
+
+void App::SaveSettings()
+{
+    try 
+    {
+        nlohmann::json jData;
+        App::to_json(jData, _settings);
+        std::ofstream file(SETTINGS_FILE_PATH);
+        file << jData;
+    }
+    catch (std::exception e)
+    {
+        std::cerr << "Error saving settings: " << e.what() << std::endl;
+    }
+}
+
+void App::LoadSettings()
+{
+    try
+    {
+        nlohmann::json jData;
+        std::ifstream file(SETTINGS_FILE_PATH);
+        file >> jData;
+        App::from_json(jData, _settings);
+    }
+    catch (std::exception e)
+    {
+        std::cerr << "Error loading settings: " << e.what() << std::endl;
     }
 }

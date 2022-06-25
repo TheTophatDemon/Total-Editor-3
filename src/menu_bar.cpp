@@ -62,8 +62,8 @@ MenuBar::MenuBar(App::Settings &settings)
         (Menu) {
             .name = "CONFIG",
             .items = {
-                (Item) { "ASSET PATHS", [](){} },
-                (Item) { "SETTINGS",    [](){} },
+                (Item) { "ASSET PATHS", [&](){ _activeDialog.reset(new AssetPathDialog(_settings)); } },
+                (Item) { "SETTINGS",    [&](){ _activeDialog.reset(new SettingsDialog(_settings)); } },
             },
         },
         (Menu) {

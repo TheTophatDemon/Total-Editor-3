@@ -42,8 +42,9 @@
 [x] Optimize entity rendering
 [x] Allow transparency with instancedMaterial?
 [x] Are you sure you want to exit?
-[ ] Asset path changing
-[ ] Settings
+[x] Asset path changing
+[x] Settings menu
+[x] Save and load settings
 [ ] Information
 [ ] Test Windows OS
 # Future prospects

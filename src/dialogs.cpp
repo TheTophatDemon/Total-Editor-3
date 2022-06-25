@@ -23,20 +23,32 @@ std::vector<Rectangle> ArrangeHorzCentered(Rectangle bounds, std::initializer_li
 {
     const float boundsHH = bounds.height / 2.0f;
 
-    float itemMargin = bounds.width;
-    for (const Rectangle &r : rects) itemMargin -= r.width;
-    itemMargin /= rects.size();
-    itemMargin /= 2.0f;
-
+    const float OFFSET = bounds.width / (rects.size() + 1);
     std::vector<Rectangle> out = rects;
-    float xofs = itemMargin;
+    float xCenter = OFFSET;
     for (Rectangle &r : out)
     {
-        r.x = bounds.x + xofs;
+        r.x = bounds.x + xCenter - (r.width / 2.0f);
         r.y = bounds.y + boundsHH - (r.height / 2.0f);
-        xofs += r.width + itemMargin;
+        xCenter += OFFSET;
     }
 
+    return out;
+}
+
+//Takes some rectangles and returns copies of them, repositioned to be vertically laid out inside of the `area` rectangle.
+std::vector<Rectangle> ArrangeVertical(Rectangle area, std::initializer_list<Rectangle> rects)
+{
+    const float REGION_HEIGHT = area.height / rects.size();
+
+    std::vector<Rectangle> out = rects;
+    int i = 0;;
+    for (Rectangle& r : out)
+    {
+        r.x += area.x;
+        r.y += area.y + (i * REGION_HEIGHT) + (REGION_HEIGHT / 2.0f) - (r.height / 2.0f);
+        ++i;
+    }
     return out;
 }
 
@@ -287,7 +299,7 @@ static const char *QUIT_MESSAGES[N_QUIT_MESSAGES] = {
     "Did I leave the editor on Nightmare difficulty?", 
     "Remember to eat some clowns.", 
     "Admiring the *cough* robust C++ architecture?", 
-    "Your soul is what really needs saving.",
+    "Your soul is what really needs saving. ;)",
     "Click 'Nah' to meet hot singles in your area!",
     "Whelp...I'm going to Grillby's...",
     "100% of people who go outside die!"
@@ -310,4 +322,141 @@ bool CloseDialog::Draw()
     default:
         return false;
     }
+}
+
+AssetPathDialog::AssetPathDialog(App::Settings &settings)
+    : _settings(settings),
+      _texPathEdit(false),
+      _shapePathEdit(false)
+{
+    strcpy(_texPathBuffer, App::Get()->GetTexturesDir().c_str());
+    strcpy(_shapePathBuffer, App::Get()->GetShapesDir().c_str());
+}
+
+bool AssetPathDialog::Draw()
+{
+    const Rectangle DRECT = DialogRec(632.0f, 256.0f);
+    
+    bool clicked = GuiWindowBox(DRECT, "Asset Paths");
+
+    const Rectangle TEX_PATH_BOX = (Rectangle) {
+        .x = DRECT.x + 8.0f,
+        .y = DRECT.y + 8.0f + 32.0f + 12.0f,
+        .width = DRECT.width - (TEX_PATH_BOX.x - DRECT.x) - 16.0f,
+        .height = 24.0f
+    };
+
+    GuiLabel((Rectangle){ TEX_PATH_BOX.x, TEX_PATH_BOX.y - 12.0f }, "Textures Path");
+    if (GuiTextBox(TEX_PATH_BOX, _texPathBuffer, TEXT_FIELD_MAX, _texPathEdit))
+    {
+        _texPathEdit = !_texPathEdit;
+    }
+
+    const Rectangle SHAPE_PATH_BOX = (Rectangle) {
+        .x = TEX_PATH_BOX.x,
+        .y = TEX_PATH_BOX.y + TEX_PATH_BOX.height + 24.0f,
+        .width = TEX_PATH_BOX.width,
+        .height = TEX_PATH_BOX.height
+    };
+    GuiLabel((Rectangle) { SHAPE_PATH_BOX.x, SHAPE_PATH_BOX.y - 12.0f }, "Shapes Path");
+    if (GuiTextBox(SHAPE_PATH_BOX, _shapePathBuffer, TEXT_FIELD_MAX, _shapePathEdit))
+    {
+        _shapePathEdit = !_shapePathEdit;
+    }
+
+    const Rectangle BUTTON_REGION = (Rectangle) {
+        .x = DRECT.x + 8.0f,
+        .y = DRECT.y + DRECT.height - 48.0f,
+        .width = DRECT.width - (BUTTON_REGION.x - DRECT.x) - 8.0f,
+        .height = 48.0f
+    };
+    std::vector<Rectangle> buttonRecs = ArrangeHorzCentered(BUTTON_REGION, { 
+        (Rectangle){ .width = 96.0f, .height = 32.0f }, 
+        (Rectangle){ .width = 96.0f, .height = 32.0f } });
+
+    if (GuiButton(buttonRecs[0], "Confirm"))
+    {
+        bool bad = false;
+        fs::directory_entry texEntry { _texPathBuffer };
+        if (!texEntry.exists() || !texEntry.is_directory())
+        {
+            strcpy(_texPathBuffer, "Invalid!");
+            bad = true;
+        }
+        fs::directory_entry shapeEntry { _shapePathBuffer };
+        if (!shapeEntry.exists() || !shapeEntry.is_directory())
+        {
+            strcpy(_shapePathBuffer, "Invalid!");
+            bad = true;
+        }
+        if (!bad) 
+        {
+            _settings.texturesDir = texEntry.path();
+            _settings.shapesDir = shapeEntry.path();
+            App::Get()->SaveSettings();
+            return false;
+        }
+    }
+    else if (GuiButton(buttonRecs[1], "Cancel"))
+    {
+        return false;
+    }
+
+    return !clicked;
+}
+
+SettingsDialog::SettingsDialog(App::Settings &settings)
+    : _settings(settings),
+      _undoMaxEdit(false),
+      _undoMax(settings.undoMax),
+      _sensitivity(settings.mouseSensitivity)
+{
+}
+
+bool SettingsDialog::Draw()
+{
+    const Rectangle DRECT = DialogRec(512.0f, 256.0f);
+
+    bool clicked = GuiWindowBox(DRECT, "Settings");
+
+    const Rectangle SETTINGS_RECT = (Rectangle) { DRECT.x + 8.0f, DRECT.y + 32.0f, DRECT.width - 16.0f, DRECT.height - 64.0f };
+    std::vector<Rectangle> recs = ArrangeVertical(
+        SETTINGS_RECT,
+        {
+            (Rectangle) { .x = 16.0f, .width = 128.0f, .height = 32.0f }, //0: Undo max
+            (Rectangle) { .x = 16.0f, .width = SETTINGS_RECT.width - 64.0f, .height = 32.0f }  //1: Sensitivity
+        }
+    );
+
+    GuiLabel((Rectangle) { recs[0].x, recs[0].y - 12.0f }, "Max Undo Count");
+    if (GuiSpinner(recs[0], "", &_undoMax, 1, 1000, _undoMaxEdit))
+    {
+        _undoMaxEdit = !_undoMaxEdit;
+    }
+
+    GuiLabel((Rectangle) { recs[1].x, recs[1].y - 12.0f }, TextFormat("Mouse sensitivity: %.2f", _sensitivity));
+    _sensitivity = GuiSlider(recs[1], "", "", _sensitivity, 0.05f, 10.0f);
+    _sensitivity = floorf(_sensitivity / 0.05f) * 0.05f;
+
+    //Confirm buttons
+    const Rectangle BUTT_GROUP = (Rectangle) { DRECT.x + 8.0f, DRECT.y + DRECT.height - 8.0f - 32.0f, DRECT.width - 16.0f, 32.0f };
+    std::vector<Rectangle> buttRecs = ArrangeHorzCentered(BUTT_GROUP, {
+        (Rectangle) { .width = 128.0f, .height = 32.0f }, //0: Confirm
+        (Rectangle) { .width = 128.0f, .height = 32.0f }  //1: Cancel
+    });
+
+    if (GuiButton(buttRecs[0], "Confirm"))
+    {
+        _settings.undoMax = _undoMax;
+        _settings.mouseSensitivity = _sensitivity;
+        App::Get()->SaveSettings();
+        return false;
+    }
+
+    if (GuiButton(buttRecs[1], "Cancel"))
+    {
+        return false;
+    }
+
+    return !clicked;
 }
