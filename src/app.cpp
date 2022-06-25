@@ -106,16 +106,16 @@ void App::Update()
                 if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::PICK_SHAPE);
                 else ChangeEditorMode(Mode::PLACE_TILE);
             }
+            else if (IsKeyDown(KEY_LEFT_CONTROL))
+            {
+                if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::EDIT_ENT);
+                else if (_editorMode == _entMode.get()) ChangeEditorMode(Mode::PLACE_TILE);
+            }
             else
             {
                 if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::PICK_TEXTURE);
                 else ChangeEditorMode(Mode::PLACE_TILE);
             }
-        }
-        if (IsKeyPressed(KEY_E) && IsKeyDown(KEY_LEFT_CONTROL))
-        {
-            if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::EDIT_ENT);
-            else if (_editorMode == _entMode.get()) ChangeEditorMode(Mode::PLACE_TILE);
         }
 
         //Save hotkey

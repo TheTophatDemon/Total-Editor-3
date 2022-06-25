@@ -137,6 +137,10 @@ void PlaceMode::UpdateCursor()
     {
         _cursor.mode = Cursor::Mode::TILE;
     }
+    else if (IsKeyPressed(KEY_E) && IsKeyDown(KEY_LEFT_CONTROL))
+    {
+        _cursor.mode = Cursor::Mode::ENT;
+    }
 
     //Position cursor
     Ray pickRay = GetMouseRay(GetMousePosition(), _camera);
@@ -392,7 +396,7 @@ void PlaceMode::Draw()
     BeginMode3D(_camera);
     {
         //Draw map
-        _mapMan.DrawMap(_layerViewMin, _layerViewMax);
+        _mapMan.DrawMap(_camera, _layerViewMin, _layerViewMax);
 
         if (!App::Get()->IsPreviewing())
         {

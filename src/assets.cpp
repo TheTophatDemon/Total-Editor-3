@@ -57,6 +57,8 @@ Assets::Assets()
     //Assign missing model as a cube
     _missingModel = LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f));
 
+    _entSphere = LoadModelFromMesh(GenMeshSphere(1.0f, 8, 8));
+
     //Initialize instanced shader for map geometry
     _mapShader = LoadShaderFromMemory(MAP_SHADER_V_SRC, MAP_SHADER_F_SRC);
     _mapShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(_mapShader, "mvp");
@@ -187,6 +189,11 @@ const Font &Assets::GetFont()
 const Shader &Assets::GetMapShader() 
 {
     return _Get()->_mapShader;
+}
+
+const Model &Assets::GetEntSphere()
+{
+    return _Get()->_entSphere;
 }
 
 template<typename D>

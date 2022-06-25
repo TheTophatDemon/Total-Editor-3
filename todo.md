@@ -39,7 +39,7 @@
 [x] Blank cursor bug after texture screen
 [x] File operations, .TI3
 [x] Import TI2 (Converter written as separate application)
-[ ] Optimize entity rendering
+[x] Optimize entity rendering
 [ ] Allow transparency with instancedMaterial?
 [ ] Are you sure you want to exit?
 [ ] Finish instructions, settings

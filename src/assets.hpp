@@ -30,6 +30,7 @@ public:
 
     static const Font &GetFont();
     static const Shader &GetMapShader();
+    static const Model &GetEntSphere();
 
     static std::vector<fs::path> GetTexturePathList();
     static std::vector<fs::path> GetShapePathList();
@@ -53,6 +54,7 @@ protected:
     Font _font; //Default application font (dejavu.fnt)
     Texture2D _missingTexture;
     Model _missingModel;
+    Model _entSphere;
     TexID _nextTexID;
     ModelID _nextModelID;
 private:

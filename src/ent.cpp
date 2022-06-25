@@ -3,13 +3,15 @@
 #include "raymath.h"
 #include "rlgl.h"
 
+#include <iostream>
+
 #include "app.hpp"
 #include "draw_extras.h"
 #include "text_util.hpp"
 #include "assets.hpp"
 #include "map_man.hpp"
 
-void EntGrid::Draw(int fromY, int toY)
+void EntGrid::Draw(Camera &camera, int fromY, int toY)
 {
     for (size_t i = 0; i < _grid.size(); ++i)
     {
@@ -19,7 +21,12 @@ void EntGrid::Draw(int fromY, int toY)
             if (gridCoords.y >= (float)fromY - 0.1f && gridCoords.y <= toY + 0.1f) 
             {
                 _grid[i].position = GridToWorldPos(gridCoords, true);
-                _grid[i].Draw();
+                //Do frustrum culling check
+                Vector3 ndc = GetWorldToNDC(_grid[i].position, camera);
+                if (ndc.z < 1.0f && ndc.x > -1.0f && ndc.x < 1.0f && ndc.y > -1.0f && ndc.y < 1.0f)
+                {
+                    _grid[i].Draw();
+                }
             }
         }
     }
@@ -40,8 +47,9 @@ void EntGrid::DrawLabels(Camera &camera, int fromY, int toY)
                     {
                         //Do frustrum culling check
                         Vector3 ndc = GetWorldToNDC(_grid[i].position, camera);
-                        if (ndc.z < 1.0f)
+                        if (ndc.z < 0.9995f)
                         {
+                            // std::cout << ndc.z << std::endl;
                             //Draw label
                             std::string name = _grid[i].properties.at("name");
 
@@ -65,7 +73,8 @@ void EntGrid::DrawLabels(Camera &camera, int fromY, int toY)
 void Ent::Draw() const
 {
     //Draw sphere
-    DrawSphere(position, radius, color);
+    // DrawSphere(position, radius, color);
+    DrawModel(Assets::GetEntSphere(), position, radius, color);
     if (!App::Get()->IsPreviewing())
     {
         //Draw axes to show orientation

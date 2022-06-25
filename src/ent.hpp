@@ -115,7 +115,7 @@ public:
         return out;
     }
 
-    void Draw(int fromY, int toY);
+    void Draw(Camera &camera, int fromY, int toY);
     void DrawLabels(Camera &camera, int fromY, int toY);
 };
 
