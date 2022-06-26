@@ -1,3 +1,17 @@
+/*
+Copyright (C) 2022 Alexander Lunsford
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #include "place_mode.hpp"
 
 #include "raymath.h"
@@ -410,7 +424,7 @@ void PlaceMode::Draw()
             rlDrawRenderBatchActive();
 
             //Draw cursor
-            if (!IsKeyDown(KEY_LEFT_SHIFT) && _cursor.tile) {
+            if (_cursor.tile) {
                 Matrix cursorTransform = MatrixMultiply(
                     TileRotationMatrix(_cursor.tile), 
                     MatrixTranslate(_cursor.endPosition.x, _cursor.endPosition.y, _cursor.endPosition.z));
@@ -419,10 +433,13 @@ void PlaceMode::Draw()
                 {
                 case Cursor::Mode::TILE:
                 {
-                    const Model &shape = Assets::ModelFromID(_cursor.tile.shape);
-                    for (size_t m = 0; m < shape.meshCount; ++m) 
+                    if (!IsKeyDown(KEY_LEFT_SHIFT))
                     {
-                        DrawMesh(shape.meshes[m], Assets::GetMaterialForTexture(_cursor.tile.texture, false), cursorTransform);
+                        const Model &shape = Assets::ModelFromID(_cursor.tile.shape);
+                        for (size_t m = 0; m < shape.meshCount; ++m) 
+                        {
+                            DrawMesh(shape.meshes[m], Assets::GetMaterialForTexture(_cursor.tile.texture, false), cursorTransform);
+                        }
                     }
                 }
                 break;

@@ -1,3 +1,17 @@
+/*
+Copyright (C) 2022 Alexander Lunsford
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #include "dialogs.hpp"
 
 #include "raylib.h"
@@ -502,27 +516,31 @@ ShortcutsDialog::ShortcutsDialog()
 
 bool ShortcutsDialog::Draw()
 {
-    static const int N_SHORTCUTS = 22;
+    static const int N_SHORTCUTS = 26;
     static const char *SHORTCUTS_TEXT[N_SHORTCUTS] = {
         "W/A/S/D - Move camera",
         "Middle click - Look around",
+        "Scroll wheel - Move grid up/down",
         "Left click - Place tile/entity/brush",
         "Right click - Remove tile/entity (Does not work in brush mode)",
+        "TAB - Switch between texture picker and map editor.",
+        "LEFT SHIFT+TAB - Switch between shape picker and map editor.",
         "T (Tile mode) - Select texture of tile under cursor",
         "G (Tile mode) - Select shape of tile under cursor",
-        "T/G (Entity mode) - Copy entity from under cursor.",
+        "HOLD LEFT SHIFT - Expand cursor to place tiles in bulk.",
         "Q - Turn cursor counterclockwise",
         "E - Turn cursor clockwise",
         "R - Reset cursor orientation",
         "F - Flip cursor vertically (Tiles), Turn cursor upwards (Entities)",
         "V - Turn cursor downwards (Entities)",
-        "TAB - Switch between texture picker and map editor.",
-        "LEFT SHIFT+TAB - Switch between shape picker and map editor.",
-        "LEFT CTRL+TAB - Switch between entity editor and map editor.",
-        "LEFT CTRL+E - Put cursor into entity mode.",
-        "HOLD LEFT SHIFT - Expand cursor to place tiles in bulk.",
+        "H - Isolate the layer of tiles the grid is on.",
+        "H (when layers are isolated) - Unhide hidden layers.",
+        "Hold H while using scrollwheel - Select multiple layers to isolate.",
         "LEFT SHIFT+B - Capture tiles under cursor as a brush.",
         "ESCAPE/BACKSPACE - Return cursor to tile mode.",
+        "LEFT CTRL+TAB - Switch between entity editor and map editor.",
+        "LEFT CTRL+E - Put cursor into entity mode.",
+        "T/G (Entity mode) - Copy entity from under cursor.",
         "LEFT CTRL+S - Save map.",
         "LEFT CTRL+Z - Undo",
         "LEFT CTRL+Y - Redo"
@@ -538,10 +556,11 @@ bool ShortcutsDialog::Draw()
     for (int i = 0; i < N_SHORTCUTS; ++i)
     {
         std::string str = SHORTCUTS_TEXT[i];
-        float w = (float)GetStringWidth(Assets::GetFont(), Assets::GetFont().baseSize, str);
+        float w = (float)GetStringWidth(Assets::GetFont(), (float)GuiGetStyle(DEFAULT, TEXT_SIZE), str);
         if (contentRect.width < w) contentRect.width = w;
         contentRect.height += TEXT_HEIGHT;
     }
+    contentRect.width += 100.0f;
 
     Rectangle scissor = GuiScrollPanel(
         (Rectangle) { DRECT.x + 8.0f, DRECT.y + 32.0f, DRECT.width - 16.0f, DRECT.height - 40.0f }, 
