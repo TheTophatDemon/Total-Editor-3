@@ -14,6 +14,17 @@
 			pre {
 				text-align: left;
 			}
+			img {
+				display:block;
+				margin: auto;
+				height: 320px;
+			}
+			.image-strip {
+				display: flex;
+				flex-direction: row;
+				flex-flow: row;
+				align-items: center;
+			}
 		</style>
 	</head>
 	<body>
@@ -22,8 +33,10 @@
 		<ol>
 			<li><a href="#basic_usage">Basic Usage</a></li>
 			<li><a href="#file_format">Using .te3 Files</a></li>
+			<li><a href="#custom_tiles">Advice on Custom Tile Shapes</a></li>
 		</ol>
 		<h2 id="basic_usage">Basic Usage</h2>
+		<img src="instr_map.png" />
 		<p>
 			Total Editor 3 is designed to build 3D game levels out of small 3 dimensional tiles.
 			Each tile has a "shape," which is a 3D model that you select from the editor, and
@@ -32,6 +45,7 @@
 			is also called "yaw rotation," and they can be flipped vertically.
 		</p>
 		<h3>Map space and the cursor</h3>
+		<img src="instr_grid.png"/>
 		<p>
 			The application starts in the map editor screen. In this screen you have a grid and a cursor.
 			The cursor is surrounded by a magenta colored wireframe cube. Moving the mouse moves the cursor
@@ -47,10 +61,11 @@
 		<p>
 			The cursor begins in "tile mode," which means that it contains a tile that can be placed onto the
 			grid by left clicking, and tiles in the grid can be erased by right clicking. 
-			The yaw rotation of the tile can be turned in 90 degree increments using the Q and E keys.a
+			The yaw rotation of the tile can be turned in 90 degree increments using the Q and E keys.
 			The tile can be flipped vertically using the F key. The angle and flipping can be reset by pressing R.
 		</p>
 		<h3>Selecting textures and shapes.</h3>
+		<img src="instr_textures.png" />
 		<p>
 			The texture of the tile can be chosen by pressing TAB. This will bring the
 			editor into the "texture picker," where an array of images placed in the "assets/textures" folder
@@ -59,6 +74,7 @@
 			This filter also takes into account the file path of each texture, so typing in the name of a subdirectory
 			will reveal textures within the subdirectory. Pressing TAB again will bring the user back to the map editor.
 		</p>
+		<img src="instr_shapes.png" />
 		<p>
 			Pressing TAB while holding LEFT SHIFT while in the map editor will bring up the "shape picker." This is
 			analogous to the texture picker, except instead of images it displays wireframe representations of several
@@ -72,6 +88,9 @@
 			used shapes and textures.
 		</p>
 		<h3>Rectangular mode</h3>
+		<span class="image-strip">
+			<img src="instr_rect1.png" /> <img src="instr_rect2.png" />
+		</span>
 		<p>
 			When holding shift, the tile inside of the cursor disappears. This means the cursor is in rectangular mode. It is like tile mode,
 			except the cursor's box expands from the point where shift was first held to the current position. Pressing left or right click
@@ -79,6 +98,9 @@
 			The grid may be moved vertically using the scroll wheel while holding shift to create 3 dimensional rectangles.
 		</p>
 		<h3>Brush mode</h3>
+		<span class="image-strip">
+			<img src="instr_brush1.png" /> <img src="instr_brush2.png" />
+		</span>
 		<p>
 			This is a quick way to duplicate certain groups of tiles. When in the rectangular cursor mode mentioned above, pressing the B key will
 			take all of the tiles inside of the rectangle and turn them into a "brush," putting the cursor into "brush mode." In this mode, the
@@ -88,12 +110,16 @@
 			Pressing ESCAPE or BACKSPACE will bring the cursor into its regular "tile mode." 
 		</p>
 		<h3>Layer isolation</h3>
+		<span class="image-strip">
+			<img src="instr_hide1.png"/> <img src="instr_hide2.png"/>
+		</span>
 		<p>
 			Pressing H will remove all layers of tiles from view, except for the one the editor grid is on. This allows for fast editing of
 			the interiors of rooms and the like. The grid cannot move into or edit the hidden layers. Pressing H again will reveal the hidden
 			layers. When first activating the layer isolation, holding H and moving the grid will select multiple layers to isolate.
 		</p>
 		<h3>Entity mode</h3>
+		<img src="instr_ent3.png" />
 		<p>
 			Holding LEFT CONTROL and pressing E will bring the cursor into "entity mode." Entities represent dynamic objects in a game, such as
 			player spawn points, enemies, items, and whatnot. Currently, they are displayed as colored spheres with nametags, and the game code
@@ -104,6 +130,9 @@
 			turning up and down by using the F and V keys. The cursor can be brought out of entity mode using the ESCAPE or BACKSPACE key.
 		</p>
 		<h3>Entity configuration</h3>
+		<span class="image-strip">
+			<img src="instr_ent1.png" /> <img src="instr_ent2.png"/>
+		</span>
 		<p>
 			Holding LEFT CONTROL and pressing TAB will enter the entity editor. This will configure the properties of the entity being placed
 			by the cursor in the map editor. The color picker and the slider near the top will control the appearance of the sphere and how
@@ -200,14 +229,16 @@ struct Tile {
 };
 			</pre>
 			There is not position information in this structure. The position of each tile can be inferred by its order in the string of data.
-			Tiles are filled out in increasing X position, and every number of tiles equal to the map width makes up the first row. The first
+			Tiles are filled out in increasing X position, and every number of tiles equal to the map width makes up the a row. The first
 			"length" number of rows make up the first layer, starting from the bottom. Then, each subsequent "length times width" number of tiles
 			make up each subsequent layer.
 			In code, the calculation would look something like this:
 			<br/>
+			<br/>
 			<code>x = (t % width) * 2.0</code><br/>
 			<code>y = (floor(t / (width * height))) * 2.0</code><br/>
 			<code>z = (floor(t / width) % length) * 2.0</code><br/>
+			<br/>
 			Where t is the overall index of the tile, starting at 0 for the first one and ending at (length * width * height) - 1.
 			Note that each coordinate is multiplied by 2. That is because the grid position is given by the index, but each tile is
 			actually spaced by 2 units in world space, because each tile model is 2 units wide.
@@ -232,6 +263,22 @@ struct Tile {
 			Particularly, look at tile.hpp, tile.cpp, grid.hpp, and map_man.hpp/.cpp.
 			If people care enough, I may get around to letting the editor export maps as .gltf files and you can bypass all of this 
 			technical wizardry.
+		</p>
+		<h2 id="custom_tiles">Advice on Custom Tile Shapes</h2>
+		<p>
+			Since the tile shapes just come from .obj files, you may of course add your own shapes and the application can use them as long as they're in the
+			configured shapes directory.
+		</p>
+		<p>
+			In order to ensure the tiles work properly, please ensure that the tiles:
+		</p>
+		<ul>
+			<li>Are centered at the origin (0, 0, 0)</li>
+			<li>Span a distance of 2.0 units (1.0 on either side of the origin).</li>
+			<li>Do not have material information.</li>
+		</ul>
+		<p>
+			Even if you break all of these rules, you should still be able to use the tiles, but they may not fit into the grid correctly.
 		</p>
 	</body>
 </html>
