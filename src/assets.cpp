@@ -74,10 +74,14 @@ Assets::Assets()
     _entSphere = LoadModelFromMesh(GenMeshSphere(1.0f, 8, 8));
 
     //Initialize instanced shader for map geometry
+    _mapShaderInstanced = LoadShaderFromMemory(MAP_SHADER_INSTANCED_V_SRC, MAP_SHADER_F_SRC);
+    _mapShaderInstanced.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(_mapShaderInstanced, "mvp");
+    _mapShaderInstanced.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(_mapShaderInstanced, "viewPos");
+    _mapShaderInstanced.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(_mapShaderInstanced, "instanceTransform");
+
     _mapShader = LoadShaderFromMemory(MAP_SHADER_V_SRC, MAP_SHADER_F_SRC);
     _mapShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(_mapShader, "mvp");
     _mapShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(_mapShader, "viewPos");
-    _mapShader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(_mapShader, "instanceTransform");
 
     _font = LoadFont_Dejavu();
 
@@ -122,7 +126,8 @@ const Material &Assets::GetMaterialForTexture(TexID texID, bool instanced)
     {
         Material mat = LoadMaterialDefault();
         SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, a->_textures[texID].second);
-        if (instanced) mat.shader = a->_mapShader;
+        if (instanced) mat.shader = a->_mapShaderInstanced;
+        else mat.shader = a->_mapShader;
         map[texID] = mat; 
         return map[texID];
     }
@@ -200,9 +205,9 @@ const Font &Assets::GetFont()
     return _Get()->_font;
 }
 
-const Shader &Assets::GetMapShader() 
+const Shader &Assets::GetMapShader(bool instanced) 
 {
-    return _Get()->_mapShader;
+    return instanced ? _Get()->_mapShaderInstanced : _Get()->_mapShader;
 }
 
 const Model &Assets::GetEntSphere()

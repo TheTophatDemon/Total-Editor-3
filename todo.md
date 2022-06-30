@@ -47,7 +47,7 @@
 [x] Save and load settings
 [x] Information
 [x] Aggregate mesh generation (For displaying in preview mode)
-[ ] Make preview mesh shaded
+[x] Make preview mesh shaded
 [ ] Export preview mesh as GLTF
 [ ] Shapes with empty UVs get automatically mapped (Allows for rotation and flipping without distorting texture mapping)
 [ ] Test Windows OS

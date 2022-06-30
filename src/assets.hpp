@@ -43,7 +43,7 @@ public:
     static const Texture2D &GetShapeIcon(ModelID shape);
 
     static const Font &GetFont();
-    static const Shader &GetMapShader();
+    static const Shader &GetMapShader(bool instanced = true);
     static const Model &GetEntSphere();
 
     static std::vector<fs::path> GetTexturePathList();
@@ -64,7 +64,8 @@ protected:
     std::map<TexID, Material>                        _instancedMaterials; //Materials that use the instanced shader.
     std::map<ModelID, std::pair<fs::path, Model>>    _models;
     std::map<ModelID, RenderTexture2D>               _shapeIcons;
-    Shader _mapShader; //Instanced shader for drawing map geometry
+    Shader _mapShaderInstanced; //Instanced shader for drawing map geometry
+    Shader _mapShader; //Non-instanced shader for drawing map geometry.
     Font _font; //Default application font (dejavu.fnt)
     Texture2D _missingTexture;
     Model _missingModel;
