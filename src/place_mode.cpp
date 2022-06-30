@@ -351,57 +351,60 @@ void PlaceMode::UpdateCursor()
 void PlaceMode::Update() 
 {
     MoveCamera();
-    
-    //Move editing plane
-    if (GetMouseWheelMove() > EPSILON || GetMouseWheelMove() < -EPSILON) 
-    {
-        _planeGridPos.y = Clamp(_planeGridPos.y + Sign(GetMouseWheelMove()), 0.0f, _mapMan.Tiles().GetHeight() - 1);
 
-        //Reveal hidden layers when the grid is over them and holding H
-        if (IsKeyDown(KEY_H))
+    if (!App::Get()->IsPreviewing())
+    {    
+        //Move editing plane
+        if (GetMouseWheelMove() > EPSILON || GetMouseWheelMove() < -EPSILON) 
         {
-            int planeLayer = (int)_planeGridPos.y;
-            if (planeLayer < _layerViewMin) _layerViewMin = planeLayer;
-            if (planeLayer > _layerViewMax) _layerViewMax = planeLayer;
+            _planeGridPos.y = Clamp(_planeGridPos.y + Sign(GetMouseWheelMove()), 0.0f, _mapMan.Tiles().GetHeight() - 1);
+
+            //Reveal hidden layers when the grid is over them and holding H
+            if (IsKeyDown(KEY_H))
+            {
+                int planeLayer = (int)_planeGridPos.y;
+                if (planeLayer < _layerViewMin) _layerViewMin = planeLayer;
+                if (planeLayer > _layerViewMax) _layerViewMax = planeLayer;
+            }
+            else
+            {
+                //Prevent the user from editing hidden layers.
+                _planeGridPos.y = Clamp(_planeGridPos.y, _layerViewMin, _layerViewMax);
+            }
         }
-        else
+        _planeWorldPos = _mapMan.Tiles().GridToWorldPos(_planeGridPos, false);
+
+        //Layer hiding
+        if (IsKeyPressed(KEY_H))
         {
-            //Prevent the user from editing hidden layers.
-            _planeGridPos.y = Clamp(_planeGridPos.y, _layerViewMin, _layerViewMax);
+            if (_layerViewMin == 0 && _layerViewMax == _mapMan.Tiles().GetHeight() - 1)
+            {
+                _layerViewMax = _layerViewMin = (int) _planeGridPos.y;
+            }
+            else
+            {
+                _layerViewMin = 0;
+                _layerViewMax = _mapMan.Tiles().GetHeight() - 1;
+            }
         }
-    }
-    _planeWorldPos = _mapMan.Tiles().GridToWorldPos(_planeGridPos, false);
 
-    //Layer hiding
-    if (IsKeyPressed(KEY_H))
-    {
-        if (_layerViewMin == 0 && _layerViewMax == _mapMan.Tiles().GetHeight() - 1)
+        if (_layerViewMin > 0 || _layerViewMax < _mapMan.Tiles().GetHeight() - 1)
         {
-            _layerViewMax = _layerViewMin = (int) _planeGridPos.y;
+            App::Get()->DisplayStatusMessage("PRESS H TO UNHIDE LAYERS", 0.25f, 1);
         }
-        else
+
+        //Update cursor
+        if (!CheckCollisionPointRec(GetMousePosition(), App::Get()->GetMenuBarRect())) //Don't update when using the menus
         {
-            _layerViewMin = 0;
-            _layerViewMax = _mapMan.Tiles().GetHeight() - 1;
+            UpdateCursor();
         }
-    }
 
-    if (_layerViewMin > 0 || _layerViewMax < _mapMan.Tiles().GetHeight() - 1)
-    {
-        App::Get()->DisplayStatusMessage("PRESS H TO UNHIDE LAYERS", 0.25f, 1);
-    }
-
-    //Update cursor
-    if (!CheckCollisionPointRec(GetMousePosition(), App::Get()->GetMenuBarRect())) //Don't update when using the menus
-    {
-        UpdateCursor();
-    }
-
-    //Undo and redo
-    if (IsKeyDown(KEY_LEFT_CONTROL))
-    {
-        if (IsKeyPressed(KEY_Z)) _mapMan.Undo();
-        else if (IsKeyPressed(KEY_Y)) _mapMan.Redo();
+        //Undo and redo
+        if (IsKeyDown(KEY_LEFT_CONTROL))
+        {
+            if (IsKeyPressed(KEY_Z)) _mapMan.Undo();
+            else if (IsKeyPressed(KEY_Y)) _mapMan.Redo();
+        }
     }
 }
 

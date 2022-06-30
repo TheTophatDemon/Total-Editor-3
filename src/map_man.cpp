@@ -140,3 +140,8 @@ bool MapMan::LoadTE3Map(fs::path filePath)
 
     return true;
 }
+
+bool MapMan::ExportTE3Map(fs::path filePath)
+{
+    return true;
+}

@@ -86,12 +86,16 @@ public:
         _batchFromY = 0;
         _batchToY = height - 1;
         _batchPosition = Vector3Zero();
+        _model = nullptr;
+        _regenBatches = true;
+        _regenModel = true;
     }
 
     inline void SetTile(int i, int j, int k, const Tile& tile) 
     {
         SetCel(i, j, k, tile);
         _regenBatches = true;
+        _regenModel = true;
     }
 
     //Sets a range of tiles in the grid inside of the rectangular prism with a corner at (i, j, k) and size (w, h, l).
@@ -111,6 +115,7 @@ public:
             }
         }
         _regenBatches = true;
+        _regenModel = true;
     }
 
     //Takes the tiles of `src` and places them in this grid starting at the offset at (i, j, k)
@@ -139,6 +144,7 @@ public:
             }
         }
         _regenBatches = true;
+        _regenModel = true;
     }
 
     inline Tile GetTile(int i, int j, int k) const 
@@ -150,6 +156,7 @@ public:
     {
         _grid[FlatIndex(i, j, k)].shape = NO_MODEL;
         _regenBatches = true;
+        _regenModel = true;
     }
 
     //Returns a smaller TileGrid with a copy of the tile data in the rectangle defined by coordinates (i, j, k) and size (w, h, l).
@@ -177,15 +184,20 @@ public:
     //Assigns tiles based on the binary data encoded in base 64. Assumes that the sizes of the data and the current grid are the same.
     void SetTileDataBase64(std::string data);
 
+    const Model &GetModel();
 protected:
     //Calculates lists of transformations for each tile, separated by texture and shape, to be drawn as instances.
-    void _RegenBatches();
+    void _RegenBatches(Vector3 position, int fromY, int toY);
+    Model *_GenerateModel();
 
     std::map<std::pair<TexID, Mesh*>, std::vector<Matrix>> _drawBatches;
     Vector3 _batchPosition;
     bool _regenBatches;
+    bool _regenModel;
     int _batchFromY;
     int _batchToY;
+
+    Model *_model;
 };
 
 void to_json(nlohmann::json& j, const TileGrid &grid);

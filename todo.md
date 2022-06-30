@@ -46,9 +46,12 @@
 [x] Settings menu
 [x] Save and load settings
 [x] Information
+[x] Aggregate mesh generation (For displaying in preview mode)
+[ ] Make preview mesh shaded
+[ ] Export preview mesh as GLTF
+[ ] Shapes with empty UVs get automatically mapped (Allows for rotation and flipping without distorting texture mapping)
 [ ] Test Windows OS
 # Future prospects
-[ ] Consider generating aggregate meshes instead of instancing in order to fix tiling distortions
 [ ] Consider replacing RayGUI with ImGUI
 [ ] Consider giving entities billboard / model viewing modes
 [ ] Rewrite it all in Rust!!! (Just kidding I'll rewrite it in Go >;) )
