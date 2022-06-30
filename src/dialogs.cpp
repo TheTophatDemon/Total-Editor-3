@@ -245,7 +245,7 @@ bool FileDialog::Draw()
     for (auto const& entry : fs::directory_iterator{_currentDir})
     {
         if (entry.is_directory() || 
-            (entry.is_regular_file() && _extensions.find(entry.path().extension()) != _extensions.end()))
+            (entry.is_regular_file() && _extensions.find(entry.path().extension().string()) != _extensions.end()))
         {
             Rectangle fileRect = (Rectangle) {
                 .x = 4.0f,
@@ -272,7 +272,7 @@ bool FileDialog::Draw()
         }
         else
         {
-            name = entry.path().filename();
+            name = entry.path().filename().string();
         }
 
         const Rectangle BUTT_RECT = (Rectangle) { 
@@ -291,7 +291,7 @@ bool FileDialog::Draw()
             }
             else 
             {
-                strcpy(_fileNameBuffer, entry.path().filename().c_str());
+                strcpy(_fileNameBuffer, entry.path().filename().string().c_str());
             }
         }
     }
@@ -424,8 +424,8 @@ bool AssetPathDialog::Draw()
         }
         if (!bad) 
         {
-            _settings.texturesDir = texEntry.path();
-            _settings.shapesDir = shapeEntry.path();
+            _settings.texturesDir = texEntry.path().string();
+            _settings.shapesDir = shapeEntry.path().string();
             App::Get()->SaveSettings();
             return false;
         }

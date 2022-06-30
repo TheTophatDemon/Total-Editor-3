@@ -93,7 +93,7 @@ TexID Assets::TexIDFromPath(fs::path texturePath)
         if (pair.first == texturePath) return id;
     }
     TexID id = a->_nextTexID;
-    a->_textures[id] = std::pair(texturePath, LoadTexture(texturePath.c_str()));
+    a->_textures[id] = std::pair(texturePath, LoadTexture(texturePath.string().c_str()));
     if (a->_textures[id].second.width == 0) a->_textures[id] = std::pair(texturePath, a->_missingTexture);
     ++a->_nextTexID;
     return id;
@@ -140,7 +140,7 @@ ModelID Assets::ModelIDFromPath(fs::path modelPath)
         if (pair.first == modelPath) return id;
     }
     ModelID id = a->_nextModelID;
-    a->_models[id] = std::pair(modelPath, LoadModel(modelPath.c_str()));
+    a->_models[id] = std::pair(modelPath, LoadModel(modelPath.string().c_str()));
     ++a->_nextModelID;
     return id;
 }

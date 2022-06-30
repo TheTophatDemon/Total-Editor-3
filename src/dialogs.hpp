@@ -72,7 +72,7 @@ public:
 class FileDialog : public Dialog
 {
 public:
-    inline FileDialog(std::string title, std::initializer_list<std::string> extensions, std::function<void(std::string)> callback) 
+    inline FileDialog(std::string title, std::initializer_list<std::string> extensions, std::function<void(std::filesystem::path)> callback) 
         : _title(title),
           _extensions(extensions),
           _callback(callback),
