@@ -35,13 +35,15 @@ enum class Direction { Z_POS, Z_NEG, X_POS, X_NEG, Y_POS, Y_NEG };
 struct Tile 
 {
     ModelID shape;
-    int angle; //In whole number of degrees
+    int angle; //Yaw in whole number of degrees
     TexID texture;
-    bool flipped; //True if flipped vertically
-    char padding[3]; //This is here to ensure that the byte layout is consistent across compilers.
+    int pitch; //Pitch in whole number of degrees
 
-    inline Tile() : shape(NO_MODEL), angle(0), texture(NO_TEX), flipped(false) {}
-    inline Tile(ModelID s, int a, TexID t, bool f) : shape(s), angle(a), texture(t), flipped(f) {}
+    // bool flipped; //True if flipped vertically
+    // char padding[3]; //This is here to ensure that the byte layout is consistent across compilers.
+
+    inline Tile() : shape(NO_MODEL), angle(0), texture(NO_TEX), pitch(0) {}
+    inline Tile(ModelID s, int a, TexID t, int p) : shape(s), angle(a), texture(t), pitch(p) {}
 
     inline operator bool() const
     {
@@ -51,7 +53,7 @@ struct Tile
 
 inline bool operator==(const Tile &lhs, const Tile &rhs)
 {
-    return (lhs.shape == rhs.shape) && (lhs.texture == rhs.texture) && (lhs.angle == rhs.angle) && (lhs.flipped == rhs.flipped);
+    return (lhs.shape == rhs.shape) && (lhs.texture == rhs.texture) && (lhs.angle == rhs.angle) && (lhs.pitch == rhs.pitch);
 }
 
 inline bool operator!=(const Tile &lhs, const Tile &rhs)
@@ -62,7 +64,7 @@ inline bool operator!=(const Tile &lhs, const Tile &rhs)
 inline Matrix TileRotationMatrix(const Tile &tile)
 {
     return MatrixMultiply( 
-        MatrixRotateX(tile.flipped ? PI : 0.0f), MatrixRotYDeg(tile.angle));
+        MatrixRotateX(ToRadians(tile.pitch)), MatrixRotYDeg(tile.angle));
 }
 
 class TileGrid : public Grid<Tile>

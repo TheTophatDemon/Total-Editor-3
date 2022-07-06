@@ -44,7 +44,7 @@ PlaceMode::PlaceMode(MapMan &mapMan)
     _cursor.tile.shape = Assets::ModelIDFromPath("assets/models/shapes/cube.obj");
     _cursor.tile.angle = 0;
     _cursor.tile.texture = Assets::TexIDFromPath("assets/textures/brickwall.png");
-    _cursor.tile.flipped = false;
+    _cursor.tile.pitch = 0;
 
     _cursor.brush = TileGrid(1, 1, 1);
     _cursor.ent = (Ent) {
@@ -236,16 +236,18 @@ void PlaceMode::UpdateCursor()
         {
             _cursor.tile.angle = OffsetDegrees(_cursor.tile.angle, 90);
         }
-        //Flip
         if (IsKeyPressed(KEY_F))
         {
-            _cursor.tile.flipped = !_cursor.tile.flipped;
+            _cursor.tile.pitch = OffsetDegrees(_cursor.tile.pitch, 90);
+        }
+        else if (IsKeyPressed(KEY_V))
+        {
+            _cursor.tile.pitch = OffsetDegrees(_cursor.tile.pitch, -90);
         }
         //Reset tile orientation
         if (IsKeyPressed(KEY_R))
         {
-            _cursor.tile.angle = 0;
-            _cursor.tile.flipped = false;
+            _cursor.tile.angle = _cursor.tile.pitch = 0;
         }
 
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !multiSelect) 
@@ -281,6 +283,7 @@ void PlaceMode::UpdateCursor()
             {
                 _cursor.tile.shape = underTile.shape;
                 _cursor.tile.angle = underTile.angle;
+                _cursor.tile.pitch = underTile.pitch;
             }
         } 
         else if (IsKeyDown(KEY_T) && !multiSelect) 

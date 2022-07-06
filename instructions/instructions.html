@@ -62,7 +62,7 @@
 			The cursor begins in "tile mode," which means that it contains a tile that can be placed onto the
 			grid by left clicking, and tiles in the grid can be erased by right clicking. 
 			The yaw rotation of the tile can be turned in 90 degree increments using the Q and E keys.
-			The tile can be flipped vertically using the F key. The angle and flipping can be reset by pressing R.
+			The tile can be pitch rotated using the F and V keys. The angles can be reset by pressing R.
 		</p>
 		<h3>Selecting textures and shapes.</h3>
 		<img src="instr_textures.png" />
@@ -224,8 +224,7 @@ struct Tile {
 	int32_t modelID,       //The index into the "shapes" JSON array. -1 if the tile is empty.
 	int32_t angle,         //The yaw angle, given in a whole number of degrees.
 	int32_t texID,         //The index into the "textures" JSON array. -1 if the tile is empty.
-	uint8_t flipped,       //A boolean, which C++ encodes as a single byte that is 1 for true and 0 for false.
-	uint8_t padding[3]     //Three bytes of padding that C++ adds to make CPU access more efficient.
+	int32_t pitch,         //The pitch angle, given in a whole number of degrees
 };
 			</pre>
 			There is not position information in this structure. The position of each tile can be inferred by its order in the string of data.
@@ -255,8 +254,7 @@ struct Tile {
 			of texture and shape.
 		</p>
 		<p>
-			Also note that when tiles are "flipped" they are <i>not</i> given a scale of -1 on the Y axis, as that would invert the
-			winding order of the triangles. Instead, they are simply rotated 180 degrees on the X axis before they are rotated on the Y axis.
+			Note that, when calculating the transform of a tile, the matrix for the pitch rotation is applied first, and then the yaw rotation.
 		</p>
 		<p>
 			If there are any significant hiccups in trying to use this map format, it may be helpful to refer to the application's <a href="https://github.com/TheTophatDemon/Total-Editor-3">source code.</a>

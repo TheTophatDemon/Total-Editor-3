@@ -143,5 +143,6 @@ bool MapMan::LoadTE3Map(fs::path filePath)
 
 bool MapMan::ExportTE3Map(fs::path filePath)
 {
+    //Unimplemented
     return true;
 }
