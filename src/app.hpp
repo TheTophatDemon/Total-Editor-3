@@ -88,6 +88,7 @@ public:
     void ShrinkMap();
     void TryOpenMap(fs::path path);
     void TrySaveMap(fs::path path);
+    void TryExportMap(fs::path path, bool separateGeometry);
 
     //Serializes settings into JSON file and exports.
     void SaveSettings();

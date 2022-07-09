@@ -35,8 +35,10 @@ class Assets
 {
 public:
     static TexID TexIDFromPath(fs::path texturePath);
+    static fs::path PathFromTexID(TexID texID);
     static const Texture2D &TexFromID(TexID texID);
     static const Material &GetMaterialForTexture(TexID texID, bool instanced);
+    static TexID FindLoadedMaterialTexID(const Material &material, bool instanced);
     static ModelID ModelIDFromPath(fs::path modelPath);
     static const Model &ModelFromID(ModelID modelID);
     

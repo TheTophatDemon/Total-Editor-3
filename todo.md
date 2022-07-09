@@ -50,6 +50,7 @@
 [x] Make preview mesh shaded
 [x] Instead of flipping tiles, allow them to be rotated on pitch.
 [ ] Export preview mesh as GLTF
+[ ] Only load used textures and shapes into Assets
 [ ] Shapes with empty UVs get automatically mapped (Allows for rotation and flipping without distorting texture mapping)
 [ ] Test Windows OS
 # Future prospects

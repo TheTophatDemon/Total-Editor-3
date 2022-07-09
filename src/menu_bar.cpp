@@ -22,6 +22,7 @@ namespace fs = std::filesystem;
 #include "math_stuff.hpp"
 #include "text_util.hpp"
 #include "assets.hpp"
+#include "map_man.hpp"
 
 #define BUTTON_MARGIN 4.0f
 #define MENUBAR_FONT_SIZE 24.0f
@@ -58,6 +59,7 @@ MenuBar::MenuBar(App::Settings &settings)
                     } 
                 },
                 (Item) { "SAVE AS",      [&](){ OpenSaveMapDialog(); } },
+                (Item) { "EXPORT",       [&](){ App::Get()->TryExportMap("test.gltf", true); }},
                 (Item) { "EXPAND GRID",  [&](){ _activeDialog.reset(new ExpandMapDialog()); } },
                 (Item) { "SHRINK GRID",  [&](){ _activeDialog.reset(new ShrinkMapDialog()); } },
             },

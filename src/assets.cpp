@@ -103,6 +103,19 @@ TexID Assets::TexIDFromPath(fs::path texturePath)
     return id;
 }
 
+fs::path Assets::PathFromTexID(TexID texID)
+{
+    Assets *a = _Get();
+    if (texID != NO_TEX && a->_textures.find(texID) != a->_textures.end())
+    {
+        return a->_textures[texID].first;
+    }
+    else
+    {
+        return fs::path();
+    }
+}
+
 const Texture &Assets::TexFromID(TexID texID)
 {
     Assets *a = _Get();
@@ -135,6 +148,21 @@ const Material &Assets::GetMaterialForTexture(TexID texID, bool instanced)
     {
         return matIter->second;
     }
+}
+
+TexID Assets::FindLoadedMaterialTexID(const Material &material, bool instanced)
+{
+    Assets *a = _Get();
+    
+    const auto &mats = instanced ? a->_instancedMaterials : a->_materials;
+    for (const auto &[texID, mat] : mats)
+    {
+        if (mat.maps == material.maps || (mat.maps[MATERIAL_MAP_DIFFUSE].texture.id == material.maps[MATERIAL_MAP_DIFFUSE].texture.id))
+        {
+            return texID;
+        }
+    }
+    return NO_TEX;
 }
 
 ModelID Assets::ModelIDFromPath(fs::path modelPath) 

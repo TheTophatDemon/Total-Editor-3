@@ -317,6 +317,33 @@ void App::TrySaveMap(fs::path path)
     }
 }
 
+void App::TryExportMap(fs::path path, bool separateGeometry)
+{
+    //Add correct extension if no extension is given.
+    if (path.extension().empty())
+    {
+        path += ".gltf";
+    }
+
+    fs::directory_entry entry {path};
+
+    if (path.extension() == ".gltf") 
+    {
+        if (_mapMan->ExportTE3Map(path, separateGeometry))
+        {
+            DisplayStatusMessage("Exported .gltf file.", 5.0f, 100);
+        }
+        else
+        {
+            DisplayStatusMessage("ERROR: Map could not be exported. Check the console.", 5.0f, 100);
+        }
+    }
+    else
+    {
+        DisplayStatusMessage("ERROR: Invalid file extension.", 5.0f, 100);
+    }
+}
+
 void App::SaveSettings()
 {
     try 
