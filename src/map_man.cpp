@@ -14,6 +14,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "map_man.hpp"
 
+#include "rlgl.h"
 #include "json.hpp"
 #include "cppcodec/base64_default_rfc4648.hpp"
 
@@ -151,7 +152,7 @@ static inline std::string GetDataURI(void *buffer, size_t byteCount)
 #define COMP_TYPE_FLOAT 5126
 #define COMP_TYPE_UBYTE 5121
 
-bool MapMan::ExportTE3Map(fs::path filePath, bool separateGeometry)
+bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
 {
     using namespace nlohmann;
 
@@ -170,7 +171,10 @@ bool MapMan::ExportTE3Map(fs::path filePath, bool separateGeometry)
         std::vector<json> buffers;
         std::vector<json> bufferViews;
         std::vector<json> accessors;
-        
+        std::vector<json> materials;
+        std::vector<json> textures;
+        std::vector<json> images;
+
         //Automates the addition of buffers, bufferViews, and accessors for a given vertex attribute
         auto pushVertexAttrib = [&](int bufferIdx, std::string uri, size_t nBytes, size_t nElems, std::string elemType, int componentType) {
             buffers.push_back({
@@ -235,6 +239,7 @@ bool MapMan::ExportTE3Map(fs::path filePath, bool separateGeometry)
             accessors[posIdx]["min"] = {minX, minY, minZ};
             accessors[posIdx]["max"] = {maxX, maxY, maxZ};
 
+            //Tex coordinate buffer
             int texCoordIdx = buffers.size();
             size_t texCoordBytes = mapModel.meshes[i].vertexCount * sizeof(float) * 2;
             pushVertexAttrib(
@@ -246,6 +251,7 @@ bool MapMan::ExportTE3Map(fs::path filePath, bool separateGeometry)
                 COMP_TYPE_FLOAT
                 );
 
+            //Normal buffer
             int normalIdx = buffers.size();
             size_t normalBytes = mapModel.meshes[i].vertexCount * sizeof(float) * 3;
             pushVertexAttrib(
@@ -275,13 +281,32 @@ bool MapMan::ExportTE3Map(fs::path filePath, bool separateGeometry)
                     {"TEXCOORD_0", texCoordIdx},
                     {"NORMAL", normalIdx}
                     // {"COLOR_0", colorIdx}
-                }}
-                // {"material", i}
+                }},
+                {"material", i}
             });
         }
 
-        //TODO: Encode materials and textures
-        
+        //Encode materials and textures
+        for (int m = 0; m < mapModel.materialCount; ++m)
+        {
+            materials.push_back({
+                {"pbrMetallicRoughness", {
+                    {"baseColorTexture", {
+                        {"index", textures.size()},
+                        {"texCoord", 0}
+                    }}
+                }}
+            });
+
+            textures.push_back({
+                {"source", textures.size()}
+            });
+
+            images.push_back({
+                {"uri", Assets::PathFromTexID(Assets::FindLoadedMaterialTexID(mapModel.materials[m], true))}
+            });
+        }
+
         std::vector<int> rootNodes;
 
         //Assign map primitives to meshes, meshes to nodes.
@@ -383,6 +408,9 @@ bool MapMan::ExportTE3Map(fs::path filePath, bool separateGeometry)
         jData["bufferViews"] = bufferViews;
         jData["accessors"] = accessors;
         jData["scenes"] = scenes;
+        jData["materials"] = materials;
+        jData["textures"] = textures;
+        jData["images"] = images;
 
         //Write JSON to file
         std::ofstream file(filePath);

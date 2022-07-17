@@ -196,7 +196,7 @@ public:
     //Exports the map as a .gltf file, returning false on error.
     //If separateGeometry is true, then the geometry will be put into separate
     //GLTF nodes according to their tile shape and texture.
-    bool ExportTE3Map(fs::path filePath, bool separateGeometry);
+    bool ExportGLTFScene(fs::path filePath, bool separateGeometry);
 
     //Executes a undoable tile action for filling an area with one tile
     void ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile);

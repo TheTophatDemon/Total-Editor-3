@@ -19,6 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <string>
 #include <initializer_list>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 inline std::string BuildPath(std::initializer_list<std::string> components) {
     std::string output;

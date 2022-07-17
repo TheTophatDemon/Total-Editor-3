@@ -265,7 +265,11 @@ void App::TryOpenMap(fs::path path)
         {
             if (_mapMan->LoadTE3Map(path))
             {
-                DisplayStatusMessage("Loaded .te3 map.", 5.0f, 100);
+                _lastSavedPath = path;
+                std::string msg = "Loaded .te3 map '";
+                msg += path.filename();
+                msg += "'.";
+                DisplayStatusMessage(msg, 5.0f, 100);
             }
             else
             {
@@ -304,7 +308,10 @@ void App::TrySaveMap(fs::path path)
         if (_mapMan->SaveTE3Map(path))
         {
             _lastSavedPath = path;
-            DisplayStatusMessage("Saved .te3 map.", 5.0f, 100);
+            std::string msg = "Saved .te3 map '";
+            msg += path.filename();
+            msg += "'.";
+            DisplayStatusMessage(msg, 5.0f, 100);
         }
         else
         {
@@ -329,7 +336,7 @@ void App::TryExportMap(fs::path path, bool separateGeometry)
 
     if (path.extension() == ".gltf") 
     {
-        if (_mapMan->ExportTE3Map(path, separateGeometry))
+        if (_mapMan->ExportGLTFScene(path, separateGeometry))
         {
             DisplayStatusMessage("Exported .gltf file.", 5.0f, 100);
         }

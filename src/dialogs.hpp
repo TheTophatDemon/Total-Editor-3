@@ -76,7 +76,7 @@ public:
         : _title(title),
           _extensions(extensions),
           _callback(callback),
-          _currentDir(GetWorkingDirectory()),
+          _currentDir(fs::current_path()),
           _scroll(Vector2Zero()),
           _fileNameEdit(false)
     {
@@ -153,6 +153,18 @@ class InstructionsDialog : public Dialog
 {
 public:
     virtual bool Draw() override;
+};
+
+class ExportDialog : public Dialog
+{
+public:
+    ExportDialog();
+    virtual bool Draw() override;
+protected:
+    std::unique_ptr<FileDialog> _dialog;
+    char _filePath[TEXT_FIELD_MAX];
+    bool _filePathEdit;
+    bool _separateGeometry;
 };
 
 #endif

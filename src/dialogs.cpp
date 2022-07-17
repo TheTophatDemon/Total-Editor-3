@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vector>
 #include <initializer_list>
 #include <map>
+#include <iostream>
 
 #include "assets.hpp"
 #include "math_stuff.hpp"
@@ -585,6 +586,64 @@ bool InstructionsDialog::Draw()
     bool clicked = GuiWindowBox(DRECT, "Instructions");
 
     GuiLabel((Rectangle){ .x = DRECT.x + 8.0f, .y = DRECT.y + 64.0f }, "Please refer to the file \n'instructions.html' included with the application.");
+
+    return !clicked;
+}
+
+ExportDialog::ExportDialog()
+{
+    for (int c = 0; c < TEXT_FIELD_MAX; ++c)
+    {
+        _filePath[c] = 0;
+    }
+    _filePathEdit = false;
+    _separateGeometry = true;
+}
+
+bool ExportDialog::Draw()
+{
+    const Rectangle DRECT = DialogRec(512.0f, 256.0f);
+
+    if (_dialog.get())
+    {
+        GuiLock();
+    }
+
+    bool clicked = GuiWindowBox(DRECT, "Export .gltf scene");
+
+    const Rectangle FILEPATH_RECT = (Rectangle) { DRECT.x + 8.0f, DRECT.y + 48.0f, DRECT.width - 16.0f, 24.0f };
+    if (GuiTextBox(FILEPATH_RECT, _filePath, TEXT_FIELD_MAX, _filePathEdit))
+    {
+        _filePathEdit = !_filePathEdit;
+    }   
+    GuiLabel((Rectangle) { .x = FILEPATH_RECT.x, .y = FILEPATH_RECT.y - 12.0f }, "File path");
+
+    const Rectangle BROWSE_BUTT_RECT = (Rectangle) { FILEPATH_RECT.x, FILEPATH_RECT.y + FILEPATH_RECT.height + 4.0f, 128.0f, 32.0f };
+    if (GuiButton(BROWSE_BUTT_RECT, "Browse"))
+    {
+        _dialog.reset(new FileDialog(std::string("Save .GLTF file"), {std::string(".gltf")}, [&](fs::path path){
+            strcpy(_filePath, fs::relative(path).string().c_str());
+        }));
+    }
+
+    const Rectangle SEP_BUTT_RECT = (Rectangle) { BROWSE_BUTT_RECT.x, BROWSE_BUTT_RECT.y + BROWSE_BUTT_RECT.height + 32.0f, 32.0f, 32.0f };
+    _separateGeometry = GuiCheckBox(SEP_BUTT_RECT, "Seperate nodes for each texture", _separateGeometry);
+
+    const Rectangle EXPORT_BUTT_RECT = (Rectangle) { DRECT.x + DRECT.width / 2.0f - 64.0f, DRECT.y + DRECT.height - 40.0f, 128.0f, 32.0f };
+    if (GuiButton(EXPORT_BUTT_RECT, "Export"))
+    {
+        App::Get()->TryExportMap(fs::path(std::string(_filePath)), _separateGeometry);
+        return false;
+    }
+
+    if (_dialog.get() && GuiIsLocked())
+    {
+        GuiUnlock();
+        if (!_dialog->Draw())
+        {
+            _dialog.reset();
+        }
+    }
 
     return !clicked;
 }

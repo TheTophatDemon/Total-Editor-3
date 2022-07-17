@@ -49,11 +49,14 @@
 [x] Aggregate mesh generation (For displaying in preview mode)
 [x] Make preview mesh shaded
 [x] Instead of flipping tiles, allow them to be rotated on pitch.
-[ ] Export preview mesh as GLTF
+[x] Export preview mesh as GLTF
+[x] GLTF Export Dialog and File Browser
+[ ] Save GLTF export setting
+[ ] Make GLTF texture paths relative to the file..?
 [ ] Only load used textures and shapes into Assets
 [ ] Shapes with empty UVs get automatically mapped (Allows for rotation and flipping without distorting texture mapping)
 [ ] Test Windows OS
 # Future prospects
 [ ] Consider replacing RayGUI with ImGUI
 [ ] Consider giving entities billboard / model viewing modes
-[ ] Rewrite it all in Rust!!! (Just kidding I'll rewrite it in Go >;) )
+[ ] Rewrite it all in Rust! I mean Go! I mean Zig! I mean Odin! I mean Nim! I mean D! I mean...!!!

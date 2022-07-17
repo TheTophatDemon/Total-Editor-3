@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <assert.h>
 #include <set>
+#include <iostream>
 
 #include "assets.hpp"
 #include "app.hpp"
@@ -109,6 +110,7 @@ void TileGrid::SetTileDataBase64(std::string data)
         //Reinterpret groups of bytes as tiles and place them into the grid.
         _grid[i] = *(reinterpret_cast<Tile *>(&bin[i * sizeof(Tile)]));
     }
+    std::cout << std::endl;
 }
 
 #define MAX_MATERIAL_MAPS 12
