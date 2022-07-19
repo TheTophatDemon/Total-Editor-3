@@ -178,6 +178,19 @@ ModelID Assets::ModelIDFromPath(fs::path modelPath)
     return id;
 }
 
+fs::path Assets::PathFromModelID(ModelID modelID)
+{
+    Assets *a = _Get();
+    if (modelID != NO_MODEL && a->_models.find(modelID) != a->_models.end())
+    {
+        return a->_models[modelID].first;
+    }
+    else
+    {
+        return fs::path();
+    }
+}
+
 const Model &Assets::ModelFromID(ModelID modelID)
 {
     Assets *a = _Get();
@@ -252,16 +265,6 @@ static std::vector<fs::path> GetAssetList(const std::map<int, std::pair<fs::path
         out.push_back(val.first);
     }
     return out;
-}
-
-std::vector<fs::path> Assets::GetTexturePathList()
-{
-    return GetAssetList(_Get()->_textures);
-}
-
-std::vector<fs::path> Assets::GetShapePathList()
-{
-    return GetAssetList(_Get()->_models);
 }
 
 void Assets::LoadTextureIDs(const std::vector<fs::path> &fileList)

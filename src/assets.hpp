@@ -40,6 +40,7 @@ public:
     static const Material &GetMaterialForTexture(TexID texID, bool instanced);
     static TexID FindLoadedMaterialTexID(const Material &material, bool instanced);
     static ModelID ModelIDFromPath(fs::path modelPath);
+    static fs::path PathFromModelID(ModelID modelID);
     static const Model &ModelFromID(ModelID modelID);
     
     static const Texture2D &GetShapeIcon(ModelID shape);
@@ -47,9 +48,6 @@ public:
     static const Font &GetFont();
     static const Shader &GetMapShader(bool instanced = true);
     static const Model &GetEntSphere();
-
-    static std::vector<fs::path> GetTexturePathList();
-    static std::vector<fs::path> GetShapePathList();
 
     //Loads new textures from the fileList, in order of increasing texID.
     static void LoadTextureIDs(const std::vector<fs::path> &fileList);

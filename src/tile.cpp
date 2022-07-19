@@ -17,8 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "cppcodec/base64_default_rfc4648.hpp"
 
 #include <assert.h>
-#include <set>
 #include <iostream>
+#include <algorithm>
 
 #include "assets.hpp"
 #include "app.hpp"
@@ -85,14 +85,37 @@ void TileGrid::Draw(Vector3 position, int fromY, int toY)
     }
 }
 
-std::string TileGrid::GetTileDataBase64() const 
+std::string TileGrid::GetTileDataBase64(const std::set<fs::path> &usedTextures, const std::set<fs::path> &usedShapes) const 
 {
+    std::vector<fs::path> textures;
+    std::vector<fs::path> shapes;
+
+    for (const fs::path &p : usedTextures) textures.push_back(p);
+    for (const fs::path &p : usedShapes) shapes.push_back(p);
+
     std::vector<uint8_t> bin;
     bin.reserve(_grid.size() * sizeof(Tile));
     for (size_t i = 0; i < _grid.size(); ++i)
     {
+        Tile savedTile = _grid[i];
+
+        if (savedTile)
+        {
+            //Change the texture and shape IDs to index into the given two arrays.
+            fs::path tPath = Assets::PathFromTexID(savedTile.texture);
+            fs::path sPath = Assets::PathFromModelID(savedTile.shape);
+            for (int i = 0; i < textures.size(); ++i)
+            {
+                if (textures[i] == tPath) savedTile.texture = i;
+            }
+            for (int i = 0; i < shapes.size(); ++i)
+            {
+                if (shapes[i] == sPath) savedTile.shape = i;
+            }
+        }
+
         //Reinterpret each tile as a series of bytes and push them onto the vector.
-        const char *tileBin = reinterpret_cast<const char *>(&_grid[i]);
+        const char *tileBin = reinterpret_cast<const char *>(&savedTile);
         for (size_t b = 0; b < sizeof(Tile); ++b)
         {
             bin.push_back(tileBin[b]);
@@ -289,11 +312,35 @@ void to_json(nlohmann::json& j, const TileGrid &grid)
     j["width"] = grid.GetWidth();
     j["height"] = grid.GetHeight();
     j["length"] = grid.GetLength();
-    j["data"] = grid.GetTileDataBase64();
+    std::set<fs::path> usedTextures = grid.GetUsedTexturePaths();
+    std::set<fs::path> usedShapes = grid.GetUsedShapePaths();
+    j["textures"] = usedTextures;
+    j["shapes"] = usedShapes;
+    j["data"] = grid.GetTileDataBase64(usedTextures, usedShapes);
 }
 
 void from_json(const nlohmann::json& j, TileGrid &grid)
 {
     grid = TileGrid(j.at("width"), j.at("height"), j.at("length"), TILE_SPACING_DEFAULT, Tile());
     grid.SetTileDataBase64(j.at("data"));
+}
+
+std::set<fs::path> TileGrid::GetUsedTexturePaths() const
+{
+    std::set<fs::path> paths;
+    for (const Tile &tile : _grid)
+    {
+        paths.insert(Assets::PathFromTexID(tile.texture));
+    }
+    return paths;
+}
+
+std::set<fs::path> TileGrid::GetUsedShapePaths() const
+{
+    std::set<fs::path> paths;
+    for (const Tile &tile : _grid)
+    {
+        paths.insert(Assets::PathFromModelID(tile.shape));
+    }
+    return paths;
 }

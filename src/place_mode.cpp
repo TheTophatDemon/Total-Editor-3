@@ -87,6 +87,15 @@ void PlaceMode::ResetGrid()
     _layerViewMax = _mapMan.Tiles().GetHeight() - 1;
     _cursor.startPosition = _cursor.endPosition = Vector3Zero();
     _cursor.mode = Cursor::Mode::TILE;
+    //Reset the cursor tile if loading maps causes it to invalidate.
+    if (Assets::PathFromModelID(_cursor.tile.shape).empty())
+    {
+        _cursor.tile.shape = 0;
+    }
+    if (Assets::PathFromTexID(_cursor.tile.texture).empty())
+    {
+        _cursor.tile.texture = 0;
+    }
 }
 
 void PlaceMode::MoveCamera() 

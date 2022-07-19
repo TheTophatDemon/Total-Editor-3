@@ -54,9 +54,12 @@
 [x] Test Windows OS
 [x] Save GLTF export setting
 [x] Make GLTF texture paths relative to the file
-[ ] Only load used textures and shapes into Assets
-[ ] Shapes with empty UVs get automatically mapped (Allows for rotation and flipping without distorting texture mapping)
+[x] Only load used textures ~~and shapes~~ into Assets
+[x] When saving, list only the used textures and shapes.
+[ ] Update instructions
 # Future prospects
+[ ] Shapes with empty UVs get automatically mapped (Allows for rotation and flipping without distorting texture mapping)
+[ ] Add .glb export, embedding textures in file.
+[ ] Optimize exported geometry by removing redundant faces.
 [ ] Consider replacing RayGUI with ImGUI
 [ ] Consider giving entities billboard / model viewing modes
-[ ] Rewrite it all in Rust! I mean Go! I mean Zig! I mean Odin! I mean Nim! I mean D! I mean...!!!

@@ -81,8 +81,6 @@ bool MapMan::SaveTE3Map(fs::path filePath)
     try
     {
         json jData;
-        jData["textures"] = Assets::GetTexturePathList();
-        jData["shapes"] = Assets::GetShapePathList();
         jData["tiles"] = _tileGrid;
         jData["ents"] = _entGrid.GetEntList();
 
@@ -118,8 +116,8 @@ bool MapMan::LoadTE3Map(fs::path filePath)
     try
     {
         Assets::Clear();
-        Assets::LoadTextureIDs(jData.at("textures"));
-        Assets::LoadShapeIDs(jData.at("shapes"));
+        Assets::LoadTextureIDs(jData.at("tiles").at("textures"));
+        Assets::LoadShapeIDs(jData.at("tiles").at("shapes"));
         _tileGrid = jData.at("tiles");
         _entGrid = EntGrid(_tileGrid.GetWidth(), _tileGrid.GetHeight(), _tileGrid.GetLength());
         for (const Ent& e : jData.at("ents").get<std::vector<Ent>>())

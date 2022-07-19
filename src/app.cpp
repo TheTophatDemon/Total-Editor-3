@@ -242,6 +242,7 @@ void App::NewMap(int width, int height, int length)
     _mapMan->NewMap(width, height, length);
     _tilePlaceMode->ResetCamera();
     _tilePlaceMode->ResetGrid();
+    _lastSavedPath = "";
 }
 
 void App::ExpandMap(Direction axis, int amount)
