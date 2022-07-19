@@ -28,7 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class PickMode : public App::ModeImpl {
 public:
     struct Frame {
-        TexID tex;
+        Texture2D tex;
         ModelID shape;
         std::string label;
     };
@@ -50,7 +50,8 @@ public:
     { 
         assert(_mode == Mode::TEXTURES);
         if (!_selectedFrame) return NO_TEX;
-        return _selectedFrame->tex;
+        //The texture is only loaded into Assets when it is selected
+        return Assets::TexIDFromPath(_selectedFrame->label);
     }
 
     inline ModelID GetPickedShape() const

@@ -161,6 +161,7 @@ public:
 protected:
     App::Settings &_settings;
     std::unique_ptr<FileDialog> _dialog;
+    char _filePathBuffer[TEXT_FIELD_MAX];
     bool _filePathEdit;
 };
 

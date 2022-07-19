@@ -43,7 +43,7 @@ public:
         size_t undoMax;
         float mouseSensitivity;
         bool exportSeparateGeometry; //For GLTF export
-        char exportFilePath[512]; //For GLTF export
+        std::string exportFilePath; //For GLTF export
     };
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Settings, texturesDir, shapesDir, undoMax, mouseSensitivity, exportSeparateGeometry, exportFilePath);
 

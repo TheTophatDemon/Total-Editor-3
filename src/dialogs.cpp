@@ -594,6 +594,7 @@ ExportDialog::ExportDialog(App::Settings &settings)
     : _settings(settings),
       _filePathEdit(false)
 {
+    strcpy(_filePathBuffer, _settings.exportFilePath.c_str());
 }
 
 bool ExportDialog::Draw()
@@ -608,17 +609,19 @@ bool ExportDialog::Draw()
     bool clicked = GuiWindowBox(DRECT, "Export .gltf scene");
 
     const Rectangle FILEPATH_RECT = (Rectangle) { DRECT.x + 8.0f, DRECT.y + 48.0f, DRECT.width - 16.0f, 24.0f };
-    if (GuiTextBox(FILEPATH_RECT, _settings.exportFilePath, TEXT_FIELD_MAX, _filePathEdit))
+    strcpy(_filePathBuffer, _settings.exportFilePath.c_str());
+    if (GuiTextBox(FILEPATH_RECT, _filePathBuffer, TEXT_FIELD_MAX, _filePathEdit))
     {
         _filePathEdit = !_filePathEdit;
     }   
+    _settings.exportFilePath = _filePathBuffer;
     GuiLabel((Rectangle) { .x = FILEPATH_RECT.x, .y = FILEPATH_RECT.y - 12.0f }, "File path");
 
     const Rectangle BROWSE_BUTT_RECT = (Rectangle) { FILEPATH_RECT.x, FILEPATH_RECT.y + FILEPATH_RECT.height + 4.0f, 128.0f, 32.0f };
     if (GuiButton(BROWSE_BUTT_RECT, "Browse"))
     {
         _dialog.reset(new FileDialog(std::string("Save .GLTF file"), {std::string(".gltf")}, [&](fs::path path){
-            strcpy(_settings.exportFilePath, fs::relative(path).string().c_str());
+            _settings.exportFilePath = fs::relative(path).string();
         }));
     }
 
@@ -628,7 +631,7 @@ bool ExportDialog::Draw()
     const Rectangle EXPORT_BUTT_RECT = (Rectangle) { DRECT.x + DRECT.width / 2.0f - 64.0f, DRECT.y + DRECT.height - 40.0f, 128.0f, 32.0f };
     if (GuiButton(EXPORT_BUTT_RECT, "Export"))
     {
-        App::Get()->TryExportMap(fs::path(std::string(_settings.exportFilePath)), _settings.exportSeparateGeometry);
+        App::Get()->TryExportMap(fs::path(_settings.exportFilePath), _settings.exportSeparateGeometry);
         App::Get()->SaveSettings();
         return false;
     }

@@ -66,7 +66,7 @@ void PickMode::_GetFrames(std::string rootDir)
             else if (_mode == Mode::TEXTURES && IsFileExtension(files[f], ".png"))
             {
                 Frame frame = {
-                    .tex = Assets::TexIDFromPath(fullPath),
+                    .tex = LoadTexture(fullPath.c_str()),
                     .shape = NO_MODEL,
                     .label = fullPath
                 };
@@ -76,7 +76,6 @@ void PickMode::_GetFrames(std::string rootDir)
             {
                 ModelID shape = Assets::ModelIDFromPath(fullPath);
                 Frame frame = {
-                    .tex = NO_TEX,
                     .shape = shape,
                     .label = fullPath};
                 _frames.push_back(frame);
@@ -102,6 +101,14 @@ void PickMode::OnEnter()
 
 void PickMode::OnExit()
 {
+    //Deallocate textures owned by the picker
+    if (_mode == Mode::TEXTURES)
+    {
+        for (Frame &frame : _frames)
+        {
+            UnloadTexture(frame.tex);
+        }
+    }
 }
 
 void PickMode::Update()
@@ -201,16 +208,14 @@ void PickMode::_DrawFrame(Frame *frame, Rectangle rect)
 
     Rectangle outline = (Rectangle){rect.x - 2, rect.y - 2, rect.width + 4, rect.height + 4};
     DrawRectangle(outline.x, outline.y, outline.width, outline.height, BLACK); //Black background
+    
     //Texture
-    if (frame->tex >= 0)
+    if (_mode == Mode::SHAPES)
     {
-        DrawTextureQuad(Assets::TexFromID(frame->tex), Vector2One(), Vector2Zero(), rect, WHITE);
+        frame->tex = Assets::GetShapeIcon(frame->shape);
     }
-    else if (frame->shape >= 0)
-    {
-        const Texture2D &icon = Assets::GetShapeIcon(frame->shape);
-        DrawTextureQuad(icon, Vector2One(), Vector2Zero(), rect, WHITE);
-    }
+    DrawTextureQuad(frame->tex, Vector2One(), Vector2Zero(), rect, WHITE);
+    
     if (_selectedFrame == frame) DrawRectangleLinesEx(outline, 2.0f, WHITE); //White selection outline
 }
 

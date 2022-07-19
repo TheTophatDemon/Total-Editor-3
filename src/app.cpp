@@ -67,12 +67,6 @@ App::App()
     _menuBar       (std::make_unique<MenuBar>(_settings)),
     _quit          (false)
 {
-    //Clear export file path string as default
-    for (size_t c = 0; c < TEXT_FIELD_MAX; ++c)
-    {
-        _settings.exportFilePath[c] = '\0';
-    }
-
     std::filesystem::directory_entry entry { SETTINGS_FILE_PATH };
     if (entry.exists())
     {
