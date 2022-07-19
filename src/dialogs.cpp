@@ -590,14 +590,10 @@ bool InstructionsDialog::Draw()
     return !clicked;
 }
 
-ExportDialog::ExportDialog()
+ExportDialog::ExportDialog(App::Settings &settings)
+    : _settings(settings),
+      _filePathEdit(false)
 {
-    for (int c = 0; c < TEXT_FIELD_MAX; ++c)
-    {
-        _filePath[c] = 0;
-    }
-    _filePathEdit = false;
-    _separateGeometry = true;
 }
 
 bool ExportDialog::Draw()
@@ -612,7 +608,7 @@ bool ExportDialog::Draw()
     bool clicked = GuiWindowBox(DRECT, "Export .gltf scene");
 
     const Rectangle FILEPATH_RECT = (Rectangle) { DRECT.x + 8.0f, DRECT.y + 48.0f, DRECT.width - 16.0f, 24.0f };
-    if (GuiTextBox(FILEPATH_RECT, _filePath, TEXT_FIELD_MAX, _filePathEdit))
+    if (GuiTextBox(FILEPATH_RECT, _settings.exportFilePath, TEXT_FIELD_MAX, _filePathEdit))
     {
         _filePathEdit = !_filePathEdit;
     }   
@@ -622,17 +618,18 @@ bool ExportDialog::Draw()
     if (GuiButton(BROWSE_BUTT_RECT, "Browse"))
     {
         _dialog.reset(new FileDialog(std::string("Save .GLTF file"), {std::string(".gltf")}, [&](fs::path path){
-            strcpy(_filePath, fs::relative(path).string().c_str());
+            strcpy(_settings.exportFilePath, fs::relative(path).string().c_str());
         }));
     }
 
     const Rectangle SEP_BUTT_RECT = (Rectangle) { BROWSE_BUTT_RECT.x, BROWSE_BUTT_RECT.y + BROWSE_BUTT_RECT.height + 32.0f, 32.0f, 32.0f };
-    _separateGeometry = GuiCheckBox(SEP_BUTT_RECT, "Seperate nodes for each texture", _separateGeometry);
+    _settings.exportSeparateGeometry = GuiCheckBox(SEP_BUTT_RECT, "Seperate nodes for each texture", _settings.exportSeparateGeometry);
 
     const Rectangle EXPORT_BUTT_RECT = (Rectangle) { DRECT.x + DRECT.width / 2.0f - 64.0f, DRECT.y + DRECT.height - 40.0f, 128.0f, 32.0f };
     if (GuiButton(EXPORT_BUTT_RECT, "Export"))
     {
-        App::Get()->TryExportMap(fs::path(std::string(_filePath)), _separateGeometry);
+        App::Get()->TryExportMap(fs::path(std::string(_settings.exportFilePath)), _settings.exportSeparateGeometry);
+        App::Get()->SaveSettings();
         return false;
     }
 
@@ -644,6 +641,8 @@ bool ExportDialog::Draw()
             _dialog.reset();
         }
     }
+
+    if (clicked) App::Get()->SaveSettings();
 
     return !clicked;
 }

@@ -59,7 +59,7 @@ MenuBar::MenuBar(App::Settings &settings)
                     } 
                 },
                 (Item) { "SAVE AS",      [&](){ OpenSaveMapDialog(); } },
-                (Item) { "EXPORT",       [&](){ _activeDialog.reset(new ExportDialog()); }},
+                (Item) { "EXPORT",       [&](){ _activeDialog.reset(new ExportDialog(_settings)); }},
                 (Item) { "EXPAND GRID",  [&](){ _activeDialog.reset(new ExpandMapDialog()); } },
                 (Item) { "SHRINK GRID",  [&](){ _activeDialog.reset(new ShrinkMapDialog()); } },
             },

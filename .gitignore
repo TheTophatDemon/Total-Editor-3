@@ -5,3 +5,5 @@ obj
 *.blend?
 settings.json
 libraries/lib/*
+*.gltf
+*.glb

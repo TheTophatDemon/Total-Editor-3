@@ -53,7 +53,8 @@ App::App()
         .texturesDir = "assets/textures",
         .shapesDir = "assets/models/shapes/",
         .undoMax = 30UL,
-        .mouseSensitivity = 0.5f
+        .mouseSensitivity = 0.5f,
+        .exportSeparateGeometry = false
     },
     _mapMan        (std::make_unique<MapMan>()),
     _tilePlaceMode (std::make_unique<PlaceMode>(*_mapMan.get())),
@@ -66,6 +67,12 @@ App::App()
     _menuBar       (std::make_unique<MenuBar>(_settings)),
     _quit          (false)
 {
+    //Clear export file path string as default
+    for (size_t c = 0; c < TEXT_FIELD_MAX; ++c)
+    {
+        _settings.exportFilePath[c] = '\0';
+    }
+
     std::filesystem::directory_entry entry { SETTINGS_FILE_PATH };
     if (entry.exists())
     {

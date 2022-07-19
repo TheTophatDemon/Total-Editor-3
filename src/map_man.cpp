@@ -302,8 +302,11 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
                 {"source", textures.size()}
             });
 
+            fs::path imagePath = Assets::PathFromTexID(Assets::FindLoadedMaterialTexID(mapModel.materials[m], true));
+            imagePath = fs::relative(imagePath, filePath.parent_path()); //Image paths are relative to the file.
+
             images.push_back({
-                {"uri", Assets::PathFromTexID(Assets::FindLoadedMaterialTexID(mapModel.materials[m], true))}
+                {"uri", imagePath.c_str()}
             });
         }
 

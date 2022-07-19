@@ -27,8 +27,6 @@ namespace fs = std::filesystem;
 #include "ent.hpp"
 #include "app.hpp"
 
-#define TEXT_FIELD_MAX 512
-
 class Dialog 
 { 
 public:
@@ -158,13 +156,12 @@ public:
 class ExportDialog : public Dialog
 {
 public:
-    ExportDialog();
+    ExportDialog(App::Settings &settings);
     virtual bool Draw() override;
 protected:
+    App::Settings &_settings;
     std::unique_ptr<FileDialog> _dialog;
-    char _filePath[TEXT_FIELD_MAX];
     bool _filePathEdit;
-    bool _separateGeometry;
 };
 
 #endif

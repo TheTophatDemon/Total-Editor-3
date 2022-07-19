@@ -31,6 +31,8 @@ class EntMode;
 class MenuBar;
 class MapMan;
 
+#define TEXT_FIELD_MAX 512
+
 class App
 {
 public:
@@ -40,8 +42,10 @@ public:
         std::string shapesDir;
         size_t undoMax;
         float mouseSensitivity;
+        bool exportSeparateGeometry; //For GLTF export
+        char exportFilePath[512]; //For GLTF export
     };
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Settings, texturesDir, shapesDir, undoMax, mouseSensitivity);
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Settings, texturesDir, shapesDir, undoMax, mouseSensitivity, exportSeparateGeometry, exportFilePath);
 
     //Mode implementation
     class ModeImpl 

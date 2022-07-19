@@ -51,11 +51,11 @@
 [x] Instead of flipping tiles, allow them to be rotated on pitch.
 [x] Export preview mesh as GLTF
 [x] GLTF Export Dialog and File Browser
-[ ] Save GLTF export setting
-[ ] Make GLTF texture paths relative to the file..?
+[x] Test Windows OS
+[x] Save GLTF export setting
+[x] Make GLTF texture paths relative to the file
 [ ] Only load used textures and shapes into Assets
 [ ] Shapes with empty UVs get automatically mapped (Allows for rotation and flipping without distorting texture mapping)
-[ ] Test Windows OS
 # Future prospects
 [ ] Consider replacing RayGUI with ImGUI
 [ ] Consider giving entities billboard / model viewing modes
