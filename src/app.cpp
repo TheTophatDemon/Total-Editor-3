@@ -216,7 +216,7 @@ int main(int argc, char **argv)
     App::Get()->NewMap(100, 5, 100);
 
     //Main loop
-	SetTargetFPS(300);
+	SetTargetFPS(60);
 	while (!App::Get()->IsQuitting())
 	{
         App::Get()->Update();
