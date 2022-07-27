@@ -275,7 +275,7 @@ void App::TryOpenMap(fs::path path)
             {
                 _lastSavedPath = path;
                 std::string msg = "Loaded .te3 map '";
-                msg += path.filename();
+                msg += path.filename().string();
                 msg += "'.";
                 DisplayStatusMessage(msg, 5.0f, 100);
             }
@@ -317,7 +317,7 @@ void App::TrySaveMap(fs::path path)
         {
             _lastSavedPath = path;
             std::string msg = "Saved .te3 map '";
-            msg += path.filename();
+            msg += path.filename().string();
             msg += "'.";
             DisplayStatusMessage(msg, 5.0f, 100);
         }
