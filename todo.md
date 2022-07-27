@@ -57,7 +57,7 @@
 [x] Only load used textures ~~and shapes~~ into Assets
 [x] When saving, list only the used textures and shapes.
 [x] Update instructions
-[ ] Include asset licenses
+[x] Include asset licenses
 # Future prospects
 [ ] Shapes with empty UVs get automatically mapped (Allows for rotation and flipping without distorting texture mapping)
 [ ] Add .glb export, embedding textures in file.
