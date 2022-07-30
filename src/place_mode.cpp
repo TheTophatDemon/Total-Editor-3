@@ -80,7 +80,7 @@ void PlaceMode::ResetCamera()
     _camera.position = _mapMan.Tiles().GetCenterPos();
     _camera.target = _camera.position;
     _cameraYaw = 0.0f;
-    _cameraPitch = PI / 4.0f;
+    _cameraPitch = -PI / 4.0f;
     _cursor.startPosition = _cursor.endPosition = Vector3Zero();
 }
 
@@ -147,8 +147,8 @@ void PlaceMode::MoveCamera()
     
     if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) 
     {
-        _cameraYaw += GetMouseDelta().x * App::Get()->GetMouseSensitivity() * GetFrameTime();
-        _cameraPitch += GetMouseDelta().y * App::Get()->GetMouseSensitivity() * GetFrameTime();
+        _cameraYaw -= GetMouseDelta().x * App::Get()->GetMouseSensitivity() * GetFrameTime();
+        _cameraPitch -= GetMouseDelta().y * App::Get()->GetMouseSensitivity() * GetFrameTime();
         _cameraPitch = Clamp(_cameraPitch, -CAMERA_PITCH_LIMIT, CAMERA_PITCH_LIMIT);
     }
 

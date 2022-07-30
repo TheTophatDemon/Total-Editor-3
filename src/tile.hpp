@@ -71,7 +71,7 @@ inline bool operator!=(const Tile &lhs, const Tile &rhs)
 inline Matrix TileRotationMatrix(const Tile &tile)
 {
     return MatrixMultiply( 
-        MatrixRotateX(ToRadians(float(tile.pitch))), MatrixRotYDeg(float(tile.angle)));
+        MatrixRotateX(ToRadians(float(-tile.pitch))), MatrixRotYDeg(float(-tile.angle)));
 }
 
 class TileGrid : public Grid<Tile>

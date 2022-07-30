@@ -63,7 +63,7 @@ void PickMode::_GetFrames(std::string rootDir)
 
         for (int f = 0; f < files.count; ++f)
         {
-            std::string fullPath = BuildPath({dir, files.paths[f]});
+            std::string fullPath = files.paths[f];
             if (DirectoryExists(fullPath.c_str()) && strcmp(files.paths[f], ".") != 0 && strcmp(files.paths[f], "..") != 0)
             {
                 dirs.push(fullPath);

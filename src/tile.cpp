@@ -341,7 +341,7 @@ std::set<fs::path> TileGrid::GetUsedTexturePaths() const
     std::set<fs::path> paths;
     for (const Tile &tile : _grid)
     {
-        paths.insert(Assets::PathFromTexID(tile.texture));
+        if (tile) paths.insert(Assets::PathFromTexID(tile.texture));
     }
     return paths;
 }
@@ -351,7 +351,7 @@ std::set<fs::path> TileGrid::GetUsedShapePaths() const
     std::set<fs::path> paths;
     for (const Tile &tile : _grid)
     {
-        paths.insert(Assets::PathFromModelID(tile.shape));
+        if (tile) paths.insert(Assets::PathFromModelID(tile.shape));
     }
     return paths;
 }
