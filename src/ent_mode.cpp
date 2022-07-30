@@ -67,21 +67,21 @@ void EntMode::Update()
 
 void EntMode::Draw()
 {
-    const Rectangle DRECT = (Rectangle){ 0.0f, 32.0f, (float)GetScreenWidth(), (float)GetScreenHeight() - 32.0f };
+    const Rectangle DRECT = Rectangle{ 0.0f, 32.0f, (float)GetScreenWidth(), (float)GetScreenHeight() - 32.0f };
     
-    const Rectangle APPEAR_RECT = (Rectangle) {
+    const Rectangle APPEAR_RECT = Rectangle {
         DRECT.x + 8.0f, DRECT.y + 8.0f, DRECT.width - 16.0f, 128.0f
     };
 
     //Appearance configuration
 
     //Color picker for empty entities.
-    const Rectangle COLOR_RECT = (Rectangle) { APPEAR_RECT.x, APPEAR_RECT.y, 128.0f, APPEAR_RECT.height };
+    const Rectangle COLOR_RECT = Rectangle { APPEAR_RECT.x, APPEAR_RECT.y, 128.0f, APPEAR_RECT.height };
     Color newColor = GuiColorPicker(COLOR_RECT, "Color", _ent.color);
     _ent.color = newColor;
 
     //Radius slider
-    const Rectangle RADIUS_RECT = (Rectangle) { 
+    const Rectangle RADIUS_RECT = Rectangle { 
         .x = COLOR_RECT.x + COLOR_RECT.width + 64.0f + 4.0f, 
         .y = COLOR_RECT.y + COLOR_RECT.height / 2.0f - 16.0f, 
         .width = APPEAR_RECT.width - (RADIUS_RECT.x - DRECT.x) - 32.0f, 
@@ -91,10 +91,10 @@ void EntMode::Draw()
     _ent.radius = floorf(_ent.radius / 0.05f) * 0.05f;
     char radiusLabel[256];
     sprintf(radiusLabel, "Radius: %.2f", _ent.radius);
-    GuiLabel((Rectangle) { RADIUS_RECT.x, RADIUS_RECT.y - 12 }, radiusLabel);
+    GuiLabel(Rectangle { RADIUS_RECT.x, RADIUS_RECT.y - 12 }, radiusLabel);
 
     //Property list
-    Rectangle SCROLL_RECT = (Rectangle) {
+    Rectangle SCROLL_RECT = Rectangle {
         DRECT.x + 8.0f, APPEAR_RECT.y + APPEAR_RECT.height + 8.0f, DRECT.width - 16.0f, DRECT.height - 8.0f - (SCROLL_RECT.y - DRECT.y) - 64.0f - 4.0f
     };
     const float PROP_HEIGHT = 24.0f;
@@ -107,7 +107,7 @@ void EntMode::Draw()
     }
 
     Rectangle scissor = GuiScrollPanel(SCROLL_RECT, "Properties", 
-        (Rectangle) { .width = Max((int)SCROLL_RECT.width - 16, DRECT.width / 2 + longestStringLen * 12), .height = (PROP_HEIGHT * _ent.properties.size()) + 8.0f }, 
+        Rectangle { .width = float(Max(int(SCROLL_RECT.width - 16), int(DRECT.width / 2) + longestStringLen * 12)), .height = (PROP_HEIGHT * _ent.properties.size()) + 8.0f }, 
         &_propsScroll);
     
     BeginScissorMode(scissor.x, scissor.y, scissor.width, scissor.height);
@@ -115,13 +115,13 @@ void EntMode::Draw()
     float y = 4.0f;
     for (auto [key, val] : _ent.properties)
     {
-        const Rectangle KEY_RECT = (Rectangle) { scissor.x + 4.0f + _propsScroll.x, scissor.y + y + _propsScroll.y, (scissor.width - 16.0f) / 2.0f, PROP_HEIGHT };
+        const Rectangle KEY_RECT = Rectangle { scissor.x + 4.0f + _propsScroll.x, scissor.y + y + _propsScroll.y, (scissor.width - 16.0f) / 2.0f, PROP_HEIGHT };
         if (GuiLabelButton(KEY_RECT, key.c_str()))
         {
             //Copy key name field when a key is clicked in the list.
             strcpy(_keyName, key.c_str());
         }
-        const Rectangle VAL_RECT = (Rectangle) { KEY_RECT.x + KEY_RECT.width + 4.0f, KEY_RECT.y, Max(KEY_RECT.width, longestStringLen * 12), PROP_HEIGHT };
+        const Rectangle VAL_RECT = Rectangle { KEY_RECT.x + KEY_RECT.width + 4.0f, KEY_RECT.y, float(Max(KEY_RECT.width, longestStringLen * 12)), PROP_HEIGHT };
         if (GuiTextBox(VAL_RECT, _propBuffers[key], TEXT_FIELD_MAX, _propEditing[key]))
         {
             _propEditing[key] = !_propEditing[key];
@@ -133,8 +133,8 @@ void EntMode::Draw()
     EndScissorMode();
 
     //Key add/remove widgets
-    const Rectangle ADD_KEY_RECT = (Rectangle) { SCROLL_RECT.x, SCROLL_RECT.y + SCROLL_RECT.height, 32, 32 };
-    const Rectangle REM_KEY_RECT = (Rectangle) { ADD_KEY_RECT.x + ADD_KEY_RECT.width + 4.0f, ADD_KEY_RECT.y, 32, 32 };
+    const Rectangle ADD_KEY_RECT = Rectangle { SCROLL_RECT.x, SCROLL_RECT.y + SCROLL_RECT.height, 32, 32 };
+    const Rectangle REM_KEY_RECT = Rectangle { ADD_KEY_RECT.x + ADD_KEY_RECT.width + 4.0f, ADD_KEY_RECT.y, 32, 32 };
     if (GuiButton(ADD_KEY_RECT, "+"))
     {
         //Add key
@@ -157,14 +157,14 @@ void EntMode::Draw()
         }
     }
     //Key name input field
-    const Rectangle KEY_NAME_RECT = (Rectangle) { REM_KEY_RECT.x + REM_KEY_RECT.width + 4.0f, REM_KEY_RECT.y, DRECT.width - (KEY_NAME_RECT.x - DRECT.x) - 8.0f, 32.0f };
+    const Rectangle KEY_NAME_RECT = Rectangle { REM_KEY_RECT.x + REM_KEY_RECT.width + 4.0f, REM_KEY_RECT.y, DRECT.width - (KEY_NAME_RECT.x - DRECT.x) - 8.0f, 32.0f };
     if (GuiTextBox(KEY_NAME_RECT, _keyName, TEXT_FIELD_MAX, _keyNameEdit))
     {
         _keyNameEdit = !_keyNameEdit;
     }
 
     //Confirm button
-    if (GuiButton((Rectangle) { .x = DRECT.x + (DRECT.width / 2.0f) - 64.0f, .y = DRECT.y + DRECT.height - 32.0f - 8.0f, .width = 128.0f, .height = 32.0f }, "Place"))
+    if (GuiButton(Rectangle { .x = DRECT.x + (DRECT.width / 2.0f) - 64.0f, .y = DRECT.y + DRECT.height - 32.0f - 8.0f, .width = 128.0f, .height = 32.0f }, "Place"))
     {
         _changeConfirmed = true;
         App::Get()->ChangeEditorMode(App::Mode::PLACE_TILE);

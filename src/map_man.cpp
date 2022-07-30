@@ -26,6 +26,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <limits>
 
 #include "app.hpp"
 #include "assets.hpp"
@@ -67,7 +68,7 @@ void MapMan::ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h,
 
 void MapMan::ExecuteEntPlacement(int i, int j, int k, Ent newEnt)
 {
-    Ent prevEnt = _entGrid.HasEnt(i, j, k) ? _entGrid.GetEnt(i, j, k) : (Ent) { 0 };
+    Ent prevEnt = _entGrid.HasEnt(i, j, k) ? _entGrid.GetEnt(i, j, k) : Ent{ 0 };
     _Execute(std::static_pointer_cast<Action>(
         std::make_shared<EntAction>(i, j, k, _entGrid.HasEnt(i, j, k), false, prevEnt, newEnt)
     ));
@@ -76,7 +77,7 @@ void MapMan::ExecuteEntPlacement(int i, int j, int k, Ent newEnt)
 void MapMan::ExecuteEntRemoval(int i, int j, int k)
 {
     _Execute(std::static_pointer_cast<Action>(
-        std::make_shared<EntAction>(i, j, k, true, true, _entGrid.GetEnt(i, j, k), (Ent){ 0 })
+        std::make_shared<EntAction>(i, j, k, true, true, _entGrid.GetEnt(i, j, k), Ent{ 0 })
     ));
 }
 
@@ -212,9 +213,9 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
 
             //Calculate max and min component values. Required only for position buffer.
             float minX, minY, minZ;
-            minX = minY = minZ = __FLT_MAX__;
+            minX = minY = minZ = std::numeric_limits<float>::max();
             float maxX, maxY, maxZ;
-            maxX = maxY = maxZ = __FLT_MIN__;
+            maxX = maxY = maxZ = std::numeric_limits<float>::min();
             for (int j = 0; j < mapModel.meshes[i].vertexCount * 3; ++j)
             {
                 const float C = mapModel.meshes[i].vertices[j];

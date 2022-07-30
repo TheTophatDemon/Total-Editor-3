@@ -14,7 +14,7 @@ if sys.platform.startswith("linux"):
   env.Append(tools = ['g++'])
   env.Append(CPPDEFINES = ['LINUX_64'])
   env.Append(LIBS = Split('raylib GL m pthread dl rt X11'))
-elif sys.platform.startswith("windows"):
+elif sys.platform.startswith("win"):
   #TODO: Test to see if this compiles on Windows
   env.Append(tools = ['mingw']) #TODO: Also consider supporting VC++ somehow
   env.Append(CPPDEFINES = ['WINDOWS_64'])
@@ -29,5 +29,4 @@ else:
 bin_dir = 'debug' if is_debug else 'release'
 
 env.Append(OBJPREFIX='../obj/%s/' % bin_dir)
-
 env.Program(target='./bin/%s/%s' % (bin_dir, project_name), source=Glob('src/*.cpp'))

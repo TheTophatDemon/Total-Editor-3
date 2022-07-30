@@ -57,19 +57,18 @@ void PickMode::_GetFrames(std::string rootDir)
         std::string dir = dirs.top();
         dirs.pop();
 
-        char **files = nullptr;
-        int fileCount = 0;
+        FilePathList files = { 0 };
         //This function will free the memory stored in `files` every time it is called, so be careful not to call it during iteration.
-        files = GetDirectoryFiles(dir.c_str(), &fileCount);
+        files = LoadDirectoryFiles(dir.c_str());
 
-        for (int f = 0; f < fileCount; ++f)
+        for (int f = 0; f < files.count; ++f)
         {
-            std::string fullPath = BuildPath({dir, files[f]});
-            if (DirectoryExists(fullPath.c_str()) && strcmp(files[f], ".") != 0 && strcmp(files[f], "..") != 0)
+            std::string fullPath = files.paths[f];
+            if (DirectoryExists(fullPath.c_str()) && strcmp(files.paths[f], ".") != 0 && strcmp(files.paths[f], "..") != 0)
             {
                 dirs.push(fullPath);
             }
-            else if (_mode == Mode::TEXTURES && IsFileExtension(files[f], ".png"))
+            else if (_mode == Mode::TEXTURES && IsFileExtension(files.paths[f], ".png"))
             {
                 Frame frame = {
                     .tex = LoadTexture(fullPath.c_str()),
@@ -78,7 +77,7 @@ void PickMode::_GetFrames(std::string rootDir)
                 };
                 _frames.push_back(frame);
             }
-            else if (_mode == Mode::SHAPES && IsFileExtension(files[f], ".obj"))
+            else if (_mode == Mode::SHAPES && IsFileExtension(files.paths[f], ".obj"))
             {
                 ModelID shape = Assets::ModelIDFromPath(fullPath);
                 Frame frame = {
@@ -87,8 +86,12 @@ void PickMode::_GetFrames(std::string rootDir)
                 _frames.push_back(frame);
             }
 
-            if (fullPath.length() > _longestLabelLength) _longestLabelLength = fullPath.length();
+            if (fullPath.length() > _longestLabelLength)
+                _longestLabelLength = fullPath.length();
+
+     
         }
+        UnloadDirectoryFiles(files);
     }
 }
 
@@ -101,8 +104,6 @@ void PickMode::OnEnter()
         _GetFrames(App::Get()->GetTexturesDir());
     else if (_mode == Mode::SHAPES)
         _GetFrames(App::Get()->GetShapesDir());
-
-    ClearDirectoryFiles();
 }
 
 void PickMode::OnExit()
@@ -133,7 +134,7 @@ void PickMode::Update()
 void PickMode::_DrawGridView(Rectangle framesView) 
 {
     const int FRAMES_PER_ROW = (int)framesView.width / FRAME_SPACING;
-    Rectangle framesContent = (Rectangle){
+    Rectangle framesContent = Rectangle{
         .x = 0, 
         .y = 0, 
         .width = framesView.width - 16, 
@@ -148,7 +149,7 @@ void PickMode::_DrawGridView(Rectangle framesView)
         int f = 0;
         for (Frame *frame : _filteredFrames)
         {
-            Rectangle rect = (Rectangle){
+            Rectangle rect = Rectangle{
                 .x = framesView.x + FRAME_MARGIN + (f % FRAMES_PER_ROW) * FRAME_SPACING + _scroll.x,
                 .y = framesView.y + FRAME_MARGIN + (f / FRAMES_PER_ROW) * FRAME_SPACING + _scroll.y,
                 .width = FRAME_SIZE,
@@ -167,7 +168,7 @@ void PickMode::_DrawListView(Rectangle framesView)
     const int SPACING_WITH_LABEL = FRAME_SPACING + (_longestLabelLength * 10) + 8;
     int framesPerRow = (int)floorf(framesView.width / SPACING_WITH_LABEL);
     if (framesPerRow < 1) framesPerRow = 1;
-    Rectangle framesContent = (Rectangle){ 
+    Rectangle framesContent = Rectangle{ 
         .x = 0, 
         .y = 0, 
         .width = framesView.width - 16, 
@@ -180,7 +181,7 @@ void PickMode::_DrawListView(Rectangle framesView)
         int f = 0;
         for (Frame *frame : _filteredFrames)
         {
-            Rectangle rect = (Rectangle){
+            Rectangle rect = Rectangle{
                 .x = framesView.x + FRAME_MARGIN + (f % framesPerRow) * SPACING_WITH_LABEL + _scroll.x,
                 .y = framesView.y + FRAME_MARGIN + (f / framesPerRow) * FRAME_SPACING + _scroll.y,
                 .width = FRAME_SIZE,
@@ -190,10 +191,10 @@ void PickMode::_DrawListView(Rectangle framesView)
 
             _DrawFrame(frame, rect);
 
-            Rectangle labelRect = (Rectangle){
+            Rectangle labelRect = Rectangle{
                 .x = rect.x + rect.width + FRAME_MARGIN,
                 .y = rect.y,
-                .width = SPACING_WITH_LABEL - FRAME_SPACING,
+                .width = float(SPACING_WITH_LABEL - FRAME_SPACING),
                 .height = rect.height
             };
             if (GuiLabelButton(labelRect, frame->label.c_str())) 
@@ -212,7 +213,7 @@ void PickMode::_DrawFrame(Frame *frame, Rectangle rect)
         _selectedFrame = frame;
     }
 
-    Rectangle outline = (Rectangle){rect.x - 2, rect.y - 2, rect.width + 4, rect.height + 4};
+    Rectangle outline = Rectangle{rect.x - 2, rect.y - 2, rect.width + 4, rect.height + 4};
     DrawRectangle(outline.x, outline.y, outline.width, outline.height, BLACK); //Black background
     
     //Texture
@@ -228,21 +229,21 @@ void PickMode::_DrawFrame(Frame *frame, Rectangle rect)
 void PickMode::Draw()
 {
     //Draw search box
-    GuiLabel((Rectangle){32, UPPER_MARGIN, 128, 32}, "SEARCH:");
-    Rectangle searchBoxRect = (Rectangle){128, UPPER_MARGIN, (float)GetScreenWidth() / 3.0f, 32};
+    GuiLabel(Rectangle{32, UPPER_MARGIN, 128, 32}, "SEARCH:");
+    Rectangle searchBoxRect = Rectangle{128, UPPER_MARGIN, (float)GetScreenWidth() / 3.0f, 32};
     if (GuiTextBox(searchBoxRect, _searchFilterBuffer, SEARCH_BUFFER_SIZE, _searchFilterFocused))
     {
         _searchFilterFocused = !_searchFilterFocused;
     }
     
     //Clear button
-    Rectangle clearButtonRect = (Rectangle){searchBoxRect.x + searchBoxRect.width + 4, searchBoxRect.y, 96, 32};
+    Rectangle clearButtonRect = Rectangle{searchBoxRect.x + searchBoxRect.width + 4, searchBoxRect.y, 96, 32};
     if (GuiButton(clearButtonRect, "Clear"))
     {
         memset(_searchFilterBuffer, 0, SEARCH_BUFFER_SIZE * sizeof(char));
     }
     //Viewing types selection
-    Rectangle viewToggleRect = (Rectangle){
+    Rectangle viewToggleRect = Rectangle{
         .x = (float)GetScreenWidth() - 32 - 128, 
         .y = clearButtonRect.y,
         .width = 64,
@@ -250,7 +251,7 @@ void PickMode::Draw()
         };
     _view = (View)GuiToggleGroup(viewToggleRect, "GRID;LIST", (int)_view);
 
-    Rectangle framesView = (Rectangle){32, 96, (float)GetScreenWidth() - 64, (float)GetScreenHeight() - 128};
+    Rectangle framesView = Rectangle{32, 96, (float)GetScreenWidth() - 64, (float)GetScreenHeight() - 128};
     if (_view == View::GRID) _DrawGridView(framesView);
     else if (_view == View::LIST) _DrawListView(framesView);
 
@@ -259,7 +260,7 @@ void PickMode::Draw()
     {
         std::string selectString = std::string("Selected: ") + _selectedFrame->label;
 
-        GuiLabel((Rectangle){
+        GuiLabel(Rectangle{
                     .x = 64, 
                     .y = (float)GetScreenHeight() - 24, 
                     .width = (float)GetScreenWidth() / 2.0f, 

@@ -53,7 +53,7 @@ PlaceMode::PlaceMode(MapMan &mapMan)
     _cursor.tile.pitch = 0;
 
     _cursor.brush = TileGrid(1, 1, 1);
-    _cursor.ent = (Ent) {
+    _cursor.ent = Ent {
         .color = WHITE,
         .radius = 1.0f
     };
@@ -80,14 +80,14 @@ void PlaceMode::ResetCamera()
     _camera.position = _mapMan.Tiles().GetCenterPos();
     _camera.target = _camera.position;
     _cameraYaw = 0.0f;
-    _cameraPitch = PI / 4.0f;
+    _cameraPitch = -PI / 4.0f;
     _cursor.startPosition = _cursor.endPosition = Vector3Zero();
 }
 
 void PlaceMode::ResetGrid()
 {
     //Editor grid and plane
-    _planeGridPos = (Vector3){ (float)_mapMan.Tiles().GetWidth() / 2.0f, 0, (float)_mapMan.Tiles().GetLength() / 2.0f };
+    _planeGridPos = Vector3{ (float)_mapMan.Tiles().GetWidth() / 2.0f, 0, (float)_mapMan.Tiles().GetLength() / 2.0f };
     _planeWorldPos = _mapMan.Tiles().GridToWorldPos(_planeGridPos, false);
     _layerViewMin = 0;
     _layerViewMax = _mapMan.Tiles().GetHeight() - 1;
@@ -147,8 +147,8 @@ void PlaceMode::MoveCamera()
     
     if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) 
     {
-        _cameraYaw += GetMouseDelta().x * App::Get()->GetMouseSensitivity() * GetFrameTime();
-        _cameraPitch += GetMouseDelta().y * App::Get()->GetMouseSensitivity() * GetFrameTime();
+        _cameraYaw -= GetMouseDelta().x * App::Get()->GetMouseSensitivity() * GetFrameTime();
+        _cameraPitch -= GetMouseDelta().y * App::Get()->GetMouseSensitivity() * GetFrameTime();
         _cameraPitch = Clamp(_cameraPitch, -CAMERA_PITCH_LIMIT, CAMERA_PITCH_LIMIT);
     }
 
@@ -176,10 +176,10 @@ void PlaceMode::UpdateCursor()
     Vector3 gridMin = _mapMan.Tiles().GetMinCorner();
     Vector3 gridMax = _mapMan.Tiles().GetMaxCorner();
     RayCollision col = GetRayCollisionQuad(pickRay, 
-        (Vector3){ gridMin.x, _planeWorldPos.y, gridMin.z }, 
-        (Vector3){ gridMax.x, _planeWorldPos.y, gridMin.z }, 
-        (Vector3){ gridMax.x, _planeWorldPos.y, gridMax.z }, 
-        (Vector3){ gridMin.x, _planeWorldPos.y, gridMax.z });
+        Vector3{ gridMin.x, _planeWorldPos.y, gridMin.z }, 
+        Vector3{ gridMax.x, _planeWorldPos.y, gridMin.z }, 
+        Vector3{ gridMax.x, _planeWorldPos.y, gridMax.z }, 
+        Vector3{ gridMin.x, _planeWorldPos.y, gridMax.z });
     if (col.hit)
     {
         _cursor.endPosition = _mapMan.Tiles().SnapToCelCenter(col.point);
@@ -226,7 +226,7 @@ void PlaceMode::UpdateCursor()
 
     if (_cursor.mode == Cursor::Mode::BRUSH)
     {
-        _cursor.startPosition = (Vector3) {
+        _cursor.startPosition = Vector3 {
             _cursor.endPosition.x + (_cursor.brush.GetWidth()  - 1) * _cursor.brush.GetSpacing(),
             _cursor.endPosition.y + (_cursor.brush.GetHeight() - 1) * _cursor.brush.GetSpacing(),
             _cursor.endPosition.z + (_cursor.brush.GetLength() - 1) * _cursor.brush.GetSpacing(),
@@ -283,13 +283,13 @@ void PlaceMode::UpdateCursor()
             //Remove tiles
             if (underTile)
             {
-                _mapMan.ExecuteTileAction(i, j, k, 1, 1, 1, (Tile) {NO_MODEL, 0, NO_TEX, false});
+                _mapMan.ExecuteTileAction(i, j, k, 1, 1, 1, Tile {NO_MODEL, 0, NO_TEX, false});
             }
         } 
         else if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && multiSelect)
         {
             //Remove tiles RECTANGLE
-            _mapMan.ExecuteTileAction(i, j, k, w, h, l, (Tile) {NO_MODEL, 0, NO_TEX, false});
+            _mapMan.ExecuteTileAction(i, j, k, w, h, l, Tile {NO_MODEL, 0, NO_TEX, false});
         }
         else if (IsKeyDown(KEY_G) && !multiSelect) 
         {
@@ -439,7 +439,7 @@ void PlaceMode::Draw()
             rlDrawRenderBatchActive();
             rlSetLineWidth(1.0f);
             DrawGridEx(
-                Vector3Add(_planeWorldPos, (Vector3){ 0.0f, 0.05f, 0.0f }), //Adding the offset to prevent Z-fighting 
+                Vector3Add(_planeWorldPos, Vector3{ 0.0f, 0.05f, 0.0f }), //Adding the offset to prevent Z-fighting 
                 _mapMan.Tiles().GetWidth()+1, _mapMan.Tiles().GetLength()+1, 
                 _mapMan.Tiles().GetSpacing());
             rlDrawRenderBatchActive();
@@ -491,7 +491,7 @@ void PlaceMode::Draw()
                 fabs(_cursor.endPosition.z - _cursor.startPosition.z) + _mapMan.Tiles().GetSpacing() * _cursor.outlineScale, 
                 MAGENTA);
 
-            DrawAxes3D((Vector3){ 1.0f, 1.0f, 1.0f }, 10.0f);
+            DrawAxes3D(Vector3{ 1.0f, 1.0f, 1.0f }, 10.0f);
             rlDrawRenderBatchActive();
             rlEnableDepthTest();
         }

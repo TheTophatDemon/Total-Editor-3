@@ -71,7 +71,7 @@ inline bool operator!=(const Tile &lhs, const Tile &rhs)
 inline Matrix TileRotationMatrix(const Tile &tile)
 {
     return MatrixMultiply( 
-        MatrixRotateX(ToRadians(tile.pitch)), MatrixRotYDeg(tile.angle));
+        MatrixRotateX(ToRadians(float(-tile.pitch))), MatrixRotYDeg(float(-tile.angle)));
 }
 
 class TileGrid : public Grid<Tile>
@@ -84,7 +84,7 @@ public:
     }
     //Constructs a TileGrid full of empty tiles.
     inline TileGrid(size_t width, size_t height, size_t length)
-        : TileGrid(width, height, length, TILE_SPACING_DEFAULT, (Tile) { NO_MODEL, 0, NO_TEX, false })
+        : TileGrid(width, height, length, TILE_SPACING_DEFAULT, Tile { NO_MODEL, 0, NO_TEX, false })
     {
     }
 
@@ -111,7 +111,7 @@ public:
     inline void SetTileRect(int i, int j, int k, int w, int h, int l, const Tile& tile)
     {
         assert(i >= 0 && j >= 0 && k >= 0);
-        assert(i + w <= _width && j + h <= _height && k + l <= _length);
+        assert(i + w <= int(_width) && j + h <= int(_height) && k + l <= int(_length));
         for (int y = j; y < j + h; ++y)
         {
             for (int z = k; z < k + l; ++z)
@@ -133,9 +133,9 @@ public:
     inline void CopyTiles(int i, int j, int k, const TileGrid &src, bool ignoreEmpty = false)
     {
         assert(i >= 0 && j >= 0 && k >= 0);
-        int xEnd = Min(i + src._width, _width); 
-        int yEnd = Min(j + src._height, _height);
-        int zEnd = Min(k + src._length, _length);
+        int xEnd = Min(i + int(src._width), int(_width));
+        int yEnd = Min(j + int(src._height), int(_height));
+        int zEnd = Min(k + int(src._length), int(_length));
         for (int z = k; z < zEnd; ++z) 
         {
             for (int y = j; y < yEnd; ++y)
@@ -172,7 +172,7 @@ public:
     inline TileGrid Subsection(int i, int j, int k, int w, int h, int l) const
     {
         assert(i >= 0 && j >= 0 && k >= 0);
-        assert(i + w <= _width && j + h <= _height && k + l <= _length);
+        assert(i + w <= int(_width) && j + h <=int(_height) && k + l <= int(_length));
 
         TileGrid newGrid(w, h, l);
 

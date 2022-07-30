@@ -46,7 +46,7 @@ inline int GetStringWidth(Font font, float fontSize, const std::string &string)
     float scaleFactor = fontSize / font.baseSize;
     int maxWidth = 0;
     int lineWidth = 0;
-    for (int i = 0; i < string.size();)
+    for (int i = 0; i < int(string.size());)
     {
         int codepointByteCount = 0;
         int codepoint = GetCodepoint(&string[i], &codepointByteCount);
@@ -61,8 +61,10 @@ inline int GetStringWidth(Font font, float fontSize, const std::string &string)
         }
         else 
         {
-            if (font.glyphs[g].advanceX == 0) lineWidth += ((float)font.recs[g].width*scaleFactor);
-            else lineWidth += ((float)font.glyphs[g].advanceX*scaleFactor);
+            if (font.glyphs[g].advanceX == 0) 
+                lineWidth += int(font.recs[g].width*scaleFactor);
+            else 
+                lineWidth += int(font.glyphs[g].advanceX*scaleFactor);
         }
 
         i += codepointByteCount;

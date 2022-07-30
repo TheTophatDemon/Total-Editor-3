@@ -80,7 +80,7 @@ public:
 
     //Creates ent grid of given dimensions, default spacing.
     inline EntGrid(size_t width, size_t height, size_t length)
-        : Grid<Ent>(width, height, length, ENT_SPACING_DEFAULT, (Ent) { 0 }) //Nullptr means no entity in the cel
+        : Grid<Ent>(width, height, length, ENT_SPACING_DEFAULT, Ent { 0 }) //Nullptr means no entity in the cel
     {
     }
 
@@ -92,7 +92,7 @@ public:
 
     inline void RemoveEnt(int i, int j, int k)
     {
-        SetCel(i, j, k, (Ent) { 0 });
+        SetCel(i, j, k, Ent { 0 });
     }
     
     inline bool HasEnt(int i, int j, int k) const
@@ -115,7 +115,7 @@ public:
     inline EntGrid Subsection(int i, int j, int k, int w, int h, int l) const
     {
         assert(i >= 0 && j >= 0 && k >= 0);
-        assert(i + w <= _width && j + h <= _height && k + l <= _length);
+        assert(i + w <= int(_width) && j + h <= int(_height) && k + l <= int(_length));
 
         EntGrid newGrid(w, h, l);
 

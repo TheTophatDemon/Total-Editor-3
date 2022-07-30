@@ -41,9 +41,12 @@ void TileGrid::_RegenBatches(Vector3 position, int fromY, int toY)
     //Create a hash map of dynamic arrays for each combination of texture and mesh
     for (int y = fromY; y <= toY; ++y)
     {
-        for (size_t t = y * layerArea; t < (y + 1) * layerArea; ++t) {
+        for (size_t t = y * layerArea; t < (y + 1) * layerArea; ++t) 
+        {
             const Tile& tile = _grid[t];
-            if (tile) {
+            if (tile)
+            
+            {
                 //Calculate world space matrix for the tile
                 Vector3 gridPos = UnflattenIndex(t);
                 Vector3 worldPos = Vector3Add(position, GridToWorldPos(gridPos, true));
@@ -52,10 +55,12 @@ void TileGrid::_RegenBatches(Vector3 position, int fromY, int toY)
                     MatrixTranslate(worldPos.x, worldPos.y, worldPos.z));
 
                 const Model &shape = Assets::ModelFromID(tile.shape);
-                for (size_t m = 0; m < shape.meshCount; ++m) {
+                for (int m = 0; m < shape.meshCount; ++m) 
+                {
                     //Add the tile's transform to the instance arrays for each mesh
                     auto pair = std::make_pair(tile.texture, &shape.meshes[m]);
-                    if (_drawBatches.find(pair) == _drawBatches.end()) {
+                    if (_drawBatches.find(pair) == _drawBatches.end()) 
+                    {
                         //Put in a vector for this pair if there hasn't been one already
                         _drawBatches[pair] = std::vector<Matrix>();
                     }
@@ -163,7 +168,7 @@ Model *TileGrid::_GenerateModel()
         auto [iter, succ] = usedTexIDs.insert(pair.first);
         if (succ)
         {
-            meshMap[pair.first] = (DynMesh) {};
+            meshMap[pair.first] = DynMesh {};
             meshMap[pair.first].triCount = 0;
         }
         Mesh &shape = *pair.second;
@@ -178,7 +183,7 @@ Model *TileGrid::_GenerateModel()
                 if (shape.vertices != NULL)
                 {
                     //Transform shape vertices into tile's orientation and position
-                    Vector3 vec = (Vector3) { shape.vertices[v*3], shape.vertices[v*3 + 1], shape.vertices[v*3 + 2] };
+                    Vector3 vec = Vector3 { shape.vertices[v*3], shape.vertices[v*3 + 1], shape.vertices[v*3 + 2] };
                     vec = Vector3Transform(vec, matrix);
                     mesh.positions.push_back(vec.x);
                     mesh.positions.push_back(vec.y);
@@ -193,7 +198,7 @@ Model *TileGrid::_GenerateModel()
                     rotMatrix.m13 = 0.0f;
                     rotMatrix.m14 = 0.0f;
                     
-                    Vector3 norm = (Vector3) { shape.normals[v*3], shape.normals[v*3 + 1], shape.normals[v*3 + 2] };
+                    Vector3 norm = Vector3 { shape.normals[v*3], shape.normals[v*3 + 1], shape.normals[v*3 + 2] };
                     norm = Vector3Transform(norm, rotMatrix);
                     mesh.normals.push_back(norm.x);
                     mesh.normals.push_back(norm.y);
@@ -247,7 +252,7 @@ Model *TileGrid::_GenerateModel()
 
         //Copy mesh data into Raylib mesh
         DynMesh &dMesh = meshMap[*texID];
-        model->meshes[i] = (Mesh) { 0 };
+        model->meshes[i] = Mesh { 0 };
         model->meshes[i].vertexCount = dMesh.positions.size() / 3;
         model->meshes[i].triangleCount = dMesh.triCount;
         
@@ -336,7 +341,7 @@ std::set<fs::path> TileGrid::GetUsedTexturePaths() const
     std::set<fs::path> paths;
     for (const Tile &tile : _grid)
     {
-        paths.insert(Assets::PathFromTexID(tile.texture));
+        if (tile) paths.insert(Assets::PathFromTexID(tile.texture));
     }
     return paths;
 }
@@ -346,7 +351,7 @@ std::set<fs::path> TileGrid::GetUsedShapePaths() const
     std::set<fs::path> paths;
     for (const Tile &tile : _grid)
     {
-        paths.insert(Assets::PathFromModelID(tile.shape));
+        if (tile) paths.insert(Assets::PathFromModelID(tile.shape));
     }
     return paths;
 }
