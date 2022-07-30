@@ -24,6 +24,8 @@
 #include <deque>
 #include <cstdint>
 #include <memory>
+#include <stdint.h>
+#include <limits>
 #include <filesystem>
 namespace fs = std::filesystem;
 
@@ -160,7 +162,7 @@ public:
     {
         size_t minX, minY, minZ;
         size_t maxX, maxY, maxZ;
-        minX = minY = minZ = UINT64_MAX;
+        minX = minY = minZ = std::numeric_limits<size_t>::max();
         maxX = maxY = maxZ = 0;
         for (size_t x = 0; x < _tileGrid.GetWidth(); ++x)
         {

@@ -33,70 +33,62 @@ namespace fs = std::filesystem;
 #define BUTTON_MARGIN 4.0f
 #define MENUBAR_FONT_SIZE 24.0f
 
-MenuBar::MenuBar(App::Settings &settings)
+MenuBar::MenuBar(App::Settings& settings)
     : _settings(settings),
-      _focused(false),
-      _activeMenu(nullptr),
-      _activeDialog(nullptr),
-      _messageTimer(0.0f),
-      _messagePriority(0)
+    _focused(false),
+    _activeMenu(nullptr),
+    _activeDialog(nullptr),
+    _messageTimer(0.0f),
+    _messagePriority(0)
 {
-    _menus = {
-        (Menu) {
-            .name = "MAP",
-            .items = {
-                (Item) { "NEW",          [&](){ _activeDialog.reset(new NewMapDialog()); } },
-                (Item) { "OPEN",         [&]()
-                    { 
-                        auto callback = [](fs::path path){ App::Get()->TryOpenMap(path); };
-                        _activeDialog.reset(new FileDialog("Open Map (*.te3)", { ".te3" }, callback)); 
-                    } 
-                },
-                (Item) { "SAVE",         [&]()
-                    { 
-                        if (!App::Get()->GetLastSavedPath().empty())
-                        {
-                            App::Get()->TrySaveMap(App::Get()->GetLastSavedPath());
-                        }
-                        else
-                        {
-                            OpenSaveMapDialog();
-                        }
-                    } 
-                },
-                (Item) { "SAVE AS",      [&](){ OpenSaveMapDialog(); } },
-                (Item) { "EXPORT",       [&](){ _activeDialog.reset(new ExportDialog(_settings)); }},
-                (Item) { "EXPAND GRID",  [&](){ _activeDialog.reset(new ExpandMapDialog()); } },
-                (Item) { "SHRINK GRID",  [&](){ _activeDialog.reset(new ShrinkMapDialog()); } },
-            },
-        },
-        (Menu) {
-            .name = "VIEW",
-            .items = {
-                (Item) { "MAP EDITOR",     [](){ App::Get()->ChangeEditorMode(App::Mode::PLACE_TILE); } },
-                (Item) { "TEXTURE PICKER", [](){ App::Get()->ChangeEditorMode(App::Mode::PICK_TEXTURE); } },
-                (Item) { "SHAPE PICKER",   [](){ App::Get()->ChangeEditorMode(App::Mode::PICK_SHAPE); } },
-                (Item) { "ENTITY EDITOR",  [](){ App::Get()->ChangeEditorMode(App::Mode::EDIT_ENT); } },
-                (Item) { "RESET CAMERA",   [](){ App::Get()->ResetEditorCamera(); } },
-                (Item) { "TOGGLE PREVIEW", [](){ App::Get()->TogglePreviewing(); } },
-            },
-        },
-        (Menu) {
-            .name = "CONFIG",
-            .items = {
-                (Item) { "ASSET PATHS", [&](){ _activeDialog.reset(new AssetPathDialog(_settings)); } },
-                (Item) { "SETTINGS",    [&](){ _activeDialog.reset(new SettingsDialog(_settings)); } },
-            },
-        },
-        (Menu) {
-            .name = "INFO",
-            .items = {
-                (Item) { "ABOUT",          [&](){ _activeDialog.reset(new AboutDialog()); } },
-                (Item) { "KEYS/SHORTCUTS", [&](){ _activeDialog.reset(new ShortcutsDialog()); } },
-                (Item) { "INSTRUCTIONS",   [&](){ _activeDialog.reset(new InstructionsDialog()); } },
-            },
-        }
-    };
+    //map menu
+    Menu mapMenu = { "MAP" };
+    mapMenu.items.push_back(Item{ "NEW",          [&]() { _activeDialog.reset(new NewMapDialog()); } });
+    mapMenu.items.push_back(Item{ "OPEN",         [&](){
+                                                    auto callback = [](fs::path path) { App::Get()->TryOpenMap(path); };
+                                                    _activeDialog.reset(new FileDialog("Open Map (*.te3)", { ".te3" }, callback));
+                                                }
+                                            });
+    mapMenu.items.push_back(Item { "SAVE",        [&]() {
+                                                        if (!App::Get()->GetLastSavedPath().empty())
+                                                        {
+                                                            App::Get()->TrySaveMap(App::Get()->GetLastSavedPath());
+                                                        }
+                                                        else
+                                                        {
+                                                            OpenSaveMapDialog();
+                                                        }
+                                                    }
+                                                });
+    mapMenu.items.push_back(Item{ "SAVE AS",      [&]() { OpenSaveMapDialog(); } });
+    mapMenu.items.push_back(Item{ "EXPORT",       [&]() { _activeDialog.reset(new ExportDialog(_settings)); } });
+    mapMenu.items.push_back(Item{ "EXPAND GRID",  [&]() { _activeDialog.reset(new ExpandMapDialog()); } });
+    mapMenu.items.push_back(Item{ "SHRINK GRID",  [&]() { _activeDialog.reset(new ShrinkMapDialog()); } });
+    _menus.push_back(mapMenu);
+
+    //view menu
+    Menu view = { "VIEW" };
+    view.items.push_back(Item{ "MAP EDITOR",     []() { App::Get()->ChangeEditorMode(App::Mode::PLACE_TILE); } });
+    view.items.push_back(Item{ "TEXTURE PICKER", []() { App::Get()->ChangeEditorMode(App::Mode::PICK_TEXTURE); } });
+    view.items.push_back(Item{ "SHAPE PICKER",   []() { App::Get()->ChangeEditorMode(App::Mode::PICK_SHAPE); } });
+    view.items.push_back(Item{ "ENTITY EDITOR",  []() { App::Get()->ChangeEditorMode(App::Mode::EDIT_ENT); } });
+    view.items.push_back(Item{ "RESET CAMERA",   []() { App::Get()->ResetEditorCamera(); } });
+    view.items.push_back(Item{ "TOGGLE PREVIEW", []() { App::Get()->TogglePreviewing(); } });
+    _menus.push_back(view);
+
+    //config menu
+    Menu config = { "CONFIG" };
+    config.items.push_back(Item{ "ASSET PATHS", [&]() { _activeDialog.reset(new AssetPathDialog(_settings)); } });
+    config.items.push_back(Item{ "SETTINGS",    [&]() { _activeDialog.reset(new SettingsDialog(_settings)); } });
+    _menus.push_back(config);
+
+    // info menu
+    Menu info = { "INFO" };
+    info.items.push_back(Item{ "ABOUT", [&]() { _activeDialog.reset(new AboutDialog()); } });
+    info.items.push_back(Item{ "KEYS/SHORTCUTS", [&]() { _activeDialog.reset(new ShortcutsDialog()); } });
+    info.items.push_back(Item{ "INSTRUCTIONS", [&]() { _activeDialog.reset(new InstructionsDialog()); } });
+
+    _menus.push_back(info);
 
     for (Menu &menu : _menus)
     {
@@ -117,7 +109,7 @@ void MenuBar::OpenSaveMapDialog()
 
 void MenuBar::Update()
 {
-    _topBar = (Rectangle) { 0, 0, (float)GetScreenWidth(), 32 };
+    _topBar = Rectangle { 0, 0, (float)GetScreenWidth(), 32 };
 
     if (_messageTimer > 0.0f)
     {
@@ -171,11 +163,11 @@ std::string MenuBar::_GetMenuString(const MenuBar::Menu &menu) const
 void MenuBar::Draw()
 {
     DrawRectangleGradientV(_topBar.x, _topBar.y, _topBar.width, _topBar.height, GRAY, DARKGRAY);
-    const Rectangle MENU_BOUNDS = (Rectangle) { _topBar.x, _topBar.y, _topBar.width / 2.0f, _topBar.height };
+    const Rectangle MENU_BOUNDS = Rectangle { _topBar.x, _topBar.y, _topBar.width / 2.0f, _topBar.height };
     
     if (_messageTimer > 0.0f)
     {
-        DrawTextEx(Assets::GetFont(), _statusMessage.c_str(), (Vector2) { MENU_BOUNDS.x + MENU_BOUNDS.width + 4, 2 }, MENUBAR_FONT_SIZE, 0.0f, WHITE);
+        DrawTextEx(Assets::GetFont(), _statusMessage.c_str(), Vector2{ MENU_BOUNDS.x + MENU_BOUNDS.width + 4, 2 }, MENUBAR_FONT_SIZE, 0.0f, WHITE);
     }
 
     const float BUTTON_WIDTH = (MENU_BOUNDS.width / _menus.size()) - (BUTTON_MARGIN * 2.0f);
@@ -183,7 +175,7 @@ void MenuBar::Draw()
     float x = BUTTON_MARGIN;
     for (auto &menu : _menus)
     {
-        const Rectangle BUTT_RECT = (Rectangle) { MENU_BOUNDS.x + x, MENU_BOUNDS.y, BUTTON_WIDTH, MENU_BOUNDS.height }; //Heehee! Butt!
+        const Rectangle BUTT_RECT = Rectangle { MENU_BOUNDS.x + x, MENU_BOUNDS.y, BUTTON_WIDTH, MENU_BOUNDS.height }; //Heehee! Butt!
 
         std::string name = menu.name;
         //Abbreviate tab names when window is too small.
@@ -204,13 +196,13 @@ void MenuBar::Draw()
         if (_activeMenu == &menu)
         {
             std::string list = _GetMenuString(menu);
-            Rectangle listBounds = (Rectangle) { 
+            Rectangle listBounds = Rectangle { 
                 .x = BUTT_RECT.x, 
                 .y = BUTT_RECT.y + BUTT_RECT.height, 
-                .width = Max(BUTT_RECT.width, menu.width + BUTTON_MARGIN), 
+                .width = float(Max(BUTT_RECT.width, menu.width + BUTTON_MARGIN)), 
                 .height = 28.0f * menu.items.size() };
                 
-            _activeMenuBounds = (Rectangle) {
+            _activeMenuBounds = Rectangle {
                 .x = listBounds.x, 
                 .y = BUTT_RECT.y,
                 .width = listBounds.width,

@@ -61,9 +61,9 @@ Assets::Assets()
             if ((((x / BLOCK_SIZE) % 2) == 0 && ((y / BLOCK_SIZE) % 2) == 0) ||
                 (((x / BLOCK_SIZE) % 2) == 1 && ((y / BLOCK_SIZE) % 2) == 1) )
             {
-                pixels[base] = 0xFF;
+                pixels[base] = char(0xFF);
                 pixels[base + 1] = 0x00;
-                pixels[base + 2] = 0xFF;
+                pixels[base + 2] = char(0xFF);
             }
             else
             {
@@ -225,10 +225,10 @@ const Texture2D &Assets::GetShapeIcon(ModelID modelID)
 
 void Assets::RedrawIcons()
 {
-    static Camera camera = (Camera) {
-        .position = (Vector3) { 4.0f, 4.0f, 4.0f },
+    static Camera camera = Camera {
+        .position = Vector3 { 4.0f, 4.0f, 4.0f },
         .target = Vector3Zero(),
-        .up = (Vector3) { 0.0f, -1.0f, 0.0f },
+        .up = Vector3 { 0.0f, -1.0f, 0.0f },
         .fovy = 45.0f,
         .projection = CAMERA_PERSPECTIVE
     };
@@ -240,7 +240,7 @@ void Assets::RedrawIcons()
         ClearBackground(BLACK);
         BeginMode3D(camera);
 
-        DrawModelWiresEx(_Get()->ModelFromID(modelID), Vector3Zero(), (Vector3){0.0f, 1.0f, 0.0f}, GetTime() * 180.0f, Vector3One(), GREEN);
+        DrawModelWiresEx(_Get()->ModelFromID(modelID), Vector3Zero(), Vector3{0.0f, 1.0f, 0.0f}, float(GetTime() * 180.0f), Vector3One(), GREEN);
 
         EndMode3D();
         EndTextureMode();

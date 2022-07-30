@@ -27,8 +27,8 @@
 #include "rlgl.h"
 #include "raymath.h"
 
-const Vector3 VEC3_UP = (Vector3) { 0.0f, 1.0f, 0.0f };
-const Vector3 VEC3_FORWARD = (Vector3) { 0.0f, 0.0f, -1.0f };
+const Vector3 VEC3_UP = Vector3 { 0.0f, 1.0f, 0.0f };
+const Vector3 VEC3_FORWARD = Vector3 { 0.0f, 0.0f, -1.0f };
 
 //Returns the parameter that is lower in value.
 inline int Min(int a, int b) {
@@ -48,7 +48,7 @@ inline int Sign(int a) {
 
 inline Rectangle CenteredRect(float x, float y, float w, float h)
 {
-    return (Rectangle) { x - (w / 2.0f), y - (h / 2.0f), w, h };
+    return Rectangle{ x - (w / 2.0f), y - (h / 2.0f), w, h };
 }
 
 inline float ToRadians(float degrees)
@@ -67,7 +67,7 @@ inline int OffsetDegrees(int base, int add)
     return (base + add >= 0) ? (base + add) % 360 : (360 + (base + add));
 }
 
-inline Matrix MatrixRotYDeg(int degrees)
+inline Matrix MatrixRotYDeg(float degrees)
 {
     return MatrixRotateY(ToRadians(degrees));
 }

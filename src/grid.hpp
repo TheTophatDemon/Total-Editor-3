@@ -64,7 +64,7 @@ public:
     {
         if (center) 
         {
-            return (Vector3) {
+            return Vector3 {
                 (gridPos.x * _spacing) + (_spacing / 2.0f),
                 (gridPos.y * _spacing) + (_spacing / 2.0f),
                 (gridPos.z * _spacing) + (_spacing / 2.0f),
@@ -110,12 +110,12 @@ public:
     
     inline Vector3 GetMaxCorner() const 
     {
-        return (Vector3) { (float)_width * _spacing, (float)_height * _spacing, (float)_length * _spacing };
+        return Vector3 { (float)_width * _spacing, (float)_height * _spacing, (float)_length * _spacing };
     }
 
     inline Vector3 GetCenterPos() const 
     {
-        return (Vector3) { (float)_width * _spacing / 2.0f, (float)_height * _spacing / 2.0f, (float)_length * _spacing / 2.0f };
+        return Vector3 { (float)_width * _spacing / 2.0f, (float)_height * _spacing / 2.0f, (float)_length * _spacing / 2.0f };
     }
 
 protected:

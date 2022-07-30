@@ -74,14 +74,14 @@ void EntGrid::DrawLabels(Camera &camera, int fromY, int toY)
                             std::string name = _grid[i].properties.at("name");
 
                             float fontSize = Assets::GetFont().baseSize;
-                            Vector2 projectPos = (Vector2){ (float)GetScreenWidth() * (ndc.x + 1.0f) / 2.0f, (float)GetScreenHeight() * (ndc.y + 1.0f) / 2.0f };
+                            Vector2 projectPos = Vector2{ (float)GetScreenWidth() * (ndc.x + 1.0f) / 2.0f, (float)GetScreenHeight() * (ndc.y + 1.0f) / 2.0f };
                             int stringWidth = GetStringWidth(Assets::GetFont(), fontSize, name);
 
                             float labelX = projectPos.x - (float)stringWidth / 2.0f;
                             float labelY = projectPos.y - fontSize / 2.0f;
 
                             DrawRectangle((int)labelX, (int)labelY, (float)stringWidth, fontSize, BLACK);
-                            DrawTextEx(Assets::GetFont(), name.c_str(), (Vector2) { labelX, labelY }, fontSize, 0.0f, WHITE);
+                            DrawTextEx(Assets::GetFont(), name.c_str(), Vector2 { labelX, labelY }, fontSize, 0.0f, WHITE);
                         }
                     }
                 }
@@ -117,8 +117,8 @@ void to_json(nlohmann::json& j, const Ent &ent)
 void from_json(const nlohmann::json& j, Ent &ent)
 {
     ent.radius = j.at("radius");
-    ent.color = (Color) { j.at("color").at(0), j.at("color").at(1), j.at("color").at(2), 255 };
-    ent.position = (Vector3) { j.at("position").at(0), j.at("position").at(1), j.at("position").at(2) };
+    ent.color = Color { j.at("color").at(0), j.at("color").at(1), j.at("color").at(2), 255 };
+    ent.position = Vector3 { j.at("position").at(0), j.at("position").at(1), j.at("position").at(2) };
     ent.pitch = j.at("angles").at(0);
     ent.yaw = j.at("angles").at(1);
     ent.properties = j.at("properties");
