@@ -16,7 +16,7 @@ For libraries, I used [Raylib 4.2](https://github.com/raysan5/raylib) for render
 ## Building
 
 I use SCONS v4.3.0 as a build system.
-All the dependencies are statically linked, so make sure you have a RayLIB (master branch) libary file (libraylib.a) in libraries/lib and run:
+All the dependencies are statically linked, so make sure you have a RayLIB (release 4.2) libary file (libraylib.a) in libraries/lib and run:
 
 > scons
 > 
