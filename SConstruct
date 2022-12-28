@@ -1,24 +1,30 @@
-import sys
+import sys, os
 
 project_name = "Total Editor 3"
 
+cpp_platform = ""
+cpp_libs = ""
+cpp_tools = []
+
+if sys.platform.startswith("linux"):
+    cpp_platform = "LINUX_64"
+    cpp_libs = 'raylib GL m pthread dl rt X11'
+    cpp_tools = ["g++"]
+elif sys.platform.startswith("win"):
+    cpp_platform = "WINDOWS_64"
+    cpp_libs = 'raylib opengl32 gdi32 winmm'
+    cpp_tools = ["mingw", "g++"]
+    
+
 env = Environment(
-  tools = ['default'],
+  tools = cpp_tools,
   CPPFLAGS = ['-std=c++17'],
   CPPPATH = ['./libraries/include'],
   LIBPATH = ['./libraries/lib'],
-  OBJPREFIX="../obj/"
+  OBJPREFIX="../obj/",
+  CPPDEFINES = [cpp_platform],
+  LIBS = Split(cpp_libs),
 )
-
-if sys.platform.startswith("linux"):
-  env.Append(tools = ['g++'])
-  env.Append(CPPDEFINES = ['LINUX_64'])
-  env.Append(LIBS = Split('raylib GL m pthread dl rt X11'))
-elif sys.platform.startswith("win"):
-  #TODO: Test to see if this compiles on Windows
-  env.Append(tools = ['mingw']) #TODO: Also consider supporting VC++ somehow
-  env.Append(CPPDEFINES = ['WINDOWS_64'])
-  env.Append(LIBS = Split('raylib opengl32 gdi32 winmm'))
 
 is_debug = int(ARGUMENTS.get('debug', 0))
 if is_debug:
