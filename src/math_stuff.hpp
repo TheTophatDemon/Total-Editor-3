@@ -72,7 +72,7 @@ inline Matrix MatrixRotYDeg(float degrees)
     return MatrixRotateY(ToRadians(degrees));
 }
 
-//Modified version of GetWorldToScreen(), but returns the NDC coordinates so that the program can tell what's behind the camera.
+//Modified version of Raylib's GetWorldToScreen(), but returns the NDC coordinates so that the program can tell what's behind the camera.
 inline Vector3 GetWorldToNDC(Vector3 position, Camera camera)
 {
     int width = GetScreenWidth();
