@@ -221,7 +221,8 @@ void PickMode::_DrawFrame(Frame *frame, Rectangle rect)
     {
         frame->tex = Assets::GetShapeIcon(frame->shape);
     }
-    DrawTextureQuad(frame->tex, Vector2One(), Vector2Zero(), rect, WHITE);
+	Rectangle source = Rectangle { 0.0f, 0.0f, (float)frame->tex.width, (float)frame->tex.height };
+    DrawTexturePro(frame->tex, source, rect, Vector2Zero(), 0.0f, WHITE);
     
     if (_selectedFrame == frame) DrawRectangleLinesEx(outline, 2.0f, WHITE); //White selection outline
 }
