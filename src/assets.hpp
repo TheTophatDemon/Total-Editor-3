@@ -26,58 +26,55 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <memory>
 #include <filesystem>
 namespace fs = std::filesystem;
 
-typedef int ModelID;
-typedef int TexID;
-
-#define NO_TEX -1
-#define NO_MODEL -1
-
-//A repository that caches all loaded resources and their file paths, indexing some using integer IDs.
-//It is implemented as a singleton with a static interface.
+//A repository that caches all loaded resources and their file paths.
+//It is implemented as a singleton with a static interface. 
+//(This circumvents certain limitations regarding static members and allows the constructor to be called automatically when the first method is called.)
 class Assets 
 {
 public:
-    static TexID TexIDFromPath(fs::path texturePath);
-    static fs::path PathFromTexID(TexID texID);
-    static const Texture2D &TexFromID(TexID texID);
-    static const Material &GetMaterialForTexture(TexID texID, bool instanced);
-    static TexID FindLoadedMaterialTexID(const Material &material, bool instanced);
-    static ModelID ModelIDFromPath(fs::path modelPath);
-    static fs::path PathFromModelID(ModelID modelID);
-    static const Model &ModelFromID(ModelID modelID);
-    
-    static const Texture2D &GetShapeIcon(ModelID shape);
+    //A RAII wrapper for a Raylib Texture (unloads on destruction)
+    class TexHandle 
+    {
+    public:
+        inline TexHandle(Texture2D texture, fs::path path) { _texture = texture; _path = path; }
+        inline ~TexHandle() { UnloadTexture(_texture); }
+    private:
+        Texture2D _texture;
+        fs::path _path;
+    };
 
-    static const Font &GetFont();
-    static const Shader &GetMapShader(bool instanced = true);
-    static const Model &GetEntSphere();
+    //A RAII wrapper for a Raylib Model (unloads on destruction)
+    class ModelHandle
+    {
+    public:
+        inline ModelHandle(Model model, fs::path path) { _model = model; _path = path; }
+        inline ~ModelHandle() { UnloadModel(_model); }
+    private:
+        Model _model;
+        fs::path _path;
+    };
 
-    //Loads new textures from the fileList, in order of increasing texID.
-    static void LoadTextureIDs(const std::vector<fs::path> &fileList);
-    //Loads new models from the fileList, in order of increasing modelID.
-    static void LoadShapeIDs(const std::vector<fs::path> &fileList);
+    static std::shared_ptr<TexHandle>   GetTexture(fs::path path); //Returns a shared pointer to the cached texture at `path`, loading it if it hasn't been loaded.
+    static std::shared_ptr<ModelHandle> GetModel(fs::path path); //Returns a shared pointer to the cached model at `path`, loading it if it hasn't been loaded.
 
-    static void RedrawIcons();
-
-    //Releases all memory and ID associations.
-    static void Clear();
+    const Font &Assets::GetFont(); //Returns the default application font (dejavu.fnt)
+    const Shader &Assets::GetMapShader(bool instanced); //Returns the shader used to render tiles
+    const Model &Assets::GetEntSphere(); //Returns the sphere that represents entities visually
 protected:
-    std::map<TexID, std::pair<fs::path, Texture2D>>  _textures;
-    std::map<TexID, Material>                        _materials; //Materials that use the default shader.
-    std::map<TexID, Material>                        _instancedMaterials; //Materials that use the instanced shader.
-    std::map<ModelID, std::pair<fs::path, Model>>    _models;
-    std::map<ModelID, RenderTexture2D>               _shapeIcons;
-    Shader _mapShaderInstanced; //Instanced shader for drawing map geometry
-    Shader _mapShader; //Non-instanced shader for drawing map geometry.
+    //Asset caches that hold weak references to all the loaded textures and models
+    std::map<fs::path, std::weak_ptr<TexHandle>>   _textures;
+    std::map<fs::path, std::weak_ptr<ModelHandle>> _models;
+
+    //Assets that are alive the whole application
     Font _font; //Default application font (dejavu.fnt)
-    Texture2D _missingTexture;
-    Model _missingModel;
-    Model _entSphere;
-    TexID _nextTexID;
-    ModelID _nextModelID;
+    Texture2D _missingTexture; //Texture to display when the texture file to be loaded isn't found
+    Model _entSphere; //The sphere that represents entities visually
+    Shader _mapShader; //The non-instanced version that is used to render tiles outside of the map itself
+    Shader _mapShaderInstanced; //The instanced version is used to render the tiles
 private:
     Assets();
     ~Assets();

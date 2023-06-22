@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022 Alexander Lunsford
+ * Copyright (c) 2022-present Alexander Lunsford
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -30,11 +30,10 @@
 #include <unordered_map>
 #include <fstream>
 
-#define SHAPE_ICON_SIZE 64
-
 static Assets *_instance = nullptr;
 
-Assets *Assets::_Get() {
+Assets *Assets::_Get() 
+{
     if (!_instance)
     {
         _instance = new Assets();
@@ -44,7 +43,7 @@ Assets *Assets::_Get() {
 
 Assets::Assets() 
 {
-    //Generate missing texture image
+    //Generate missing texture image (a black-and-magenta checkerboard)
     Image texImg = { 0 };
     texImg.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
     texImg.width = 64;
@@ -73,10 +72,8 @@ Assets::Assets()
     }
     _missingTexture = LoadTextureFromImage(texImg);
     free(texImg.data);
-    
-    //Assign missing model as a cube
-    _missingModel = LoadModelFromMesh(GenMeshCube(2.0f, 2.0f, 2.0f));
 
+    //Generate entity sphere
     _entSphere = LoadModelFromMesh(GenMeshSphere(1.0f, 8, 8));
 
     //Initialize instanced shader for map geometry
@@ -90,161 +87,6 @@ Assets::Assets()
     _mapShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(_mapShader, "viewPos");
 
     _font = LoadFont_Dejavu();
-
-    _nextModelID = 0;
-    _nextTexID = 0;
-}
-
-TexID Assets::TexIDFromPath(fs::path texturePath) 
-{
-    Assets *a = _Get();
-    for (const auto &[id, pair] : a->_textures)
-    {
-        if (pair.first == texturePath) return id;
-    }
-    TexID id = a->_nextTexID;
-    a->_textures[id] = std::pair(texturePath, LoadTexture(texturePath.string().c_str()));
-    if (a->_textures[id].second.width == 0) a->_textures[id] = std::pair(texturePath, a->_missingTexture);
-    ++a->_nextTexID;
-    return id;
-}
-
-fs::path Assets::PathFromTexID(TexID texID)
-{
-    Assets *a = _Get();
-    if (texID != NO_TEX && a->_textures.find(texID) != a->_textures.end())
-    {
-        return a->_textures[texID].first;
-    }
-    else
-    {
-        return fs::path();
-    }
-}
-
-const Texture &Assets::TexFromID(TexID texID)
-{
-    Assets *a = _Get();
-    if (texID != NO_TEX && a->_textures.find(texID) != a->_textures.end())
-    {
-        return a->_textures[texID].second;
-    }
-    else
-    {
-        return a->_missingTexture;
-    }
-}
-
-const Material &Assets::GetMaterialForTexture(TexID texID, bool instanced) 
-{
-    Assets *a = _Get();
-    auto &map = instanced ? a->_instancedMaterials : a->_materials;
-
-    auto matIter = map.find(texID);
-    if (matIter == map.end()) 
-    {
-        Material mat = LoadMaterialDefault();
-        SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, a->_textures[texID].second);
-        if (instanced) mat.shader = a->_mapShaderInstanced;
-        else mat.shader = a->_mapShader;
-        map[texID] = mat; 
-        return map[texID];
-    }
-    else
-    {
-        return matIter->second;
-    }
-}
-
-TexID Assets::FindLoadedMaterialTexID(const Material &material, bool instanced)
-{
-    Assets *a = _Get();
-    
-    const auto &mats = instanced ? a->_instancedMaterials : a->_materials;
-    for (const auto &[texID, mat] : mats)
-    {
-        if (mat.maps == material.maps || (mat.maps[MATERIAL_MAP_DIFFUSE].texture.id == material.maps[MATERIAL_MAP_DIFFUSE].texture.id))
-        {
-            return texID;
-        }
-    }
-    return NO_TEX;
-}
-
-ModelID Assets::ModelIDFromPath(fs::path modelPath) 
-{
-    Assets *a = _Get();
-    for (const auto &[id, pair] : a->_models)
-    {
-        if (pair.first == modelPath) return id;
-    }
-    ModelID id = a->_nextModelID;
-    a->_models[id] = std::pair(modelPath, LoadModel(modelPath.string().c_str()));
-    ++a->_nextModelID;
-    return id;
-}
-
-fs::path Assets::PathFromModelID(ModelID modelID)
-{
-    Assets *a = _Get();
-    if (modelID != NO_MODEL && a->_models.find(modelID) != a->_models.end())
-    {
-        return a->_models[modelID].first;
-    }
-    else
-    {
-        return fs::path();
-    }
-}
-
-const Model &Assets::ModelFromID(ModelID modelID)
-{
-    Assets *a = _Get();
-    if (a->_models.find(modelID) != a->_models.end())
-    {
-        return a->_models[modelID].second;
-    }
-    else
-    {
-        return a->_missingModel;
-    }
-}
-
-const Texture2D &Assets::GetShapeIcon(ModelID modelID) 
-{
-    Assets *a = _Get();
-    if (a->_shapeIcons.find(modelID) == a->_shapeIcons.end()) 
-    {
-        //Generate icon by rendering the shape onto a texture.
-        a->_shapeIcons[modelID] = LoadRenderTexture(SHAPE_ICON_SIZE, SHAPE_ICON_SIZE);
-        //Icon will be drawn to later.
-    }
-
-    return a->_shapeIcons[modelID].texture;
-}
-
-void Assets::RedrawIcons()
-{
-    static Camera camera = Camera {
-        .position = Vector3 { 4.0f, 4.0f, 4.0f },
-        .target = Vector3Zero(),
-        .up = Vector3 { 0.0f, -1.0f, 0.0f },
-        .fovy = 45.0f,
-        .projection = CAMERA_PERSPECTIVE
-    };
-
-    for (const auto &[modelID, target] : _Get()->_shapeIcons)
-    {
-        //Redraw the contents, because it is animated.
-        BeginTextureMode(target);
-        ClearBackground(BLACK);
-        BeginMode3D(camera);
-
-        DrawModelWiresEx(_Get()->ModelFromID(modelID), Vector3Zero(), Vector3{0.0f, 1.0f, 0.0f}, float(GetTime() * 180.0f), Vector3One(), GREEN);
-
-        EndMode3D();
-        EndTextureMode();
-    }
 }
 
 const Font &Assets::GetFont() 
@@ -262,68 +104,48 @@ const Model &Assets::GetEntSphere()
     return _Get()->_entSphere;
 }
 
-template<typename D>
-static std::vector<fs::path> GetAssetList(const std::map<int, std::pair<fs::path, D>> &map) 
-{
-    std::vector<fs::path> out;
-    for (const auto &[key, val] : map)
-    {
-        out.push_back(val.first);
-    }
-    return out;
-}
-
-void Assets::LoadTextureIDs(const std::vector<fs::path> &fileList)
-{
-    for (const fs::path &path : fileList)
-    {
-        TexIDFromPath(path);
-    }
-}
-
-void Assets::LoadShapeIDs(const std::vector<fs::path> &fileList)
-{
-    for (const fs::path &path : fileList)
-    {
-        ModelIDFromPath(path);
-    }
-}   
-
-void Assets::Clear()
+std::shared_ptr<Assets::TexHandle> Assets::GetTexture(fs::path texturePath)
 {
     Assets *a = _Get();
-    for (const auto &[id, pair] : a->_textures)
+    //Attempt to find the texture in the cache
+    if (a->_textures.find(texturePath) != a->_textures.end())
     {
-        UnloadTexture(pair.second);
+        std::weak_ptr<TexHandle> weakHandle = a->_textures[texturePath];
+        if (std::shared_ptr<TexHandle> handle = weakHandle.lock())
+        {
+            return handle;
+        }
     }
-    a->_textures.clear();
 
-    for (const auto &[id, pair] : a->_models)
+    //Load the texture if it is no longer stored in the cache
+    Texture2D texture = LoadTexture(texturePath.string().c_str());
+    //Replace with the checkerboard texture if the file didn't load
+    if (texture.width == 0) texture = a->_missingTexture;
+
+    auto sharedPtr = std::make_shared<TexHandle>(texture, texturePath);
+    //Cache the texture
+    a->_textures[texturePath] = std::weak_ptr<TexHandle>(sharedPtr);
+    return sharedPtr;
+}
+
+std::shared_ptr<Assets::ModelHandle> Assets::GetModel(fs::path path)
+{
+    Assets *a = _Get();
+    //Attempt to find the model in the cache
+    if (a->_models.find(path) != a->_models.end())
     {
-        UnloadModel(pair.second);
+        std::weak_ptr<ModelHandle> weakHandle = a->_models[path];
+        if (std::shared_ptr<ModelHandle> handle = weakHandle.lock())
+        {
+            return handle;
+        }
     }
-    a->_models.clear();
 
-    for (const auto &[id, mat] : a->_materials)
-    {
-        //Because the materials share textures that we have already freed, we cannot call UnloadMaterial()
-        RL_FREE(mat.maps);
-    }
-    a->_materials.clear();
+    //Load the model if it is no longer stored in the cache
+    Model model = LoadModel(path.string().c_str());
 
-    for (const auto &[id, mat] : a->_instancedMaterials)
-    {
-        //Because the materials share textures that we have already freed, we cannot call UnloadMaterial()
-        RL_FREE(mat.maps);
-    }
-    a->_instancedMaterials.clear();
-
-    for (const auto &[id, target] : a->_shapeIcons)
-    {
-        UnloadRenderTexture(target);
-    }
-    a->_shapeIcons.clear();
-
-    a->_nextModelID = 0;
-    a->_nextTexID = 0;
+    auto sharedPtr = std::make_shared<ModelHandle>(model, path);
+    //Cache the model
+    a->_models[path] = std::weak_ptr<ModelHandle>(sharedPtr);
+    return sharedPtr;
 }
