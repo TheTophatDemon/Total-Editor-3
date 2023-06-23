@@ -31,12 +31,24 @@
 
 #define SEARCH_BUFFER_SIZE 256
 
-class PickMode : public App::ModeImpl {
+class PickMode : public App::ModeImpl
+{
 public:
-    struct Frame {
-        Texture2D tex;
-        ModelID shape;
-        std::string label;
+    //Represents a selectable frame in the list or grid of the picker
+    struct Frame 
+    {
+        std::shared_ptr<Assets::TexHandle>   tex;
+        std::shared_ptr<Assets::ModelHandle> shape;
+        RenderTexture2D                      renderTex; //Used to render model icons
+        std::string                          label;
+
+        inline ~Frame() 
+        {
+            if (renderTex.texture.width != 0 && renderTex.texture.height != 0)
+            {
+                UnloadRenderTexture(renderTex);
+            }
+        }
     };
 
     enum class Mode { TEXTURES, SHAPES };
@@ -48,36 +60,34 @@ public:
     virtual void OnEnter() override;
     virtual void OnExit() override;
     
-    // inline void SetMode(Mode mode) { _mode = mode; }
     inline Mode GetMode() const { return _mode; }
     inline View GetView() const { return _view; }
 
-    inline TexID GetPickedTexture() const
+    inline std::shared_ptr<Assets::TexHandle> GetPickedTexture() const
     { 
         assert(_mode == Mode::TEXTURES);
-        if (!_selectedFrame) return NO_TEX;
-        //The texture is only loaded into Assets when it is selected
-        return Assets::TexIDFromPath(_selectedFrame->label);
+        if (!_selectedFrame) return nullptr;
+        return _selectedFrame->tex;
     }
 
-    inline ModelID GetPickedShape() const
+    inline std::shared_ptr<Assets::ModelHandle> GetPickedShape() const
     {
         assert(_mode == Mode::SHAPES);
-        if (!_selectedFrame) return NO_MODEL;
+        if (!_selectedFrame) return nullptr;
         return _selectedFrame->shape;
     }
 
 protected:
     //Retrieves files, recursively, and generates frames for each.
-    void _GetFrames(std::string rootDir);
+    void _GetFrames(fs::path rootDir);
 
     void _DrawGridView(Rectangle framesView);
     void _DrawListView(Rectangle framesView);
     void _DrawFrame(Frame *frame, Rectangle rect);
 
     std::vector<Frame> _frames;
-    std::vector<Frame *> _filteredFrames;
-    Frame *_selectedFrame;
+    std::vector<Frame*> _filteredFrames;
+    Frame* _selectedFrame;
     size_t _longestLabelLength;
     
     char _searchFilterBuffer[SEARCH_BUFFER_SIZE];

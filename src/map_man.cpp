@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022 Alexander Lunsford
+ * Copyright (c) 2022-present Alexander Lunsford
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -42,7 +42,7 @@ void MapMan::_Execute(std::shared_ptr<Action> action)
 void MapMan::ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile)
 {
     TileGrid prevState = _tileGrid.Subsection(i, j, k, w, h, l);
-    TileGrid newState = TileGrid(w, h, l, _tileGrid.GetSpacing(), newTile);
+    TileGrid newState = TileGrid(this, w, h, l, _tileGrid.GetSpacing(), newTile);
 
     _Execute(std::static_pointer_cast<Action>(
         std::make_shared<TileAction>(i, j, k, prevState, newState)
@@ -88,7 +88,14 @@ bool MapMan::SaveTE3Map(fs::path filePath)
     try
     {
         json jData;
-        jData["tiles"] = _tileGrid;
+        jData["tiles"] = json::object();
+        jData["tiles"]["width"] = _tileGrid.GetWidth();
+        jData["tiles"]["height"] = _tileGrid.GetHeight();
+        jData["tiles"]["length"] = _tileGrid.GetLength();
+        jData["tiles"]["textures"] = GetTexturePathList();
+        jData["tiles"]["shapes"] = GetModelPathList();
+        jData["tiles"]["data"] = _tileGrid.GetTileDataBase64();
+
         jData["ents"] = _entGrid.GetEntList();
 
         std::ofstream file(filePath);
@@ -122,10 +129,28 @@ bool MapMan::LoadTE3Map(fs::path filePath)
 
     try
     {
-        Assets::Clear();
-        Assets::LoadTextureIDs(jData.at("tiles").at("textures"));
-        Assets::LoadShapeIDs(jData.at("tiles").at("shapes"));
-        _tileGrid = jData.at("tiles");
+        auto tData = jData.at("tiles");
+        
+        //Replace our textures with the listed ones
+        std::vector<std::string> texturePaths = tData.at("textures");
+        _textureList.clear();
+        _textureList.reserve(texturePaths.size());
+        for (const auto& path : texturePaths)
+        {
+            _textureList.push_back(Assets::GetTexture(fs::path(path)));
+        }
+        //Same with models
+        std::vector<std::string> shapePaths = tData.at("shapes");
+        _modelList.clear();
+        _modelList.reserve(shapePaths.size());
+        for (const auto& path : shapePaths)
+        {
+            _modelList.push_back(Assets::GetModel(fs::path(path)));
+        }
+
+        _tileGrid = TileGrid(this, tData.at("width"), tData.at("height"), tData.at("length"), TILE_SPACING_DEFAULT, Tile());
+        _tileGrid.SetTileDataBase64(tData.at("data"));
+        
         _entGrid = EntGrid(_tileGrid.GetWidth(), _tileGrid.GetHeight(), _tileGrid.GetLength());
         for (const Ent& e : jData.at("ents").get<std::vector<Ent>>())
         {
@@ -202,7 +227,7 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
         };
 
         //Generate primitives and buffers for map geometry.
-        const Model& mapModel = _tileGrid.GetModel();
+        const Model mapModel = _tileGrid.GetModel();
         std::vector<json> mapPrims;
         mapPrims.reserve(mapModel.meshCount);
         for (int i = 0; i < mapModel.meshCount; ++i)
@@ -307,7 +332,7 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
                 {"source", textures.size()}
             });
 
-            fs::path imagePath = Assets::PathFromTexID(Assets::FindLoadedMaterialTexID(mapModel.materials[m], true));
+            fs::path imagePath = PathFromTexID(m);
             imagePath = fs::relative(imagePath, filePath.parent_path()); //Image paths are relative to the file.
 
             images.push_back({
@@ -342,9 +367,8 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
             {
                 //Find texture name based off material
                 Material mat = mapModel.materials[m];
-                TexID texID = Assets::FindLoadedMaterialTexID(mat, true);
                 std::string nodeName;
-                fs::path path = Assets::PathFromTexID(texID);
+                fs::path path = PathFromTexID(m);
                 
                 for (auto p : path)
                 {
@@ -437,4 +461,24 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
     }
 
     return true;
+}
+
+const std::vector<fs::path> MapMan::GetModelPathList() const 
+{
+    std::vector<fs::path> paths;
+    for (const auto& handle : _modelList)
+    {
+        paths.push_back(handle->GetPath());
+    }
+    return paths;
+}
+
+const std::vector<fs::path> MapMan::GetTexturePathList() const 
+{
+    std::vector<fs::path> paths;
+    for (const auto& handle : _textureList)
+    {
+        paths.push_back(handle->GetPath());
+    }
+    return paths;
 }

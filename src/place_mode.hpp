@@ -35,45 +35,100 @@
 class PlaceMode : public App::ModeImpl {
 public:
     PlaceMode(MapMan &mapMan);
+    ~PlaceMode();
 
     virtual void Update() override;
     virtual void Draw() override;
     virtual void OnEnter() override;
     virtual void OnExit() override;
 
-    inline void SetCursorShape(ModelID shape) { _cursor.tile.shape = shape; _cursor.mode = Cursor::Mode::TILE; }
-    inline void SetCursorTexture(TexID tex) { _cursor.tile.texture = tex; _cursor.mode = Cursor::Mode::TILE; }
-    inline void SetCursorEnt(const Ent &ent) { _cursor.ent = ent; _cursor.mode = Cursor::Mode::ENT; }
-    inline ModelID GetCursorShape() const { return _cursor.tile.shape; }
-    inline TexID GetCursorTexture() const { return _cursor.tile.texture; }
-    inline const Ent &GetCursorEnt() const { return _cursor.ent; }
+    inline void SetCursorShape(std::shared_ptr<Assets::ModelHandle> shape) 
+    { 
+        _tileCursor.model = shape;
+        _cursor = &_tileCursor;
+    }
+
+    inline void SetCursorTexture(std::shared_ptr<Assets::TexHandle> tex)
+    { 
+        _tileCursor.tex = tex; 
+        _cursor = &_tileCursor;
+    }
+
+    inline void SetCursorEnt(const Ent &ent) 
+    { 
+        _entCursor.ent = ent; 
+        _cursor = &_entCursor; 
+    }
+
+    inline std::shared_ptr<Assets::ModelHandle> GetCursorShape() const 
+    { 
+        return _tileCursor.model; 
+    }
+    
+    inline std::shared_ptr<Assets::TexHandle> GetCursorTexture() const 
+    { 
+        return _tileCursor.tex; 
+    }
+    
+    inline const Ent &GetCursorEnt() const 
+    {
+        return _entCursor.ent; 
+    }
 
     void ResetCamera();
     void ResetGrid();
 protected:
-    struct Cursor {
-        Tile tile;
-        TileGrid brush;
-        Ent ent;
+    struct Cursor 
+    {
+        Vector3 position;
         Vector3 endPosition;
-        Vector3 startPosition;
         float outlineScale;
-        
-        enum class Mode { TILE, BRUSH, ENT };
-        Mode mode;
+    };
+
+    struct TileCursor : public Cursor
+    {
+        std::shared_ptr<Assets::ModelHandle> model;
+        std::shared_ptr<Assets::TexHandle> tex;
+        int angle, pitch;
+
+        inline Tile GetTile(MapMan& mapMan) const
+        {
+            return Tile(
+                mapMan.GetOrAddModelID(model->GetPath()),
+                angle,
+                mapMan.GetOrAddTexID(tex->GetPath()),
+                pitch
+            );
+        }
+    };
+
+    struct BrushCursor : public Cursor
+    {
+        TileGrid brush;
+    };
+
+    struct EntCursor : public Cursor
+    {
+        Ent ent;
     };
 
     void MoveCamera();
     void UpdateCursor();
 
-    MapMan &_mapMan;
+    MapMan& _mapMan;
 
     Camera _camera;
     float _cameraYaw;
     float _cameraPitch;
     float _cameraMoveSpeed;
 
-    Cursor _cursor;
+    Cursor* _cursor; //The current cursor being used in the editor. Will point to one of: _tileCursor, _brushCursor, _entCursor
+    TileCursor _tileCursor;
+    BrushCursor _brushCursor;
+    EntCursor _entCursor;
+
+    Material _cursorMaterial; //Material used to render the cursor
+
     int _layerViewMin, _layerViewMax;
 
     Vector3 _planeGridPos;

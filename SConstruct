@@ -14,7 +14,6 @@ elif sys.platform.startswith("win"):
     cpp_platform = "WINDOWS_64"
     cpp_libs = 'raylib opengl32 gdi32 winmm'
     cpp_tools = ["mingw", "g++"]
-    
 
 env = Environment(
   tools = cpp_tools,

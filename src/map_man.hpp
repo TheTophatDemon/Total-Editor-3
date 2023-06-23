@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022 Alexander Lunsford
+ * Copyright (c) 2022-present Alexander Lunsford
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -108,7 +108,7 @@ public:
     
     inline void NewMap(int width, int height, int length) 
     {
-        _tileGrid = TileGrid(width, height, length);
+        _tileGrid = TileGrid(this, width, height, length);
         _entGrid = EntGrid(width, height, length);
         _undoHistory.clear();
         _redoHistory.clear();
@@ -151,7 +151,7 @@ public:
         _redoHistory.clear();
         TileGrid oldTiles = _tileGrid;
         EntGrid oldEnts = _entGrid;
-        _tileGrid = TileGrid(newWidth, newHeight, newLength);
+        _tileGrid = TileGrid(this, newWidth, newHeight, newLength);
         _entGrid = EntGrid(newWidth, newHeight, newLength);       
         _tileGrid.CopyTiles(ofsx, ofsy, ofsz, oldTiles, false);
         _entGrid.CopyEnts(ofsx, ofsy, ofsz, oldEnts);
@@ -185,7 +185,7 @@ public:
         if (minX > maxX || minY > maxY || minZ > maxZ)
         {
             //If there aren't any tiles, just make it 1x1x1.
-            _tileGrid = TileGrid(1, 1, 1);
+            _tileGrid = TileGrid(this, 1, 1, 1);
             _entGrid = EntGrid(1, 1, 1);
         }
         else
@@ -215,6 +215,70 @@ public:
     //Executes an undoable entity action for removing an entity.
     void ExecuteEntRemoval(int i, int j, int k);
 
+    inline TexID GetOrAddTexID(const fs::path texturePath) 
+    {
+        //Look for existing ID
+        for (int i = 0; i < _textureList.size(); ++i)
+        {
+            if (_textureList[i]->GetPath() == texturePath)
+            {
+                return (TexID)(i);
+            }
+        }
+        //Create new ID and append texture to list
+        TexID newID = _textureList.size();
+        _textureList.push_back(Assets::GetTexture(texturePath));
+        return newID;
+    }
+
+    inline ModelID GetOrAddModelID(const fs::path modelPath)
+    {
+        //Look for existing ID
+        for (int i = 0; i < _modelList.size(); ++i)
+        {
+            if (_modelList[i]->GetPath() == modelPath)
+            {
+                return (ModelID)(i);
+            }
+        }
+        //Create new ID and append texture to list
+        ModelID newID = _modelList.size();
+        _modelList.push_back(Assets::GetModel(modelPath));
+        return newID;
+    }
+
+    inline fs::path PathFromTexID(const TexID id) const
+    {
+        if (id == NO_TEX || id >= _textureList.size()) return fs::path();
+        return _textureList[id]->GetPath();
+    }
+
+    inline fs::path PathFromModelID(const ModelID id) const
+    {
+        if (id == NO_MODEL || id >= _modelList.size()) return fs::path();
+        return _modelList[id]->GetPath();
+    }
+
+    inline Model ModelFromID(const ModelID id) const
+    {
+        if (id == NO_MODEL || id >= _modelList.size()) return Model{};
+        return _modelList[id]->GetModel();
+    }
+
+    inline Texture TexFromID(const TexID id) const
+    {
+        if (id == NO_TEX || id >= _textureList.size()) return Texture{};
+        return _textureList[id]->GetTexture();
+    }
+
+    inline const std::vector<std::shared_ptr<Assets::ModelHandle>> GetModelList() const { return _modelList; }
+    const std::vector<fs::path> GetModelPathList() const;
+    inline int GetNumModels() const { return _modelList.size(); }
+    inline const std::vector<std::shared_ptr<Assets::TexHandle>> GetTextureList() const { return _textureList; }
+    const std::vector<fs::path> GetTexturePathList() const;
+    inline int GetNumTextures() const { return _textureList.size(); }
+
+
     inline void Undo()
     {
         if (!_undoHistory.empty())
@@ -239,6 +303,9 @@ private:
 
     TileGrid _tileGrid;
     EntGrid _entGrid;
+
+    std::vector<std::shared_ptr<Assets::TexHandle>> _textureList;
+    std::vector<std::shared_ptr<Assets::ModelHandle>> _modelList;
 
     //Stores recently executed actions to be undone on command.
     std::deque<std::shared_ptr<Action>> _undoHistory;

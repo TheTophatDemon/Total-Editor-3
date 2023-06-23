@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022 Alexander Lunsford
+ * Copyright (c) 2022-present Alexander Lunsford
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -42,6 +42,8 @@ public:
     public:
         inline TexHandle(Texture2D texture, fs::path path) { _texture = texture; _path = path; }
         inline ~TexHandle() { UnloadTexture(_texture); }
+        inline Texture2D GetTexture() const { return _texture; }
+        inline fs::path GetPath() const { return _path; }
     private:
         Texture2D _texture;
         fs::path _path;
@@ -53,17 +55,19 @@ public:
     public:
         inline ModelHandle(Model model, fs::path path) { _model = model; _path = path; }
         inline ~ModelHandle() { UnloadModel(_model); }
+        inline Model GetModel() const { return _model; }
+        inline fs::path GetPath() const { return _path; }
     private:
         Model _model;
         fs::path _path;
     };
 
     static std::shared_ptr<TexHandle>   GetTexture(fs::path path); //Returns a shared pointer to the cached texture at `path`, loading it if it hasn't been loaded.
-    static std::shared_ptr<ModelHandle> GetModel(fs::path path); //Returns a shared pointer to the cached model at `path`, loading it if it hasn't been loaded.
+    static std::shared_ptr<ModelHandle> GetModel(fs::path path);   //Returns a shared pointer to the cached model at `path`, loading it if it hasn't been loaded.
 
-    const Font &Assets::GetFont(); //Returns the default application font (dejavu.fnt)
-    const Shader &Assets::GetMapShader(bool instanced); //Returns the shader used to render tiles
-    const Model &Assets::GetEntSphere(); //Returns the sphere that represents entities visually
+    static const Font&   GetFont(); //Returns the default application font (dejavu.fnt)
+    static const Shader& GetMapShader(bool instanced); //Returns the shader used to render tiles
+    static const Model&  GetEntSphere(); //Returns the sphere that represents entities visually
 protected:
     //Asset caches that hold weak references to all the loaded textures and models
     std::map<fs::path, std::weak_ptr<TexHandle>>   _textures;

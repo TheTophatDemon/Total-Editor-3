@@ -25,6 +25,7 @@
 
 #include <cstring>
 #include <stack>
+#include <iostream>
 
 #include "assets.hpp"
 #include "text_util.hpp"
@@ -46,52 +47,42 @@ PickMode::PickMode(Mode mode)
     memset(_searchFilterBuffer, 0, sizeof(char) * SEARCH_BUFFER_SIZE);
 }
 
-void PickMode::_GetFrames(std::string rootDir)
+void PickMode::_GetFrames(fs::path rootDir)
 {
-    std::stack<std::string> dirs;
-    dirs.push(rootDir);
-
-    _longestLabelLength = 0;
-    while (!dirs.empty())
+    if (!fs::is_directory(rootDir)) 
     {
-        std::string dir = dirs.top();
-        dirs.pop();
+        std::cerr << "Asset directory in settings is not a directory!" << std::endl;
+        return;
+    }
+    
+    for (auto const& entry : fs::recursive_directory_iterator{rootDir})
+    {
+        if (entry.is_directory() || !entry.is_regular_file()) continue;
 
-        FilePathList files = { 0 };
-        //This function will free the memory stored in `files` every time it is called, so be careful not to call it during iteration.
-        files = LoadDirectoryFiles(dir.c_str());
-
-        for (int f = 0; f < files.count; ++f)
+        auto labelPath = fs::relative(entry.path(), rootDir);
+        auto ext = labelPath.extension().string();
+        if (ext == ".png")
         {
-            std::string fullPath = files.paths[f];
-            if (DirectoryExists(fullPath.c_str()) && strcmp(files.paths[f], ".") != 0 && strcmp(files.paths[f], "..") != 0)
-            {
-                dirs.push(fullPath);
-            }
-            else if (_mode == Mode::TEXTURES && IsFileExtension(files.paths[f], ".png"))
-            {
-                Frame frame = {
-                    .tex = LoadTexture(fullPath.c_str()),
-                    .shape = NO_MODEL,
-                    .label = fullPath
-                };
-                _frames.push_back(frame);
-            }
-            else if (_mode == Mode::SHAPES && IsFileExtension(files.paths[f], ".obj"))
-            {
-                ModelID shape = Assets::ModelIDFromPath(fullPath);
-                Frame frame = {
-                    .shape = shape,
-                    .label = fullPath};
-                _frames.push_back(frame);
-            }
-
-            if (fullPath.length() > _longestLabelLength)
-                _longestLabelLength = fullPath.length();
-
-     
+            Frame frame = {
+                .tex = Assets::GetTexture(entry.path()),
+                .shape = nullptr,
+                .label = labelPath.string()
+            };
+            _frames.push_back(frame);
         }
-        UnloadDirectoryFiles(files);
+        else if (ext == ".obj")
+        {
+            Frame frame = {
+                .tex = nullptr,
+                .shape = Assets::GetModel(entry.path()),
+                .renderTex = LoadRenderTexture(FRAME_SIZE, FRAME_SIZE),
+                .label = labelPath.string(),
+            };
+            _frames.push_back(frame);
+        }
+
+        //Update longest label length
+        _longestLabelLength = Max(_longestLabelLength, labelPath.string().length());
     }
 }
 
@@ -101,33 +92,29 @@ void PickMode::OnEnter()
     _frames.clear();
 
     if (_mode == Mode::TEXTURES)
-        _GetFrames(App::Get()->GetTexturesDir());
+        _GetFrames(fs::path(App::Get()->GetTexturesDir()));
     else if (_mode == Mode::SHAPES)
-        _GetFrames(App::Get()->GetShapesDir());
+        _GetFrames(fs::path(App::Get()->GetShapesDir()));
 }
 
 void PickMode::OnExit()
 {
-    //Deallocate textures owned by the picker
-    if (_mode == Mode::TEXTURES)
-    {
-        for (Frame &frame : _frames)
-        {
-            UnloadTexture(frame.tex);
-        }
-    }
 }
 
 void PickMode::Update()
 {
-    //Filter frames by the search text. If the search text is contained anywhere in the file path, then it passes.
+
     _filteredFrames.clear();
-    for (Frame& frame : _frames) {
+    for (Frame& frame : _frames) 
+    {
+        //Filter frames by the search text. If the search text is contained anywhere in the file path, then it passes.
         std::string lowerCaseLabel = TextToLower(frame.label.c_str());
         if (strlen(_searchFilterBuffer) == 0 || lowerCaseLabel.find(TextToLower(_searchFilterBuffer)) != std::string::npos)
         {
             _filteredFrames.push_back(&frame);
         }
+
+        
     }
 }
 
@@ -208,6 +195,15 @@ void PickMode::_DrawListView(Rectangle framesView)
 
 void PickMode::_DrawFrame(Frame *frame, Rectangle rect) 
 {
+    //Camera for the model preview icons
+    static Camera camera = Camera {
+        .position = Vector3 { 4.0f, 4.0f, 4.0f },
+        .target = Vector3Zero(),
+        .up = Vector3 { 0.0f, -1.0f, 0.0f },
+        .fovy = 45.0f,
+        .projection = CAMERA_PERSPECTIVE
+    };
+
     if (CheckCollisionPointRec(GetMousePosition(), rect) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
         _selectedFrame = frame;
@@ -217,12 +213,27 @@ void PickMode::_DrawFrame(Frame *frame, Rectangle rect)
     DrawRectangle(outline.x, outline.y, outline.width, outline.height, BLACK); //Black background
     
     //Texture
+    Texture2D tex;
     if (_mode == Mode::SHAPES)
     {
-        frame->tex = Assets::GetShapeIcon(frame->shape);
+        //Update/redraw the shape preview icons so that they spin
+        BeginTextureMode(frame->renderTex);
+        ClearBackground(BLACK);
+        BeginMode3D(camera);
+
+        DrawModelWiresEx(frame->shape->GetModel(), Vector3Zero(), Vector3{0.0f, 1.0f, 0.0f}, float(GetTime() * 180.0f), Vector3One(), GREEN);
+
+        EndMode3D();
+        EndTextureMode();
+
+        tex = frame->renderTex.texture;
     }
-	Rectangle source = Rectangle { 0.0f, 0.0f, (float)frame->tex.width, (float)frame->tex.height };
-    DrawTexturePro(frame->tex, source, rect, Vector2Zero(), 0.0f, WHITE);
+    else
+    {
+        tex = frame->tex->GetTexture();
+    }
+	Rectangle source = Rectangle { 0.0f, 0.0f, (float)tex.width, (float)tex.height };
+    DrawTexturePro(tex, source, rect, Vector2Zero(), 0.0f, WHITE);
     
     if (_selectedFrame == frame) DrawRectangleLinesEx(outline, 2.0f, WHITE); //White selection outline
 }

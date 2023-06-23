@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022 Alexander Lunsford
+ * Copyright (c) 2022-present Alexander Lunsford
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -28,9 +28,116 @@
 
 #include "assets.hpp"
 #include "app.hpp"
+#include "map_man.hpp"
+
+TileGrid::TileGrid()
+    : TileGrid(nullptr, 0, 0, 0)
+{
+}
+
+TileGrid::TileGrid(MapMan* mapMan, size_t width, size_t height, size_t length)
+    : TileGrid(mapMan, width, height, length, TILE_SPACING_DEFAULT, Tile { NO_MODEL, 0, NO_TEX, 0 })
+{
+}
+
+TileGrid::TileGrid(MapMan* mapMan, size_t width, size_t height, size_t length, float spacing, Tile fill)
+    : Grid<Tile>(width, height, length, spacing, fill)
+{
+    _mapMan = mapMan;
+    _batchFromY = 0;
+    _batchToY = height - 1;
+    _batchPosition = Vector3Zero();
+    _model = nullptr;
+    _regenBatches = true;
+    _regenModel = true;
+}
+
+TileGrid::~TileGrid()
+{
+}
+
+void TileGrid::SetTile(int i, int j, int k, const Tile& tile) 
+{
+    SetCel(i, j, k, tile);
+    _regenBatches = true;
+    _regenModel = true;
+}
+
+void TileGrid::SetTileRect(int i, int j, int k, int w, int h, int l, const Tile& tile)
+{
+    assert(i >= 0 && j >= 0 && k >= 0);
+    assert(i + w <= int(_width) && j + h <= int(_height) && k + l <= int(_length));
+    for (int y = j; y < j + h; ++y)
+    {
+        for (int z = k; z < k + l; ++z)
+        {
+            size_t base = FlatIndex(0, y, z);
+            for (int x = i; x < i + w; ++x)
+            {
+                _grid[base + x] = tile;
+            }
+        }
+    }
+    _regenBatches = true;
+    _regenModel = true;
+}
+
+void TileGrid::CopyTiles(int i, int j, int k, const TileGrid &src, bool ignoreEmpty)
+{
+    assert(i >= 0 && j >= 0 && k >= 0);
+    int xEnd = Min(i + int(src._width), int(_width));
+    int yEnd = Min(j + int(src._height), int(_height));
+    int zEnd = Min(k + int(src._length), int(_length));
+    for (int z = k; z < zEnd; ++z) 
+    {
+        for (int y = j; y < yEnd; ++y)
+        {
+            size_t ourBase = FlatIndex(0, y, z);
+            size_t theirBase = src.FlatIndex(0, y - j, z - k);
+            for (int x = i; x < xEnd; ++x)
+            {
+                const Tile &tile = src._grid[theirBase + (x - i)];
+                if (!ignoreEmpty || tile)
+                {
+                    _grid[ourBase + x] = tile;
+                }
+            }
+        }
+    }
+    _regenBatches = true;
+    _regenModel = true;
+}
+
+Tile TileGrid::GetTile(int i, int j, int k) const 
+{
+    return GetCel(i, j, k);
+}
+
+void TileGrid::UnsetTile(int i, int j, int k) 
+{
+    _grid[FlatIndex(i, j, k)].shape = NO_MODEL;
+    _regenBatches = true;
+    _regenModel = true;
+}
+
+TileGrid TileGrid::Subsection(int i, int j, int k, int w, int h, int l) const
+{
+    assert(i >= 0 && j >= 0 && k >= 0);
+    assert(i + w <= int(_width) && j + h <=int(_height) && k + l <= int(_length));
+
+    TileGrid newGrid(_mapMan, w, h, l);
+
+    SubsectionCopy(i, j, k, w, h, l, newGrid);
+
+    newGrid._regenBatches = true;
+
+    return newGrid;
+}
 
 void TileGrid::_RegenBatches(Vector3 position, int fromY, int toY)
 {
+    if (!_mapMan) return;
+
     _drawBatches.clear();
     _batchFromY = fromY;
     _batchToY = toY;
@@ -45,7 +152,6 @@ void TileGrid::_RegenBatches(Vector3 position, int fromY, int toY)
         {
             const Tile& tile = _grid[t];
             if (tile)
-            
             {
                 //Calculate world space matrix for the tile
                 Vector3 gridPos = UnflattenIndex(t);
@@ -54,7 +160,7 @@ void TileGrid::_RegenBatches(Vector3 position, int fromY, int toY)
                     TileRotationMatrix(tile), 
                     MatrixTranslate(worldPos.x, worldPos.y, worldPos.z));
 
-                const Model &shape = Assets::ModelFromID(tile.shape);
+                const Model &shape = _mapMan->ModelFromID(tile.shape);
                 for (int m = 0; m < shape.meshCount; ++m) 
                 {
                     //Add the tile's transform to the instance arrays for each mesh
@@ -78,6 +184,8 @@ void TileGrid::Draw(Vector3 position)
 
 void TileGrid::Draw(Vector3 position, int fromY, int toY)
 {
+    if (!_mapMan) return;
+
     if (App::Get()->IsPreviewing())
     {
         DrawModel(GetModel(), position, 1.0f, WHITE);
@@ -89,41 +197,28 @@ void TileGrid::Draw(Vector3 position, int fromY, int toY)
             _RegenBatches(position, fromY, toY);
         }
 
+        Material tileMaterial = LoadMaterialDefault();
+        tileMaterial.shader = Assets::GetMapShader(true);
+
         //Call DrawMeshInstanced for each combination of material and mesh.
         for (auto& [pair, matrices] : _drawBatches) {
-            DrawMeshInstanced(*pair.second, Assets::GetMaterialForTexture(pair.first, true), matrices.data(), matrices.size());
+            //Reusing the same material for everything and just changing the albedo map between batches
+            SetMaterialTexture(&tileMaterial, MATERIAL_MAP_ALBEDO, _mapMan->TexFromID(pair.first));
+            DrawMeshInstanced(*pair.second, tileMaterial, matrices.data(), matrices.size());
         }
+
+        //Free material w/o unloading its textures
+        RL_FREE(tileMaterial.maps);
     }
 }
 
-std::string TileGrid::GetTileDataBase64(const std::set<fs::path> &usedTextures, const std::set<fs::path> &usedShapes) const 
+std::string TileGrid::GetTileDataBase64() const 
 {
-    std::vector<fs::path> textures;
-    std::vector<fs::path> shapes;
-
-    for (const fs::path &p : usedTextures) textures.push_back(p);
-    for (const fs::path &p : usedShapes) shapes.push_back(p);
-
     std::vector<uint8_t> bin;
     bin.reserve(_grid.size() * sizeof(Tile));
     for (size_t i = 0; i < _grid.size(); ++i)
     {
         Tile savedTile = _grid[i];
-
-        if (savedTile)
-        {
-            //Change the texture and shape IDs to index into the given two arrays.
-            fs::path tPath = Assets::PathFromTexID(savedTile.texture);
-            fs::path sPath = Assets::PathFromModelID(savedTile.shape);
-            for (int i = 0; i < textures.size(); ++i)
-            {
-                if (textures[i] == tPath) savedTile.texture = i;
-            }
-            for (int i = 0; i < shapes.size(); ++i)
-            {
-                if (shapes[i] == sPath) savedTile.shape = i;
-            }
-        }
 
         //Reinterpret each tile as a series of bytes and push them onto the vector.
         const char *tileBin = reinterpret_cast<const char *>(&savedTile);
@@ -150,9 +245,11 @@ void TileGrid::SetTileDataBase64(std::string data)
 #define MAX_MATERIAL_MAPS 12
 Model *TileGrid::_GenerateModel()
 {
+    if (!_mapMan) return nullptr;
+
     _RegenBatches(Vector3Zero(), 0, _height - 1);
 
-    std::set<TexID> usedTexIDs;
+    //Collects vertex data for a given texture's portion of the model
     struct DynMesh {
         std::vector<float> positions;
         std::vector<float> texCoords;
@@ -161,16 +258,20 @@ Model *TileGrid::_GenerateModel()
         std::vector<unsigned short> indices;
         int triCount; //Independent form indices count since some models may not have indices
     };
-    std::map<TexID, DynMesh> meshMap;
+
+    DynMesh meshMap[_mapMan->GetNumTextures()];
+    for (auto& dynMesh : meshMap)
+    {
+        dynMesh.positions = std::vector<float>();
+        dynMesh.texCoords = std::vector<float>();
+        dynMesh.normals = std::vector<float>();
+        dynMesh.colors = std::vector<unsigned char>();
+        dynMesh.indices = std::vector<unsigned short>();
+        dynMesh.triCount = 0;
+    }
 
     for (const auto& [pair, matrices] : _drawBatches)
     {
-        auto [iter, succ] = usedTexIDs.insert(pair.first);
-        if (succ)
-        {
-            meshMap[pair.first] = DynMesh {};
-            meshMap[pair.first].triCount = 0;
-        }
         Mesh &shape = *pair.second;
         DynMesh &mesh = meshMap[pair.first];
         //Generate vertex data for this tile.
@@ -234,24 +335,25 @@ Model *TileGrid::_GenerateModel()
 
     //Create Raylib mesh
     Model *model = (Model *)RL_MALLOC(sizeof(Model));
-    model->materialCount = usedTexIDs.size();
-    model->meshCount = usedTexIDs.size();
-    model->meshMaterial = (int *)RL_CALLOC(usedTexIDs.size(), sizeof(int));
-    model->materials = (Material *)RL_CALLOC(usedTexIDs.size(), sizeof(Material));
-    model->meshes = (Mesh *)RL_CALLOC(usedTexIDs.size(), sizeof(Mesh));
+    model->materialCount = _mapMan->GetNumTextures();
+    model->meshCount = _mapMan->GetNumTextures();
+    model->meshMaterial = (int *)RL_CALLOC(_mapMan->GetNumTextures(), sizeof(int));
+    model->materials = (Material *)RL_CALLOC(_mapMan->GetNumTextures(), sizeof(Material));
+    model->meshes = (Mesh *)RL_CALLOC(_mapMan->GetNumTextures(), sizeof(Mesh));
     model->transform = MatrixIdentity();
     model->bindPose = NULL;
     model->boneCount = 0;
     model->bones = NULL;
     
-    auto texID = usedTexIDs.cbegin();
     for (int i = 0; i < model->materialCount; ++i)
     {
-        model->materials[i] = Assets::GetMaterialForTexture(*texID, false);
+        model->materials[i] = LoadMaterialDefault();
+        model->materials[i].shader = Assets::GetMapShader(false);
+        model->materials[i].maps[MATERIAL_MAP_ALBEDO].texture = _mapMan->TexFromID(i);
         model->meshMaterial[i] = i;
 
         //Copy mesh data into Raylib mesh
-        DynMesh &dMesh = meshMap[*texID];
+        DynMesh &dMesh = meshMap[i];
         model->meshes[i] = Mesh { 0 };
         model->meshes[i].vertexCount = dMesh.positions.size() / 3;
         model->meshes[i].triangleCount = dMesh.triCount;
@@ -283,75 +385,24 @@ Model *TileGrid::_GenerateModel()
         }
 
         UploadMesh(&model->meshes[i], false);
-
-        texID++;
     }
 
     return model;
 }
 
-const Model &TileGrid::GetModel()
+const Model TileGrid::GetModel()
 {
+    if (!_mapMan) return Model{};
+
     if (_regenModel || _model == nullptr)
     {
         if (_model != nullptr)
         {
-            //Cannot use UnloadModel() or it will unload the materials that are used elsewhere.
-            RL_FREE(_model->materials);
-            RL_FREE(_model->meshMaterial);
-            for (int m = 0; m < _model->meshCount; ++m)
-            {
-                if (_model->meshes[m].vertices != NULL) RL_FREE(_model->meshes[m].vertices);
-                if (_model->meshes[m].texcoords != NULL) RL_FREE(_model->meshes[m].texcoords);
-                if (_model->meshes[m].normals != NULL) RL_FREE(_model->meshes[m].normals);
-                if (_model->meshes[m].colors != NULL) RL_FREE(_model->meshes[m].colors);
-                if (_model->meshes[m].indices != NULL) RL_FREE(_model->meshes[m].indices);
-                if (_model->meshes[m].vboId != NULL) RL_FREE(_model->meshes[m].vboId);
-            }
-            RL_FREE(_model->meshes);
-            free(_model);
+            UnloadModel(*_model);
         }
         _model = _GenerateModel();
         _regenModel = false;
     }
 
     return *_model;
-}
-
-void to_json(nlohmann::json& j, const TileGrid &grid)
-{
-    j["width"] = grid.GetWidth();
-    j["height"] = grid.GetHeight();
-    j["length"] = grid.GetLength();
-    std::set<fs::path> usedTextures = grid.GetUsedTexturePaths();
-    std::set<fs::path> usedShapes = grid.GetUsedShapePaths();
-    j["textures"] = usedTextures;
-    j["shapes"] = usedShapes;
-    j["data"] = grid.GetTileDataBase64(usedTextures, usedShapes);
-}
-
-void from_json(const nlohmann::json& j, TileGrid &grid)
-{
-    grid = TileGrid(j.at("width"), j.at("height"), j.at("length"), TILE_SPACING_DEFAULT, Tile());
-    grid.SetTileDataBase64(j.at("data"));
-}
-
-std::set<fs::path> TileGrid::GetUsedTexturePaths() const
-{
-    std::set<fs::path> paths;
-    for (const Tile &tile : _grid)
-    {
-        if (tile) paths.insert(Assets::PathFromTexID(tile.texture));
-    }
-    return paths;
-}
-
-std::set<fs::path> TileGrid::GetUsedShapePaths() const
-{
-    std::set<fs::path> paths;
-    for (const Tile &tile : _grid)
-    {
-        if (tile) paths.insert(Assets::PathFromModelID(tile.shape));
-    }
-    return paths;
 }

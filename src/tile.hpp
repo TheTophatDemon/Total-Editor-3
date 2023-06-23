@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022 Alexander Lunsford
+ * Copyright (c) 2022-present Alexander Lunsford
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -30,14 +30,23 @@
 #include <assert.h>
 #include <map>
 #include <set>
+#include <memory>
 
 #include "grid.hpp"
 #include "math_stuff.hpp"
 #include "assets.hpp"
 
+class MapMan;
+
 #define TILE_SPACING_DEFAULT 2.0f
 
 enum class Direction { Z_POS, Z_NEG, X_POS, X_NEG, Y_POS, Y_NEG };
+
+typedef int TexID;
+typedef int ModelID;
+
+#define NO_TEX -1
+#define NO_MODEL -1
 
 struct Tile 
 {
@@ -78,127 +87,44 @@ class TileGrid : public Grid<Tile>
 {
 public:
     //Constructs a blank TileGrid with no size
-    inline TileGrid()
-        : TileGrid(0, 0, 0)
-    {
-    }
+    TileGrid();
     //Constructs a TileGrid full of empty tiles.
-    inline TileGrid(size_t width, size_t height, size_t length)
-        : TileGrid(width, height, length, TILE_SPACING_DEFAULT, Tile { NO_MODEL, 0, NO_TEX, false })
-    {
-    }
-
+    TileGrid(MapMan* mapMan, size_t width, size_t height, size_t length);
     //Constructs a TileGrid filled with the given tile.
-    inline TileGrid(size_t width, size_t height, size_t length, float spacing, Tile fill)
-        : Grid<Tile>(width, height, length, spacing, fill)
-    {
-        _batchFromY = 0;
-        _batchToY = height - 1;
-        _batchPosition = Vector3Zero();
-        _model = nullptr;
-        _regenBatches = true;
-        _regenModel = true;
-    }
+    TileGrid(MapMan* mapMan, size_t width, size_t height, size_t length, float spacing, Tile fill);
+    ~TileGrid();
 
-    inline void SetTile(int i, int j, int k, const Tile& tile) 
-    {
-        SetCel(i, j, k, tile);
-        _regenBatches = true;
-        _regenModel = true;
-    }
+    void SetTile(int i, int j, int k, const Tile& tile);
 
     //Sets a range of tiles in the grid inside of the rectangular prism with a corner at (i, j, k) and size (w, h, l).
-    inline void SetTileRect(int i, int j, int k, int w, int h, int l, const Tile& tile)
-    {
-        assert(i >= 0 && j >= 0 && k >= 0);
-        assert(i + w <= int(_width) && j + h <= int(_height) && k + l <= int(_length));
-        for (int y = j; y < j + h; ++y)
-        {
-            for (int z = k; z < k + l; ++z)
-            {
-                size_t base = FlatIndex(0, y, z);
-                for (int x = i; x < i + w; ++x)
-                {
-                    _grid[base + x] = tile;
-                }
-            }
-        }
-        _regenBatches = true;
-        _regenModel = true;
-    }
+    void SetTileRect(int i, int j, int k, int w, int h, int l, const Tile& tile);
 
     //Takes the tiles of `src` and places them in this grid starting at the offset at (i, j, k)
     //If the offset results in `src` exceeding the current grid's boundaries, it is cut off.
     //If `ignoreEmpty` is true, then empty tiles do not overwrite existing tiles.
-    inline void CopyTiles(int i, int j, int k, const TileGrid &src, bool ignoreEmpty = false)
-    {
-        assert(i >= 0 && j >= 0 && k >= 0);
-        int xEnd = Min(i + int(src._width), int(_width));
-        int yEnd = Min(j + int(src._height), int(_height));
-        int zEnd = Min(k + int(src._length), int(_length));
-        for (int z = k; z < zEnd; ++z) 
-        {
-            for (int y = j; y < yEnd; ++y)
-            {
-                size_t ourBase = FlatIndex(0, y, z);
-                size_t theirBase = src.FlatIndex(0, y - j, z - k);
-                for (int x = i; x < xEnd; ++x)
-                {
-                    const Tile &tile = src._grid[theirBase + (x - i)];
-                    if (!ignoreEmpty || tile)
-                    {
-                        _grid[ourBase + x] = tile;
-                    }
-                }
-            }
-        }
-        _regenBatches = true;
-        _regenModel = true;
-    }
+    void CopyTiles(int i, int j, int k, const TileGrid &src, bool ignoreEmpty = false);
 
-    inline Tile GetTile(int i, int j, int k) const 
-    {
-        return GetCel(i, j, k);
-    }
+    Tile GetTile(int i, int j, int k) const;
 
-    inline void UnsetTile(int i, int j, int k) 
-    {
-        _grid[FlatIndex(i, j, k)].shape = NO_MODEL;
-        _regenBatches = true;
-        _regenModel = true;
-    }
+    void UnsetTile(int i, int j, int k);
 
     //Returns a smaller TileGrid with a copy of the tile data in the rectangle defined by coordinates (i, j, k) and size (w, h, l).
-    inline TileGrid Subsection(int i, int j, int k, int w, int h, int l) const
-    {
-        assert(i >= 0 && j >= 0 && k >= 0);
-        assert(i + w <= int(_width) && j + h <=int(_height) && k + l <= int(_length));
-
-        TileGrid newGrid(w, h, l);
-
-        SubsectionCopy(i, j, k, w, h, l, newGrid);
-
-        newGrid._regenBatches = true;
-
-        return newGrid;
-    }
+    TileGrid Subsection(int i, int j, int k, int w, int h, int l) const;
 
     //Draws the tile grid, hiding all layers that are outside of the given y coordinate range.
     void Draw(Vector3 position, int fromY, int toY);
     void Draw(Vector3 position);
 
     //Returns a base64 encoded string with the binary representations of all tiles.
-    //Requires lists of used textures and shapes generated by GetUsedTexturePaths() and its counterpart.
-    std::string GetTileDataBase64(const std::set<fs::path> &usedTextures, const std::set<fs::path> &usedShapes) const;
+    std::string GetTileDataBase64() const;
 
     //Assigns tiles based on the binary data encoded in base 64. Assumes that the sizes of the data and the current grid are the same.
     void SetTileDataBase64(std::string data);
 
-    std::set<fs::path> GetUsedTexturePaths() const;
-    std::set<fs::path> GetUsedShapePaths() const;
-
-    const Model &GetModel();
+    const Model GetModel();
 protected:
+    MapMan* _mapMan;
+
     //Calculates lists of transformations for each tile, separated by texture and shape, to be drawn as instances.
     void _RegenBatches(Vector3 position, int fromY, int toY);
     Model *_GenerateModel();
@@ -212,8 +138,5 @@ protected:
 
     Model *_model;
 };
-
-void to_json(nlohmann::json& j, const TileGrid &grid);
-void from_json(const nlohmann::json& j, TileGrid &grid);
 
 #endif

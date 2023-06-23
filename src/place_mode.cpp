@@ -45,26 +45,35 @@ PlaceMode::PlaceMode(MapMan &mapMan)
 	_camera.projection = CAMERA_PERSPECTIVE;
     _cameraMoveSpeed = CAMERA_MOVE_SPEED_MIN;
 
-    //Setup cursor
-    _cursor.tile = Tile();
-    _cursor.tile.shape = Assets::ModelIDFromPath("assets/models/shapes/cube.obj");
-    _cursor.tile.angle = 0;
-    _cursor.tile.texture = Assets::TexIDFromPath("assets/textures/brickwall.png");
-    _cursor.tile.pitch = 0;
+    //Setup cursors
+    _tileCursor.tex = Assets::GetTexture("assets/textures/brickwall.png");
+    _tileCursor.model = Assets::GetModel("assets/models/shapes/cube.obj");
+    _tileCursor.angle = _tileCursor.pitch = 0;
 
-    _cursor.brush = TileGrid(1, 1, 1);
-    _cursor.ent = Ent {
+    _brushCursor.brush = TileGrid(&mapMan, 1, 1, 1);
+    
+    _entCursor.ent = Ent {
         .color = WHITE,
         .radius = 1.0f
     };
-    _cursor.ent.properties["name"] = "entity";
+    _entCursor.ent.properties["name"] = "entity";
 
-    _cursor.mode = Cursor::Mode::TILE;
-    _cursor.startPosition = _cursor.endPosition = Vector3Zero();
-    _cursor.outlineScale = 1.125f;
+    _cursor = &_tileCursor;
+    _cursor->position = _tileCursor.endPosition = Vector3Zero();
+    _cursor->outlineScale = 1.125f;
+
+    _cursorMaterial = LoadMaterialDefault();
+    _cursorMaterial.shader = Assets::GetMapShader(false);
 
     ResetCamera();
     ResetGrid();
+}
+
+PlaceMode::~PlaceMode() 
+{
+    //Free the cursor material
+    //Do not use UnloadMaterial, because it will free the texture that the material uses, which might be being used somewhere else.
+    RL_FREE(_cursorMaterial.maps);
 }
 
 void PlaceMode::OnEnter() 
@@ -81,7 +90,7 @@ void PlaceMode::ResetCamera()
     _camera.target = _camera.position;
     _cameraYaw = 0.0f;
     _cameraPitch = -PI / 4.0f;
-    _cursor.startPosition = _cursor.endPosition = Vector3Zero();
+    _cursor->position = _tileCursor.endPosition = Vector3Zero();
 }
 
 void PlaceMode::ResetGrid()
@@ -91,17 +100,9 @@ void PlaceMode::ResetGrid()
     _planeWorldPos = _mapMan.Tiles().GridToWorldPos(_planeGridPos, false);
     _layerViewMin = 0;
     _layerViewMax = _mapMan.Tiles().GetHeight() - 1;
-    _cursor.startPosition = _cursor.endPosition = Vector3Zero();
-    _cursor.mode = Cursor::Mode::TILE;
-    //Reset the cursor tile if loading maps causes it to invalidate.
-    if (Assets::PathFromModelID(_cursor.tile.shape).empty())
-    {
-        _cursor.tile.shape = 0;
-    }
-    if (Assets::PathFromTexID(_cursor.tile.texture).empty())
-    {
-        _cursor.tile.texture = 0;
-    }
+    //Cursor
+    _cursor->position = _tileCursor.endPosition = Vector3Zero();
+    _cursor = &_tileCursor;
 }
 
 void PlaceMode::MoveCamera() 
@@ -160,15 +161,16 @@ void PlaceMode::MoveCamera()
     _camera.target = Vector3Add(_camera.position, Vector3Transform(VEC3_FORWARD, cameraRotation));
 }
 
+//TODO: Separate cursor updates into virtual functions
 void PlaceMode::UpdateCursor()
 {
     if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_BACKSPACE))
     {
-        _cursor.mode = Cursor::Mode::TILE;
+        _cursor = &_tileCursor;
     }
     else if (IsKeyPressed(KEY_E) && IsKeyDown(KEY_LEFT_CONTROL))
     {
-        _cursor.mode = Cursor::Mode::ENT;
+        _cursor = &_entCursor;
     }
 
     //Position cursor
@@ -182,31 +184,27 @@ void PlaceMode::UpdateCursor()
         Vector3{ gridMin.x, _planeWorldPos.y, gridMax.z });
     if (col.hit)
     {
-        _cursor.endPosition = _mapMan.Tiles().SnapToCelCenter(col.point);
-        _cursor.endPosition.y = _planeWorldPos.y + _mapMan.Tiles().GetSpacing() / 2.0f;
+        _cursor->position = _mapMan.Tiles().SnapToCelCenter(col.point);
+        _cursor->position.y = _planeWorldPos.y + _mapMan.Tiles().GetSpacing() / 2.0f;
     }
     
     //Handle box selection/fill in tile mode.
     bool multiSelect = false;
-    if (_cursor.mode == Cursor::Mode::TILE)
+    if (_cursor == &_tileCursor)
     {
         if (!IsKeyDown(KEY_LEFT_SHIFT))
         {
-            _cursor.startPosition = _cursor.endPosition;
+            _tileCursor.endPosition = _tileCursor.position;
         }
         else
         {
             multiSelect = true;
         }
     }
-    else if (_cursor.mode == Cursor::Mode::ENT)
-    {
-        _cursor.startPosition = _cursor.endPosition;
-    }
 
     //Perform Tile operations
-    Vector3 cursorStartGridPos = _mapMan.Tiles().WorldToGridPos(_cursor.startPosition);
-    Vector3 cursorEndGridPos = _mapMan.Tiles().WorldToGridPos(_cursor.endPosition);
+    Vector3 cursorStartGridPos = _mapMan.Tiles().WorldToGridPos(_cursor->position);
+    Vector3 cursorEndGridPos = _mapMan.Tiles().WorldToGridPos(_cursor->endPosition);
     Vector3 gridPosMin = Vector3Min(cursorStartGridPos, cursorEndGridPos);
     Vector3 gridPosMax = Vector3Max(cursorStartGridPos, cursorEndGridPos);
     size_t i = (size_t)gridPosMin.x; 
@@ -218,65 +216,64 @@ void PlaceMode::UpdateCursor()
     Tile underTile = _mapMan.Tiles().GetTile(i, j, k); // * hi. my name's sans undertile...you get it?
 
     //Press Shift+B to enter brush mode, copying the currently selected rectangle of tiles.
-    if (_cursor.mode == Cursor::Mode::TILE && IsKeyPressed(KEY_B) && IsKeyDown(KEY_LEFT_SHIFT))
+    if (_cursor == &_tileCursor && IsKeyPressed(KEY_B) && IsKeyDown(KEY_LEFT_SHIFT))
     {
-        _cursor.mode = Cursor::Mode::BRUSH;
-        _cursor.brush = _mapMan.Tiles().Subsection(i, j, k, w, h, l);
+        _cursor = &_brushCursor;
+        _brushCursor.brush = _mapMan.Tiles().Subsection(i, j, k, w, h, l);
     }
 
-    if (_cursor.mode == Cursor::Mode::BRUSH)
+    if (_cursor == &_brushCursor)
     {
-        _cursor.startPosition = Vector3 {
-            _cursor.endPosition.x + (_cursor.brush.GetWidth()  - 1) * _cursor.brush.GetSpacing(),
-            _cursor.endPosition.y + (_cursor.brush.GetHeight() - 1) * _cursor.brush.GetSpacing(),
-            _cursor.endPosition.z + (_cursor.brush.GetLength() - 1) * _cursor.brush.GetSpacing(),
+        //Put the end position at the other extent of the bounding box so that a border can be drawn later
+        _brushCursor.endPosition = Vector3 {
+            _tileCursor.position.x + (_brushCursor.brush.GetWidth()  - 1) * _brushCursor.brush.GetSpacing(),
+            _tileCursor.position.y + (_brushCursor.brush.GetHeight() - 1) * _brushCursor.brush.GetSpacing(),
+            _tileCursor.position.z + (_brushCursor.brush.GetLength() - 1) * _brushCursor.brush.GetSpacing(),
         };
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            _mapMan.ExecuteTileAction(i, j, k, w, h, l, _cursor.brush);
-        }
-        else if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT))
-        {
-            //_cursor.mode = Cursor::Mode::TILE;
+            _mapMan.ExecuteTileAction(i, j, k, w, h, l, _brushCursor.brush);
         }
     }
-    else if (_cursor.mode == Cursor::Mode::TILE)
+    else if (_cursor == &_tileCursor)
     {
         //Rotate cursor
         if (IsKeyPressed(KEY_Q))
         {
-            _cursor.tile.angle = OffsetDegrees(_cursor.tile.angle, -90);
+            _tileCursor.angle = OffsetDegrees(_tileCursor.angle, -90);
         }
         else if (IsKeyPressed(KEY_E))
         {
-            _cursor.tile.angle = OffsetDegrees(_cursor.tile.angle, 90);
+            _tileCursor.angle = OffsetDegrees(_tileCursor.angle, 90);
         }
         if (IsKeyPressed(KEY_F))
         {
-            _cursor.tile.pitch = OffsetDegrees(_cursor.tile.pitch, 90);
+            _tileCursor.pitch = OffsetDegrees(_tileCursor.pitch, 90);
         }
         else if (IsKeyPressed(KEY_V))
         {
-            _cursor.tile.pitch = OffsetDegrees(_cursor.tile.pitch, -90);
+            _tileCursor.pitch = OffsetDegrees(_tileCursor.pitch, -90);
         }
         //Reset tile orientation
         if (IsKeyPressed(KEY_R))
         {
-            _cursor.tile.angle = _cursor.tile.pitch = 0;
+            _tileCursor.angle = _tileCursor.pitch = 0;
         }
+
+        Tile cursorTile = _tileCursor.GetTile(_mapMan);
 
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !multiSelect) 
         {
             //Place tiles
-            if (underTile != _cursor.tile)
+            if (underTile != cursorTile)
             {
-                _mapMan.ExecuteTileAction(i, j, k, 1, 1, 1, _cursor.tile);
+                _mapMan.ExecuteTileAction(i, j, k, 1, 1, 1, cursorTile);
             }
         }
         else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && multiSelect)
         {
             //Place tiles rectangle
-            _mapMan.ExecuteTileAction(i, j, k, w, h, l, _cursor.tile);
+            _mapMan.ExecuteTileAction(i, j, k, w, h, l, cursorTile);
         }
         else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && !multiSelect) 
         {
@@ -296,9 +293,9 @@ void PlaceMode::UpdateCursor()
             //(G)rab the shape from the tile under the cursor
             if (underTile) 
             {
-                _cursor.tile.shape = underTile.shape;
-                _cursor.tile.angle = underTile.angle;
-                _cursor.tile.pitch = underTile.pitch;
+                _tileCursor.model = Assets::GetModel(_mapMan.PathFromModelID(underTile.shape));
+                _tileCursor.angle = underTile.angle;
+                _tileCursor.pitch = underTile.pitch;
             }
         } 
         else if (IsKeyDown(KEY_T) && !multiSelect) 
@@ -306,45 +303,43 @@ void PlaceMode::UpdateCursor()
             //Pick the (T)exture from the tile under the cursor.
             if (underTile) 
             {
-                _cursor.tile.texture = underTile.texture;
+                _tileCursor.tex = Assets::GetTexture(_mapMan.PathFromTexID(underTile.texture));
             }
         }
     }
-    else if (_cursor.mode == Cursor::Mode::ENT)
+    else if (_cursor == &_entCursor)
     {
+        _entCursor.endPosition = _entCursor.position;
+
         //Turn entity
         const int ANGLE_INC = IsKeyDown(KEY_LEFT_SHIFT) ? 15 : 45;
         if (IsKeyPressed(KEY_Q))
         {
-            _cursor.ent.yaw = OffsetDegrees(_cursor.ent.yaw, -ANGLE_INC);
+            _entCursor.ent.yaw = OffsetDegrees(_entCursor.ent.yaw, -ANGLE_INC);
         }
         else if (IsKeyPressed(KEY_E))
         {
-            _cursor.ent.yaw = OffsetDegrees(_cursor.ent.yaw, ANGLE_INC);
+            _entCursor.ent.yaw = OffsetDegrees(_entCursor.ent.yaw, ANGLE_INC);
         }
         if (IsKeyPressed(KEY_F))
         {
-            _cursor.ent.pitch = OffsetDegrees(_cursor.ent.pitch, ANGLE_INC);
+            _entCursor.ent.pitch = OffsetDegrees(_entCursor.ent.pitch, ANGLE_INC);
         }
         else if (IsKeyPressed(KEY_V))
         {
-            _cursor.ent.pitch = OffsetDegrees(_cursor.ent.pitch, -ANGLE_INC);
+            _entCursor.ent.pitch = OffsetDegrees(_entCursor.ent.pitch, -ANGLE_INC);
         }
 
         //Reset ent orientation
         if (IsKeyPressed(KEY_R))
         {
-            _cursor.ent.yaw = 0;
-            _cursor.ent.pitch = 0;
+            _entCursor.ent.yaw = _entCursor.ent.pitch = 0;
         }
-
-        //Sync ent position with cursor
-        _cursor.ent.position = _cursor.endPosition;
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
             //Placement
-            _mapMan.ExecuteEntPlacement(i, j, k, _cursor.ent);
+            _mapMan.ExecuteEntPlacement(i, j, k, _entCursor.ent);
         }
         else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
         {
@@ -360,7 +355,7 @@ void PlaceMode::UpdateCursor()
             //Copy the entity under the cursor
             if (_mapMan.Ents().HasEnt(i, j, k))
             {
-                _cursor.ent = _mapMan.Ents().GetEnt(i, j, k);
+                _entCursor.ent = _mapMan.Ents().GetEnt(i, j, k);
             }
         }
     }
@@ -445,50 +440,43 @@ void PlaceMode::Draw()
             rlDrawRenderBatchActive();
 
             //Draw cursor
-            if (_cursor.tile) {
-                Matrix cursorTransform = MatrixMultiply(
-                    TileRotationMatrix(_cursor.tile), 
-                    MatrixTranslate(_cursor.endPosition.x, _cursor.endPosition.y, _cursor.endPosition.z));
-                
-                switch (_cursor.mode)
+            if (_cursor == &_tileCursor)
+            {
+                if (!IsKeyDown(KEY_LEFT_SHIFT))
                 {
-                case Cursor::Mode::TILE:
-                {
-                    if (!IsKeyDown(KEY_LEFT_SHIFT))
+                    Matrix cursorTransform = MatrixMultiply(
+                        TileRotationMatrix(_tileCursor.GetTile(_mapMan)), 
+                        MatrixTranslate(_cursor->position.x, _cursor->position.y, _cursor->position.z));
+                    
+                    _cursorMaterial.maps[MATERIAL_MAP_ALBEDO].texture = _tileCursor.tex->GetTexture();
+                    const Model &shape = _tileCursor.model->GetModel();
+                    for (size_t m = 0; m < shape.meshCount; ++m) 
                     {
-                        const Model &shape = Assets::ModelFromID(_cursor.tile.shape);
-                        for (size_t m = 0; m < shape.meshCount; ++m) 
-                        {
-                            DrawMesh(shape.meshes[m], Assets::GetMaterialForTexture(_cursor.tile.texture, false), cursorTransform);
-                        }
+                        DrawMesh(shape.meshes[m], _cursorMaterial, cursorTransform);
                     }
                 }
-                break;
-                case Cursor::Mode::BRUSH:
-                {
-                    Vector3 brushOffset = Vector3Min(_cursor.startPosition, _cursor.endPosition);
-                    brushOffset.x -= _cursor.brush.GetSpacing() / 2.0f;
-                    brushOffset.y -= _cursor.brush.GetSpacing() / 2.0f;
-                    brushOffset.z -= _cursor.brush.GetSpacing() / 2.0f;
-                    _cursor.brush.Draw(brushOffset);
-                }
-                break;
-                case Cursor::Mode::ENT:
-                {
-                    _cursor.ent.Draw();
-                }
-                break;
-                }
+            }
+            else if (_cursor == &_brushCursor)
+            {
+                Vector3 brushOffset = Vector3Min(_brushCursor.position, _brushCursor.endPosition);
+                brushOffset.x -= _brushCursor.brush.GetSpacing() / 2.0f;
+                brushOffset.y -= _brushCursor.brush.GetSpacing() / 2.0f;
+                brushOffset.z -= _brushCursor.brush.GetSpacing() / 2.0f;
+                _brushCursor.brush.Draw(brushOffset);
+            }
+            else if (_cursor == &_entCursor)
+            {
+                _entCursor.ent.Draw();
             }
 
             rlDrawRenderBatchActive();
             rlDisableDepthTest();
             rlSetLineWidth(2.0f);
             DrawCubeWires(
-                Vector3Scale(Vector3Add(_cursor.startPosition, _cursor.endPosition), 0.5f), 
-                fabs(_cursor.endPosition.x - _cursor.startPosition.x) + _mapMan.Tiles().GetSpacing() * _cursor.outlineScale, 
-                fabs(_cursor.endPosition.y - _cursor.startPosition.y) + _mapMan.Tiles().GetSpacing() * _cursor.outlineScale, 
-                fabs(_cursor.endPosition.z - _cursor.startPosition.z) + _mapMan.Tiles().GetSpacing() * _cursor.outlineScale, 
+                Vector3Scale(Vector3Add(_cursor->position, _cursor->endPosition), 0.5f), 
+                fabs(_cursor->endPosition.x - _cursor->position.x) + _mapMan.Tiles().GetSpacing() * _cursor->outlineScale, 
+                fabs(_cursor->endPosition.y - _cursor->position.y) + _mapMan.Tiles().GetSpacing() * _cursor->outlineScale, 
+                fabs(_cursor->endPosition.z - _cursor->position.z) + _mapMan.Tiles().GetSpacing() * _cursor->outlineScale, 
                 MAGENTA);
 
             DrawAxes3D(Vector3{ 1.0f, 1.0f, 1.0f }, 10.0f);

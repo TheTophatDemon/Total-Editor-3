@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022 Alexander Lunsford
+ * Copyright (c) 2022-present Alexander Lunsford
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -88,11 +88,11 @@ void App::ChangeEditorMode(const App::Mode newMode)
 {
     _editorMode->OnExit();
 
-    if (_editorMode == _texPickMode.get() && _texPickMode->GetPickedTexture() != NO_TEX) 
+    if (_editorMode == _texPickMode.get() && _texPickMode->GetPickedTexture()) 
     {
         _tilePlaceMode->SetCursorTexture(_texPickMode->GetPickedTexture());
     }
-    else if (_editorMode == _shapePickMode.get() && _shapePickMode->GetPickedShape() != NO_MODEL) 
+    else if (_editorMode == _shapePickMode.get() && _shapePickMode->GetPickedShape()) 
     {
         _tilePlaceMode->SetCursorShape(_shapePickMode->GetPickedShape());
     }
@@ -171,8 +171,6 @@ void App::Update()
     }
 
     //Draw
-    Assets::RedrawIcons(); //This must be done before BeginDrawing() for some reason.
-
     BeginDrawing();
     
     ClearBackground(BLACK);

@@ -53,6 +53,8 @@ public:
     {
     }
 
+    virtual ~Grid() {};
+
     inline Vector3 WorldToGridPos(Vector3 worldPos) const 
     {
         return Vector3{ floorf(worldPos.x / _spacing), floorf(worldPos.y / _spacing) , floorf(worldPos.z / _spacing)};

@@ -1,18 +1,20 @@
 # TODO
 
-- Add pagination for texture picker so that everything doesn't need to be loaded at once- 
+* Fix shape icons
 
-- Fix bug with the placeholder texture/model being included in the .te3 file
+* Test GLTF export
 
-  * Should maybe give the map its own independent texture path list instead of using the global Assets
+- Add pagination for texture picker so that everything doesn't need to be loaded at once
+
+- Add settings for default texture & shape selection
+
+- Add setting for grid scale?
 
 - Add .ti importer
 
-- Optimize exported geometry by removing redundant faces.
+- Optimize exported geometry by removing redundant faces. 
 
 - Add .glb export, embedding textures in file.
-
-- Consistent UV mapping for rotated tiles (or automatic texture mapping)
 
 # FUTURE PLANS
 
