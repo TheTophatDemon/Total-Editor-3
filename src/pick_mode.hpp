@@ -44,10 +44,10 @@ public:
 
         inline ~Frame() 
         {
-            if (renderTex.texture.width != 0 && renderTex.texture.height != 0)
-            {
-                UnloadRenderTexture(renderTex);
-            }
+            // if (renderTex.texture.width != 0 && renderTex.texture.height != 0)
+            // {
+            //     UnloadRenderTexture(renderTex);
+            // }
         }
     };
 
@@ -89,6 +89,7 @@ protected:
     std::vector<Frame*> _filteredFrames;
     Frame* _selectedFrame;
     size_t _longestLabelLength;
+    Camera _iconCamera; //Camera for rendering 3D shape preview icons
     
     char _searchFilterBuffer[SEARCH_BUFFER_SIZE];
     bool _searchFilterFocused;

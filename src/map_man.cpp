@@ -333,7 +333,9 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
             });
 
             fs::path imagePath = PathFromTexID(m);
-            imagePath = fs::relative(imagePath, filePath.parent_path()); //Image paths are relative to the file.
+            imagePath = fs::relative(
+                fs::current_path() / imagePath, 
+                fs::current_path() / filePath.parent_path()); //Image paths are relative to the file.
 
             images.push_back({
                 {"uri", imagePath.c_str()}
@@ -367,17 +369,10 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
             {
                 //Find texture name based off material
                 Material mat = mapModel.materials[m];
-                std::string nodeName;
                 fs::path path = PathFromTexID(m);
                 
-                for (auto p : path)
-                {
-                    if (p.has_extension()) nodeName += p.stem().string();
-                    else nodeName += p.string() + std::string("_");
-                }
-                
                 json materialNode;
-                materialNode["name"] = nodeName;
+                materialNode["name"] = path.generic_string();
 
                 //Add children for each mesh with that material
                 for (int mm = 0; mm < mapModel.meshCount; ++mm)

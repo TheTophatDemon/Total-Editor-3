@@ -45,6 +45,14 @@ PickMode::PickMode(Mode mode)
       _longestLabelLength(0)
 {
     memset(_searchFilterBuffer, 0, sizeof(char) * SEARCH_BUFFER_SIZE);
+    
+    _iconCamera = Camera {
+        .position = Vector3 { 4.0f, 4.0f, 4.0f },
+        .target = Vector3Zero(),
+        .up = Vector3 { 0.0f, -1.0f, 0.0f },
+        .fovy = 45.0f,
+        .projection = CAMERA_PERSPECTIVE
+    };
 }
 
 void PickMode::_GetFrames(fs::path rootDir)
@@ -89,6 +97,15 @@ void PickMode::_GetFrames(fs::path rootDir)
 void PickMode::OnEnter()
 {
     _selectedFrame = nullptr;
+    
+    //Clean up memory from previous frames
+    for (Frame& frame : _frames)
+    {
+        if (IsRenderTextureReady(frame.renderTex))
+        {
+            UnloadRenderTexture(frame.renderTex);
+        }
+    }
     _frames.clear();
 
     if (_mode == Mode::TEXTURES)
@@ -114,7 +131,18 @@ void PickMode::Update()
             _filteredFrames.push_back(&frame);
         }
 
-        
+        if (_mode == Mode::SHAPES)
+        {
+            //Update/redraw the shape preview icons so that they spin
+            BeginTextureMode(frame.renderTex);
+            ClearBackground(BLACK);
+            BeginMode3D(_iconCamera);
+
+            DrawModelWiresEx(frame.shape->GetModel(), Vector3Zero(), Vector3{0.0f, 1.0f, 0.0f}, float(GetTime() * 180.0f), Vector3One(), GREEN);
+
+            EndMode3D();
+            EndTextureMode();
+        }
     }
 }
 
@@ -195,15 +223,6 @@ void PickMode::_DrawListView(Rectangle framesView)
 
 void PickMode::_DrawFrame(Frame *frame, Rectangle rect) 
 {
-    //Camera for the model preview icons
-    static Camera camera = Camera {
-        .position = Vector3 { 4.0f, 4.0f, 4.0f },
-        .target = Vector3Zero(),
-        .up = Vector3 { 0.0f, -1.0f, 0.0f },
-        .fovy = 45.0f,
-        .projection = CAMERA_PERSPECTIVE
-    };
-
     if (CheckCollisionPointRec(GetMousePosition(), rect) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
         _selectedFrame = frame;
@@ -216,16 +235,6 @@ void PickMode::_DrawFrame(Frame *frame, Rectangle rect)
     Texture2D tex;
     if (_mode == Mode::SHAPES)
     {
-        //Update/redraw the shape preview icons so that they spin
-        BeginTextureMode(frame->renderTex);
-        ClearBackground(BLACK);
-        BeginMode3D(camera);
-
-        DrawModelWiresEx(frame->shape->GetModel(), Vector3Zero(), Vector3{0.0f, 1.0f, 0.0f}, float(GetTime() * 180.0f), Vector3One(), GREEN);
-
-        EndMode3D();
-        EndTextureMode();
-
         tex = frame->renderTex.texture;
     }
     else

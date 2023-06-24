@@ -1,10 +1,6 @@
 # TODO
 
-* Fix shape icons
-
-* Test GLTF export
-
-- Add pagination for texture picker so that everything doesn't need to be loaded at once
+- Add pagination / parallelism for the picker so that everything doesn't need to be loaded at once
 
 - Add settings for default texture & shape selection
 
