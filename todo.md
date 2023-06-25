@@ -8,9 +8,11 @@
 
 - Add .ti importer
 
+- Add .glb export, embedding textures in file.
+
 - Optimize exported geometry by removing redundant faces. 
 
-- Add .glb export, embedding textures in file.
+    * Mark shapes with .obj groups describing which faces to cull
 
 # FUTURE PLANS
 

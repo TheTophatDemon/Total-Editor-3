@@ -94,7 +94,10 @@ public:
     TileGrid(MapMan* mapMan, size_t width, size_t height, size_t length, float spacing, Tile fill);
     ~TileGrid();
 
+    Tile GetTile(int i, int j, int k) const;
+    Tile GetTile(int flatIndex) const;
     void SetTile(int i, int j, int k, const Tile& tile);
+    void SetTile(int flatIndex, const Tile& tile);
 
     //Sets a range of tiles in the grid inside of the rectangular prism with a corner at (i, j, k) and size (w, h, l).
     void SetTileRect(int i, int j, int k, int w, int h, int l, const Tile& tile);
@@ -104,7 +107,6 @@ public:
     //If `ignoreEmpty` is true, then empty tiles do not overwrite existing tiles.
     void CopyTiles(int i, int j, int k, const TileGrid &src, bool ignoreEmpty = false);
 
-    Tile GetTile(int i, int j, int k) const;
 
     void UnsetTile(int i, int j, int k);
 
@@ -120,6 +122,9 @@ public:
 
     //Assigns tiles based on the binary data encoded in base 64. Assumes that the sizes of the data and the current grid are the same.
     void SetTileDataBase64(std::string data);
+
+    //Returns the list of texture and model IDs that are actually used in this tile grid
+    std::pair<std::vector<TexID>, std::vector<ModelID>> GetUsedIDs() const;
 
     const Model GetModel();
 protected:

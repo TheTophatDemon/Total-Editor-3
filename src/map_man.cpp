@@ -92,9 +92,52 @@ bool MapMan::SaveTE3Map(fs::path filePath)
         jData["tiles"]["width"] = _tileGrid.GetWidth();
         jData["tiles"]["height"] = _tileGrid.GetHeight();
         jData["tiles"]["length"] = _tileGrid.GetLength();
-        jData["tiles"]["textures"] = GetTexturePathList();
-        jData["tiles"]["shapes"] = GetModelPathList();
-        jData["tiles"]["data"] = _tileGrid.GetTileDataBase64();
+
+        //Make new texture & model lists containing only used assets
+        //This prevents extraneous assets from accumulating in the file every time it's saved
+        auto [usedTexIDs, usedModelIDs] = _tileGrid.GetUsedIDs();
+        std::vector<fs::path> usedTexPaths, usedModelPaths;
+        usedTexPaths.resize(usedTexIDs.size());
+        usedModelPaths.resize(usedModelIDs.size());
+        std::transform(usedTexIDs.begin(), usedTexIDs.end(), usedTexPaths.begin(), 
+            [&](TexID id){
+                return _textureList[id]->GetPath();
+            });
+        std::transform(usedModelIDs.begin(), usedModelIDs.end(), usedModelPaths.begin(),
+            [&](ModelID id){
+                return _modelList[id]->GetPath();
+            });
+
+        jData["tiles"]["textures"] = usedTexPaths;
+        jData["tiles"]["shapes"] = usedModelPaths;
+
+        //Make a copy of the map that reassigns all IDs to match the new lists
+        const int tileArea = _tileGrid.GetWidth() * _tileGrid.GetHeight() * _tileGrid.GetLength();
+        TileGrid optimizedGrid = _tileGrid.Subsection(0, 0, 0, _tileGrid.GetWidth(), _tileGrid.GetHeight(), _tileGrid.GetLength());
+        for (size_t i = 0; i < tileArea; ++i)
+        {
+            Tile tile = optimizedGrid.GetTile(i);
+            for (int t = 0; t < usedTexIDs.size(); ++t)
+            {
+                if (usedTexIDs[t] == tile.texture)
+                {
+                    tile.texture = t;
+                    break;
+                }
+            }
+            for (int m = 0; m < usedModelIDs.size(); ++m)
+            {
+                if (usedModelIDs[m] == tile.shape)
+                {
+                    tile.shape = m;
+                    break;
+                }
+            }
+            optimizedGrid.SetTile(i, tile);
+        }
+
+        //Save the modified tile data
+        jData["tiles"]["data"] = optimizedGrid.GetTileDataBase64();
 
         jData["ents"] = _entGrid.GetEntList();
 

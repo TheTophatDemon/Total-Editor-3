@@ -56,9 +56,26 @@ TileGrid::~TileGrid()
 {
 }
 
+Tile TileGrid::GetTile(int i, int j, int k) const 
+{
+    return GetCel(i, j, k);
+}
+
+Tile TileGrid::GetTile(int flatIndex) const
+{
+    return _grid[flatIndex];
+}
+
 void TileGrid::SetTile(int i, int j, int k, const Tile& tile) 
 {
     SetCel(i, j, k, tile);
+    _regenBatches = true;
+    _regenModel = true;
+}
+
+void TileGrid::SetTile(int flatIndex, const Tile& tile)
+{
+    _grid[flatIndex] = tile;
     _regenBatches = true;
     _regenModel = true;
 }
@@ -106,11 +123,6 @@ void TileGrid::CopyTiles(int i, int j, int k, const TileGrid &src, bool ignoreEm
     }
     _regenBatches = true;
     _regenModel = true;
-}
-
-Tile TileGrid::GetTile(int i, int j, int k) const 
-{
-    return GetCel(i, j, k);
 }
 
 void TileGrid::UnsetTile(int i, int j, int k) 
@@ -240,6 +252,25 @@ void TileGrid::SetTileDataBase64(std::string data)
         _grid[i] = *(reinterpret_cast<Tile *>(&bin[i * sizeof(Tile)]));
     }
     std::cout << std::endl;
+}
+
+std::pair<std::vector<TexID>, std::vector<ModelID>> TileGrid::GetUsedIDs() const
+{
+    std::set<TexID> usedTexIDs;
+    std::set<ModelID> usedModelIDs;
+    for (const auto& tile : _grid)
+    {
+        if (tile)
+        {
+            usedTexIDs.insert(tile.texture);
+            usedModelIDs.insert(tile.shape);
+        }
+    }
+
+    //Convert the sets to vectors and return
+    return std::make_pair(
+        std::vector(usedTexIDs.begin(), usedTexIDs.end()), 
+        std::vector(usedModelIDs.begin(), usedModelIDs.end()));
 }
 
 #define MAX_MATERIAL_MAPS 12
