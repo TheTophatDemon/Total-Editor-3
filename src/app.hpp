@@ -50,8 +50,21 @@ public:
         float mouseSensitivity;
         bool exportSeparateGeometry; //For GLTF export
         std::string exportFilePath; //For GLTF export
+        std::string defaultTexturePath;
+        std::string defaultShapePath;
+        size_t framesPerPage;
     };
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Settings, texturesDir, shapesDir, undoMax, mouseSensitivity, exportSeparateGeometry, exportFilePath);
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
+        Settings, 
+        texturesDir, 
+        shapesDir, 
+        undoMax, 
+        mouseSensitivity, 
+        exportSeparateGeometry, 
+        exportFilePath, 
+        defaultTexturePath, 
+        defaultShapePath, 
+        framesPerPage);
 
     //Mode implementation
     class ModeImpl 
@@ -75,6 +88,9 @@ public:
     inline size_t      GetUndoMax() { return _settings.undoMax; }
     inline std::string GetTexturesDir() { return _settings.texturesDir; };
     inline std::string GetShapesDir() { return _settings.shapesDir; } 
+    inline std::string GetDefaultTexturePath() { return _settings.defaultTexturePath; }
+    inline std::string GetDefaultShapePath() { return _settings.defaultShapePath; }
+    inline size_t      GetFramesPerPage() { return _settings.framesPerPage; }
 
     //Indicates if rendering should be done in "preview mode", i.e. without editor widgets being drawn.
     inline bool IsPreviewing() const { return _previewDraw; }

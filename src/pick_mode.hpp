@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022 Alexander Lunsford
+ * Copyright (c) 2022-present Alexander Lunsford
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -26,6 +26,9 @@
 #include <vector>
 #include <string>
 #include <assert.h>
+#include <mutex>
+#include <future>
+#include <map>
 
 #include "app.hpp"
 
@@ -37,18 +40,11 @@ public:
     //Represents a selectable frame in the list or grid of the picker
     struct Frame 
     {
-        std::shared_ptr<Assets::TexHandle>   tex;
-        std::shared_ptr<Assets::ModelHandle> shape;
-        RenderTexture2D                      renderTex; //Used to render model icons
-        std::string                          label;
+        fs::path        filePath;
+        std::string     label;
 
-        inline ~Frame() 
-        {
-            // if (renderTex.texture.width != 0 && renderTex.texture.height != 0)
-            // {
-            //     UnloadRenderTexture(renderTex);
-            // }
-        }
+        Frame();
+        Frame(const fs::path filePath, const fs::path rootDir);
     };
 
     enum class Mode { TEXTURES, SHAPES };
@@ -63,19 +59,8 @@ public:
     inline Mode GetMode() const { return _mode; }
     inline View GetView() const { return _view; }
 
-    inline std::shared_ptr<Assets::TexHandle> GetPickedTexture() const
-    { 
-        assert(_mode == Mode::TEXTURES);
-        if (!_selectedFrame) return nullptr;
-        return _selectedFrame->tex;
-    }
-
-    inline std::shared_ptr<Assets::ModelHandle> GetPickedShape() const
-    {
-        assert(_mode == Mode::SHAPES);
-        if (!_selectedFrame) return nullptr;
-        return _selectedFrame->shape;
-    }
+    std::shared_ptr<Assets::TexHandle> GetPickedTexture() const;
+    std::shared_ptr<Assets::ModelHandle> GetPickedShape() const;
 
 protected:
     //Retrieves files, recursively, and generates frames for each.
@@ -83,15 +68,24 @@ protected:
 
     void _DrawGridView(Rectangle framesView);
     void _DrawListView(Rectangle framesView);
-    void _DrawFrame(Frame *frame, Rectangle rect);
+    void _DrawFrame(Frame& frame, Rectangle rect);
 
+    Texture2D _GetTexture(const fs::path path);
+    Model _GetModel(const fs::path path);
+    RenderTexture2D _GetIcon(const fs::path path);
+
+    std::map<fs::path, Texture2D> _loadedTextures;
+    std::map<fs::path, Model> _loadedModels;
+    std::map<fs::path, RenderTexture2D> _loadedIcons;
+    std::vector<fs::path> _foundFiles;
     std::vector<Frame> _frames;
-    std::vector<Frame*> _filteredFrames;
-    Frame* _selectedFrame;
+    
+    Frame _selectedFrame;
     size_t _longestLabelLength;
     Camera _iconCamera; //Camera for rendering 3D shape preview icons
     
     char _searchFilterBuffer[SEARCH_BUFFER_SIZE];
+    char _searchFilterPrevious[SEARCH_BUFFER_SIZE];
     bool _searchFilterFocused;
 
     Mode _mode;

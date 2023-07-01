@@ -1,12 +1,12 @@
 # TODO
 
-- Add pagination / parallelism for the picker so that everything doesn't need to be loaded at once
+- Add settings for default texture & shape selection (Do the UI!)
 
-- Add settings for default texture & shape selection
-
-- Add setting for grid scale?
+- Optimize file format using runs
 
 - Add .ti importer
+
+- Add setting for grid scale?
 
 - Add .glb export, embedding textures in file.
 
@@ -15,7 +15,5 @@
     * Mark shapes with .obj groups describing which faces to cull
 
 # FUTURE PLANS
-
-- Consider replacing RayGUI with ImGUI
 
 - Consider giving entities billboard / model viewing modes

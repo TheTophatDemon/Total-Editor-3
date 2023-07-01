@@ -60,7 +60,10 @@ App::App()
         .shapesDir = "assets/models/shapes/",
         .undoMax = 30UL,
         .mouseSensitivity = 0.5f,
-        .exportSeparateGeometry = false
+        .exportSeparateGeometry = false,
+        .defaultTexturePath = "assets/textures/brickwall.png",
+        .defaultShapePath = "assets/models/shapes/cube.obj",
+        .framesPerPage = 72,
     },
     _mapMan        (std::make_unique<MapMan>()),
     _tilePlaceMode (std::make_unique<PlaceMode>(*_mapMan.get())),
@@ -211,6 +214,9 @@ int main(int argc, char **argv)
     GuiSetStyle(TEXTBOX, BACKGROUND_COLOR, ColorToInt(DARKGRAY));
     GuiSetStyle(SLIDER, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
 
+    SetTraceLogLevel(LOG_WARNING);
+
+    App::Get()->ChangeEditorMode(App::Mode::PLACE_TILE);
     App::Get()->NewMap(100, 5, 100);
 
     //Main loop

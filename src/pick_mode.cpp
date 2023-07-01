@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022 Alexander Lunsford
+ * Copyright (c) 2022-present Alexander Lunsford
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -26,20 +26,32 @@
 #include <cstring>
 #include <stack>
 #include <iostream>
+#include <thread>
+#include <chrono>
+#include <fstream>
+#include <stdio.h>
 
 #include "assets.hpp"
 #include "text_util.hpp"
 
-const int FRAME_SIZE = 64;
-const int FRAME_MARGIN = 16;
-const int FRAME_SPACING = (FRAME_SIZE + FRAME_MARGIN * 2);
-
 #define UPPER_MARGIN 48
+#define FRAME_SIZE 64
+#define FRAME_MARGIN 16
+#define FRAME_SPACING (FRAME_SIZE + FRAME_MARGIN * 2)
+
+PickMode::Frame::Frame()
+    : Frame(fs::path(), fs::path())
+{}
+
+PickMode::Frame::Frame(const fs::path filePath, const fs::path rootDir)
+{
+    this->filePath = filePath;
+    label = fs::relative(filePath, rootDir).string();
+}
 
 PickMode::PickMode(Mode mode)
     : _mode(mode),
       _scroll(Vector2Zero()),
-      _selectedFrame(nullptr),
       _searchFilterFocused(false),
       _view(mode == Mode::TEXTURES ? View::GRID : View::LIST),
       _longestLabelLength(0)
@@ -55,90 +67,154 @@ PickMode::PickMode(Mode mode)
     };
 }
 
+std::shared_ptr<Assets::TexHandle> PickMode::GetPickedTexture() const
+{ 
+    assert(_mode == Mode::TEXTURES);
+    if (_selectedFrame.filePath.empty())
+        return Assets::GetTexture(fs::path(App::Get()->GetDefaultTexturePath()));
+    else
+        return Assets::GetTexture(_selectedFrame.filePath);
+}
+
+std::shared_ptr<Assets::ModelHandle> PickMode::GetPickedShape() const
+{
+    assert(_mode == Mode::SHAPES);
+    if (_selectedFrame.filePath.empty())
+        return Assets::GetModel(fs::path(App::Get()->GetDefaultShapePath()));
+    else
+        return Assets::GetModel(_selectedFrame.filePath);
+}
+
+Texture2D PickMode::_GetTexture(const fs::path path)
+{
+    if (_loadedTextures.find(path) == _loadedTextures.end())
+    {
+        Texture2D texture = LoadTexture(path.string().c_str());
+        _loadedTextures[path] = texture;
+        return texture;
+    }
+    return _loadedTextures[path];
+}
+
+Model PickMode::_GetModel(const fs::path path)
+{
+    if (_loadedModels.find(path) == _loadedModels.end())
+    {
+        Model model = LoadModel(path.string().c_str());
+        _loadedModels[path] = model;
+        return model;
+    }
+    return _loadedModels[path];
+}
+
+RenderTexture2D PickMode::_GetIcon(const fs::path path)
+{
+    if (_loadedIcons.find(path) == _loadedIcons.end())
+    {
+        RenderTexture2D icon = LoadRenderTexture(FRAME_SIZE, FRAME_SIZE);
+        _loadedIcons[path] = icon;
+        return icon;
+    }
+    return _loadedIcons[path];
+}
+
 void PickMode::_GetFrames(fs::path rootDir)
 {
-    if (!fs::is_directory(rootDir)) 
-    {
-        std::cerr << "Asset directory in settings is not a directory!" << std::endl;
-        return;
-    }
+    _frames.clear();
     
-    for (auto const& entry : fs::recursive_directory_iterator{rootDir})
+    for (const fs::path path : _foundFiles)
     {
-        if (entry.is_directory() || !entry.is_regular_file()) continue;
+        Frame frame(path, rootDir);
 
-        auto labelPath = fs::relative(entry.path(), rootDir);
-        auto ext = labelPath.extension().string();
-        if (ext == ".png")
+        //Filter out files that don't contain the search term
+        std::string lowerCaseLabel = TextToLower(frame.label.c_str());
+        if (strlen(_searchFilterBuffer) > 0 && 
+            lowerCaseLabel.find(TextToLower(_searchFilterBuffer)) == std::string::npos)
         {
-            Frame frame = {
-                .tex = Assets::GetTexture(entry.path()),
-                .shape = nullptr,
-                .label = labelPath.string()
-            };
-            _frames.push_back(frame);
-        }
-        else if (ext == ".obj")
-        {
-            Frame frame = {
-                .tex = nullptr,
-                .shape = Assets::GetModel(entry.path()),
-                .renderTex = LoadRenderTexture(FRAME_SIZE, FRAME_SIZE),
-                .label = labelPath.string(),
-            };
-            _frames.push_back(frame);
+            continue;
         }
 
         //Update longest label length
-        _longestLabelLength = Max(_longestLabelLength, labelPath.string().length());
+        _longestLabelLength = Max(_longestLabelLength, frame.label.length());
+
+        _frames.push_back(std::move(frame));
     }
 }
 
 void PickMode::OnEnter()
 {
-    _selectedFrame = nullptr;
-    
-    //Clean up memory from previous frames
-    for (Frame& frame : _frames)
+    // Get the paths to all assets if this hasn't been done already.
+    auto rootDir = (_mode == Mode::SHAPES) ? fs::path(App::Get()->GetShapesDir()) : fs::path(App::Get()->GetTexturesDir());
+    if (_foundFiles.empty())
     {
-        if (IsRenderTextureReady(frame.renderTex))
+        if (!fs::is_directory(rootDir)) 
         {
-            UnloadRenderTexture(frame.renderTex);
+            std::cerr << "Asset directory in settings is not a directory!" << std::endl;
+            return;
+        }
+        
+        for (auto const& entry : fs::recursive_directory_iterator{rootDir})
+        {
+            if (entry.is_directory() || !entry.is_regular_file()) continue;
+            
+            //Filter out files with the wrong extensions
+            auto extensionStr = TextToLower(entry.path().extension().string().c_str());
+            if (
+                (_mode != Mode::TEXTURES || !TextIsEqual(extensionStr, ".png")) &&
+                (_mode != Mode::SHAPES   || !TextIsEqual(extensionStr, ".obj"))
+            ) {
+                continue;
+            }
+
+            _foundFiles.push_back(entry.path());
         }
     }
-    _frames.clear();
 
-    if (_mode == Mode::TEXTURES)
-        _GetFrames(fs::path(App::Get()->GetTexturesDir()));
-    else if (_mode == Mode::SHAPES)
-        _GetFrames(fs::path(App::Get()->GetShapesDir()));
+    _GetFrames(rootDir);
 }
 
 void PickMode::OnExit()
 {
+    for (const auto& pair : _loadedModels)
+    {
+        UnloadModel(pair.second);
+    }
+    _loadedModels.clear();
+    
+    for (const auto& pair : _loadedTextures)
+    {
+        UnloadTexture(pair.second);
+    }
+    _loadedTextures.clear();
+
+    for (const auto& pair : _loadedIcons)
+    {
+        UnloadRenderTexture(pair.second);
+    }
+    _loadedIcons.clear();
 }
 
 void PickMode::Update()
 {
-
-    _filteredFrames.clear();
-    for (Frame& frame : _frames) 
+    if (strcmp(_searchFilterBuffer, _searchFilterPrevious) != 0)
     {
-        //Filter frames by the search text. If the search text is contained anywhere in the file path, then it passes.
-        std::string lowerCaseLabel = TextToLower(frame.label.c_str());
-        if (strlen(_searchFilterBuffer) == 0 || lowerCaseLabel.find(TextToLower(_searchFilterBuffer)) != std::string::npos)
-        {
-            _filteredFrames.push_back(&frame);
-        }
+        if (_mode == Mode::TEXTURES)
+            _GetFrames(fs::path(App::Get()->GetTexturesDir()));
+        else if (_mode == Mode::SHAPES)
+            _GetFrames(fs::path(App::Get()->GetShapesDir()));
+    }
+    strcpy(_searchFilterPrevious, _searchFilterBuffer);
 
-        if (_mode == Mode::SHAPES)
+    if (_mode == Mode::SHAPES)
+    {
+        for (Frame& frame : _frames) 
         {
             //Update/redraw the shape preview icons so that they spin
-            BeginTextureMode(frame.renderTex);
+            BeginTextureMode(_GetIcon(frame.filePath));
             ClearBackground(BLACK);
             BeginMode3D(_iconCamera);
 
-            DrawModelWiresEx(frame.shape->GetModel(), Vector3Zero(), Vector3{0.0f, 1.0f, 0.0f}, float(GetTime() * 180.0f), Vector3One(), GREEN);
+            DrawModelWiresEx(_GetModel(frame.filePath), Vector3Zero(), Vector3{0.0f, 1.0f, 0.0f}, float(GetTime() * 180.0f), Vector3One(), GREEN);
 
             EndMode3D();
             EndTextureMode();
@@ -153,7 +229,7 @@ void PickMode::_DrawGridView(Rectangle framesView)
         .x = 0, 
         .y = 0, 
         .width = framesView.width - 16, 
-        .height = ceilf((float)_filteredFrames.size() / FRAMES_PER_ROW) * FRAME_SPACING + 64
+        .height = ceilf((float)_frames.size() / FRAMES_PER_ROW) * FRAME_SPACING + 64
     };
 
     Rectangle scissorRect = GuiScrollPanel(framesView, NULL, framesContent, &_scroll);
@@ -161,18 +237,18 @@ void PickMode::_DrawGridView(Rectangle framesView)
     // Drawing the scrolling view
     BeginScissorMode(scissorRect.x, scissorRect.y, scissorRect.width, scissorRect.height);
     {
-        int f = 0;
-        for (Frame *frame : _filteredFrames)
+        for (int i = 0; i < _frames.size(); ++i)
         {
             Rectangle rect = Rectangle{
-                .x = framesView.x + FRAME_MARGIN + (f % FRAMES_PER_ROW) * FRAME_SPACING + _scroll.x,
-                .y = framesView.y + FRAME_MARGIN + (f / FRAMES_PER_ROW) * FRAME_SPACING + _scroll.y,
+                .x = framesView.x + FRAME_MARGIN + (i % FRAMES_PER_ROW) * FRAME_SPACING + _scroll.x,
+                .y = framesView.y + FRAME_MARGIN + (i / FRAMES_PER_ROW) * FRAME_SPACING + _scroll.y,
                 .width = FRAME_SIZE,
                 .height = FRAME_SIZE};
 
-            ++f;
-
-            _DrawFrame(frame, rect);
+            if (CheckCollisionRecs(rect, scissorRect))
+            {
+                _DrawFrame(_frames[i], rect);
+            }
         }
     }
     EndScissorMode();
@@ -187,64 +263,67 @@ void PickMode::_DrawListView(Rectangle framesView)
         .x = 0, 
         .y = 0, 
         .width = framesView.width - 16, 
-        .height = ceilf((float)_filteredFrames.size() / framesPerRow) * FRAME_SPACING + 64 };
+        .height = ceilf((float)_frames.size() / framesPerRow) * FRAME_SPACING + 64 };
     Rectangle scissorRect = GuiScrollPanel(framesView, NULL, framesContent, &_scroll);
 
     // Drawing the scrolling view
     BeginScissorMode(scissorRect.x, scissorRect.y, scissorRect.width, scissorRect.height);
     {
-        int f = 0;
-        for (Frame *frame : _filteredFrames)
+        for (int i = 0; i < _frames.size(); ++i)
         {
             Rectangle rect = Rectangle{
-                .x = framesView.x + FRAME_MARGIN + (f % framesPerRow) * SPACING_WITH_LABEL + _scroll.x,
-                .y = framesView.y + FRAME_MARGIN + (f / framesPerRow) * FRAME_SPACING + _scroll.y,
+                .x = framesView.x + FRAME_MARGIN + (i % framesPerRow) * SPACING_WITH_LABEL + _scroll.x,
+                .y = framesView.y + FRAME_MARGIN + (i / framesPerRow) * FRAME_SPACING + _scroll.y,
                 .width = FRAME_SIZE,
                 .height = FRAME_SIZE};
-
-            ++f;
-
-            _DrawFrame(frame, rect);
-
-            Rectangle labelRect = Rectangle{
-                .x = rect.x + rect.width + FRAME_MARGIN,
-                .y = rect.y,
-                .width = float(SPACING_WITH_LABEL - FRAME_SPACING),
-                .height = rect.height
-            };
-            if (GuiLabelButton(labelRect, frame->label.c_str())) 
+            
+            if (CheckCollisionRecs(rect, scissorRect))
             {
-                _selectedFrame = frame;
+
+                _DrawFrame(_frames[i], rect);
+
+                Rectangle labelRect = Rectangle{
+                    .x = rect.x + rect.width + FRAME_MARGIN,
+                    .y = rect.y,
+                    .width = float(SPACING_WITH_LABEL - FRAME_SPACING),
+                    .height = rect.height
+                };
+
+                // Allow the label to be clickable as well to select the frame
+                if (GuiLabelButton(labelRect, _frames[i].label.c_str())) 
+                {
+                    _selectedFrame = _frames[i];
+                }
             }
         }
     }
     EndScissorMode();
 }
 
-void PickMode::_DrawFrame(Frame *frame, Rectangle rect) 
+void PickMode::_DrawFrame(Frame& frame, Rectangle rect) 
 {
+    // Handle clicking
     if (CheckCollisionPointRec(GetMousePosition(), rect) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
         _selectedFrame = frame;
     }
 
+    // Black background & outline
     Rectangle outline = Rectangle{rect.x - 2, rect.y - 2, rect.width + 4, rect.height + 4};
-    DrawRectangle(outline.x, outline.y, outline.width, outline.height, BLACK); //Black background
+    DrawRectangle(outline.x, outline.y, outline.width, outline.height, BLACK);
     
-    //Texture
+    //Draw the rendered texture
     Texture2D tex;
     if (_mode == Mode::SHAPES)
-    {
-        tex = frame->renderTex.texture;
-    }
-    else
-    {
-        tex = frame->tex->GetTexture();
-    }
+        tex = _GetIcon(frame.filePath).texture;
+    else if (_mode == Mode::TEXTURES)
+        tex = _GetTexture(frame.filePath);
 	Rectangle source = Rectangle { 0.0f, 0.0f, (float)tex.width, (float)tex.height };
     DrawTexturePro(tex, source, rect, Vector2Zero(), 0.0f, WHITE);
     
-    if (_selectedFrame == frame) DrawRectangleLinesEx(outline, 2.0f, WHITE); //White selection outline
+    //White selection outline
+    if (_selectedFrame.filePath == frame.filePath) 
+        DrawRectangleLinesEx(outline, 2.0f, WHITE); 
 }
 
 void PickMode::Draw()
@@ -263,6 +342,7 @@ void PickMode::Draw()
     {
         memset(_searchFilterBuffer, 0, SEARCH_BUFFER_SIZE * sizeof(char));
     }
+
     //Viewing types selection
     Rectangle viewToggleRect = Rectangle{
         .x = (float)GetScreenWidth() - 32 - 128, 
@@ -272,14 +352,15 @@ void PickMode::Draw()
         };
     _view = (View)GuiToggleGroup(viewToggleRect, "GRID;LIST", (int)_view);
 
+    // Draw views
     Rectangle framesView = Rectangle{32, 96, (float)GetScreenWidth() - 64, (float)GetScreenHeight() - 128};
     if (_view == View::GRID) _DrawGridView(framesView);
     else if (_view == View::LIST) _DrawListView(framesView);
 
     // Draw the text showing the selected frame's label.
-    if (_selectedFrame)
+    if (!_selectedFrame.filePath.empty())
     {
-        std::string selectString = std::string("Selected: ") + _selectedFrame->label;
+        std::string selectString = std::string("Selected: ") + _selectedFrame.label;
 
         GuiLabel(Rectangle{
                     .x = 64, 

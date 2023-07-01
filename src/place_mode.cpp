@@ -28,10 +28,22 @@
 #include "math_stuff.hpp"
 #include "assets.hpp"
 
+#include <iostream>
+
 #define CAMERA_PITCH_LIMIT (PI / 2.5f)
 #define CAMERA_MOVE_SPEED_MIN   8.0f
 #define CAMERA_MOVE_SPEED_MAX   64.0f
 #define CAMERA_ACCELERATION     16.0f
+
+Tile PlaceMode::TileCursor::GetTile(MapMan& mapMan) const
+{
+    return Tile(
+        mapMan.GetOrAddModelID(model->GetPath()),
+        angle,
+        mapMan.GetOrAddTexID(tex->GetPath()),
+        pitch
+    );
+}
 
 PlaceMode::PlaceMode(MapMan &mapMan) 
     : _mapMan(mapMan),
@@ -46,8 +58,8 @@ PlaceMode::PlaceMode(MapMan &mapMan)
     _cameraMoveSpeed = CAMERA_MOVE_SPEED_MIN;
 
     //Setup cursors
-    _tileCursor.tex = Assets::GetTexture("assets/textures/brickwall.png");
-    _tileCursor.model = Assets::GetModel("assets/models/shapes/cube.obj");
+    _tileCursor.tex = nullptr;
+    _tileCursor.model = nullptr;
     _tileCursor.angle = _tileCursor.pitch = 0;
 
     _brushCursor.brush = TileGrid(&mapMan, 1, 1, 1);
@@ -60,7 +72,7 @@ PlaceMode::PlaceMode(MapMan &mapMan)
 
     _cursor = &_tileCursor;
     _cursor->position = _tileCursor.endPosition = Vector3Zero();
-    _cursor->outlineScale = 1.125f;
+    _outlineScale = 1.125f;
 
     _cursorMaterial = LoadMaterialDefault();
     _cursorMaterial.shader = Assets::GetMapShader(false);
@@ -76,8 +88,46 @@ PlaceMode::~PlaceMode()
     RL_FREE(_cursorMaterial.maps);
 }
 
+void PlaceMode::SetCursorShape(std::shared_ptr<Assets::ModelHandle> shape) 
+{ 
+    _tileCursor.model = shape;
+    _cursor = &_tileCursor;
+}
+
+void PlaceMode::SetCursorTexture(std::shared_ptr<Assets::TexHandle> tex)
+{ 
+    _tileCursor.tex = tex; 
+    _cursor = &_tileCursor;
+}
+
+void PlaceMode::SetCursorEnt(const Ent &ent) 
+{ 
+    _entCursor.ent = ent; 
+    _cursor = &_entCursor; 
+}
+
+std::shared_ptr<Assets::ModelHandle> PlaceMode::GetCursorShape() const 
+{ 
+    return _tileCursor.model; 
+}
+
+std::shared_ptr<Assets::TexHandle> PlaceMode::GetCursorTexture() const 
+{ 
+    return _tileCursor.tex; 
+}
+
+const Ent& PlaceMode::GetCursorEnt() const 
+{
+    return _entCursor.ent; 
+}
+
 void PlaceMode::OnEnter() 
 {
+    if (_tileCursor.tex == nullptr || _tileCursor.model == nullptr)
+    {
+        _tileCursor.tex = Assets::GetTexture(App::Get()->GetDefaultTexturePath());
+        _tileCursor.model = Assets::GetModel(App::Get()->GetDefaultShapePath());
+    }
 }
 
 void PlaceMode::OnExit() 
@@ -220,15 +270,17 @@ void PlaceMode::UpdateCursor()
     {
         _cursor = &_brushCursor;
         _brushCursor.brush = _mapMan.Tiles().Subsection(i, j, k, w, h, l);
+        _brushCursor.position = _tileCursor.position;
+        _brushCursor.endPosition = _tileCursor.endPosition;
     }
 
     if (_cursor == &_brushCursor)
     {
         //Put the end position at the other extent of the bounding box so that a border can be drawn later
         _brushCursor.endPosition = Vector3 {
-            _tileCursor.position.x + (_brushCursor.brush.GetWidth()  - 1) * _brushCursor.brush.GetSpacing(),
-            _tileCursor.position.y + (_brushCursor.brush.GetHeight() - 1) * _brushCursor.brush.GetSpacing(),
-            _tileCursor.position.z + (_brushCursor.brush.GetLength() - 1) * _brushCursor.brush.GetSpacing(),
+            _brushCursor.position.x + ((_brushCursor.brush.GetWidth() - 1) * _brushCursor.brush.GetSpacing()),
+            _brushCursor.position.y + ((_brushCursor.brush.GetHeight() - 1) * _brushCursor.brush.GetSpacing()),
+            _brushCursor.position.z + ((_brushCursor.brush.GetLength() - 1) * _brushCursor.brush.GetSpacing()),
         };
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
@@ -303,13 +355,18 @@ void PlaceMode::UpdateCursor()
             //Pick the (T)exture from the tile under the cursor.
             if (underTile) 
             {
-                _tileCursor.tex = Assets::GetTexture(_mapMan.PathFromTexID(underTile.texture));
+                std::cout << "ID: " << underTile.texture << std::endl;
+                auto path = _mapMan.PathFromTexID(underTile.texture);
+                std::cout << "MAPMAN PATH: " << path << std::endl;
+                _tileCursor.tex = Assets::GetTexture(path);
+                std::cout << "ASSETS PATH: " << _tileCursor.tex->GetPath() << std::endl;
             }
         }
     }
     else if (_cursor == &_entCursor)
     {
         _entCursor.endPosition = _entCursor.position;
+        _entCursor.ent.position = _entCursor.position;
 
         //Turn entity
         const int ANGLE_INC = IsKeyDown(KEY_LEFT_SHIFT) ? 15 : 45;
@@ -458,6 +515,7 @@ void PlaceMode::Draw()
             }
             else if (_cursor == &_brushCursor)
             {
+                // Draw the tile grid within the brush
                 Vector3 brushOffset = Vector3Min(_brushCursor.position, _brushCursor.endPosition);
                 brushOffset.x -= _brushCursor.brush.GetSpacing() / 2.0f;
                 brushOffset.y -= _brushCursor.brush.GetSpacing() / 2.0f;
@@ -469,14 +527,15 @@ void PlaceMode::Draw()
                 _entCursor.ent.Draw();
             }
 
+            // Draw pink border around the cursor
             rlDrawRenderBatchActive();
             rlDisableDepthTest();
             rlSetLineWidth(2.0f);
             DrawCubeWires(
                 Vector3Scale(Vector3Add(_cursor->position, _cursor->endPosition), 0.5f), 
-                fabs(_cursor->endPosition.x - _cursor->position.x) + _mapMan.Tiles().GetSpacing() * _cursor->outlineScale, 
-                fabs(_cursor->endPosition.y - _cursor->position.y) + _mapMan.Tiles().GetSpacing() * _cursor->outlineScale, 
-                fabs(_cursor->endPosition.z - _cursor->position.z) + _mapMan.Tiles().GetSpacing() * _cursor->outlineScale, 
+                fabs(_cursor->endPosition.x - _cursor->position.x) + _mapMan.Tiles().GetSpacing() * _outlineScale, 
+                fabs(_cursor->endPosition.y - _cursor->position.y) + _mapMan.Tiles().GetSpacing() * _outlineScale, 
+                fabs(_cursor->endPosition.z - _cursor->position.z) + _mapMan.Tiles().GetSpacing() * _outlineScale, 
                 MAGENTA);
 
             DrawAxes3D(Vector3{ 1.0f, 1.0f, 1.0f }, 10.0f);

@@ -42,38 +42,12 @@ public:
     virtual void OnEnter() override;
     virtual void OnExit() override;
 
-    inline void SetCursorShape(std::shared_ptr<Assets::ModelHandle> shape) 
-    { 
-        _tileCursor.model = shape;
-        _cursor = &_tileCursor;
-    }
-
-    inline void SetCursorTexture(std::shared_ptr<Assets::TexHandle> tex)
-    { 
-        _tileCursor.tex = tex; 
-        _cursor = &_tileCursor;
-    }
-
-    inline void SetCursorEnt(const Ent &ent) 
-    { 
-        _entCursor.ent = ent; 
-        _cursor = &_entCursor; 
-    }
-
-    inline std::shared_ptr<Assets::ModelHandle> GetCursorShape() const 
-    { 
-        return _tileCursor.model; 
-    }
-    
-    inline std::shared_ptr<Assets::TexHandle> GetCursorTexture() const 
-    { 
-        return _tileCursor.tex; 
-    }
-    
-    inline const Ent &GetCursorEnt() const 
-    {
-        return _entCursor.ent; 
-    }
+    void SetCursorShape(std::shared_ptr<Assets::ModelHandle> shape);
+    void SetCursorTexture(std::shared_ptr<Assets::TexHandle> tex);
+    void SetCursorEnt(const Ent &ent);
+    std::shared_ptr<Assets::ModelHandle> GetCursorShape() const;
+    std::shared_ptr<Assets::TexHandle> GetCursorTexture() const;
+    const Ent &GetCursorEnt() const;
 
     void ResetCamera();
     void ResetGrid();
@@ -82,7 +56,6 @@ protected:
     {
         Vector3 position;
         Vector3 endPosition;
-        float outlineScale;
     };
 
     struct TileCursor : public Cursor
@@ -91,15 +64,7 @@ protected:
         std::shared_ptr<Assets::TexHandle> tex;
         int angle, pitch;
 
-        inline Tile GetTile(MapMan& mapMan) const
-        {
-            return Tile(
-                mapMan.GetOrAddModelID(model->GetPath()),
-                angle,
-                mapMan.GetOrAddTexID(tex->GetPath()),
-                pitch
-            );
-        }
+        Tile GetTile(MapMan& mapMan) const;
     };
 
     struct BrushCursor : public Cursor
@@ -128,6 +93,7 @@ protected:
     EntCursor _entCursor;
 
     Material _cursorMaterial; //Material used to render the cursor
+    float _outlineScale; //How much the wire box around the cursor is larger than its contents
 
     int _layerViewMin, _layerViewMax;
 

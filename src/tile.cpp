@@ -196,6 +196,7 @@ void TileGrid::Draw(Vector3 position)
 
 void TileGrid::Draw(Vector3 position, int fromY, int toY)
 {
+    // std::cout << "TILE DRAWING IDs" << std::endl;
     if (!_mapMan) return;
 
     if (App::Get()->IsPreviewing())
@@ -215,7 +216,9 @@ void TileGrid::Draw(Vector3 position, int fromY, int toY)
         //Call DrawMeshInstanced for each combination of material and mesh.
         for (auto& [pair, matrices] : _drawBatches) {
             //Reusing the same material for everything and just changing the albedo map between batches
-            SetMaterialTexture(&tileMaterial, MATERIAL_MAP_ALBEDO, _mapMan->TexFromID(pair.first));
+            Texture2D texture = _mapMan->TexFromID(pair.first);
+            // std::cout << texture.id << std::endl;
+            SetMaterialTexture(&tileMaterial, MATERIAL_MAP_ALBEDO, texture);
             DrawMeshInstanced(*pair.second, tileMaterial, matrices.data(), matrices.size());
         }
 
