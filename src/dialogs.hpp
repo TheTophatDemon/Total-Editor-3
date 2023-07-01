@@ -122,8 +122,12 @@ protected:
     App::Settings &_settings;
     char _texPathBuffer[TEXT_FIELD_MAX];
     char _shapePathBuffer[TEXT_FIELD_MAX];
+    char _defaultTexBuffer[TEXT_FIELD_MAX];
+    char _defaultShapeBuffer[TEXT_FIELD_MAX];
     bool _texPathEdit;
     bool _shapePathEdit;
+    bool _defaultTexEdit;
+    bool _defaultShapeEdit;
 };
 
 class SettingsDialog : public Dialog

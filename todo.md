@@ -1,7 +1,5 @@
 # TODO
 
-- Add settings for default texture & shape selection (Do the UI!)
-
 - Optimize file format using runs
 
 - Add .ti importer
@@ -14,6 +12,6 @@
 
     * Mark shapes with .obj groups describing which faces to cull
 
-# FUTURE PLANS
+- Refactor UI code or replace with ImGUI
 
 - Consider giving entities billboard / model viewing modes

@@ -367,43 +367,49 @@ bool CloseDialog::Draw()
 AssetPathDialog::AssetPathDialog(App::Settings &settings)
     : _settings(settings),
       _texPathEdit(false),
-      _shapePathEdit(false)
+      _shapePathEdit(false),
+      _defaultTexEdit(false),
+      _defaultShapeEdit(false)
 {
     strcpy(_texPathBuffer, App::Get()->GetTexturesDir().c_str());
     strcpy(_shapePathBuffer, App::Get()->GetShapesDir().c_str());
+    strcpy(_defaultTexBuffer, App::Get()->GetDefaultTexturePath().c_str());
+    strcpy(_defaultShapeBuffer, App::Get()->GetDefaultShapePath().c_str());
 }
 
 bool AssetPathDialog::Draw()
 {
-    const Rectangle DRECT = DialogRec(632.0f, 256.0f);
+    const Rectangle DRECT = DialogRec(632.0f, 320.0f);
     
     bool clicked = GuiWindowBox(DRECT, "Asset Paths");
 
-    const Rectangle TEX_PATH_BOX = Rectangle {
-        .x = DRECT.x + 8.0f,
-        .y = DRECT.y + 8.0f + 32.0f + 12.0f,
-        .width = DRECT.width - (TEX_PATH_BOX.x - DRECT.x) - 16.0f,
-        .height = 24.0f
-    };
+    auto textBoxes = ArrangeVertical (
+        Rectangle { DRECT.x + 8.0f, DRECT.y + 32.0f, DRECT.width - 16.0f, DRECT.height - 80.0f }, 
+        Rectangle { .width = DRECT.width - 16.0f, .height = 24.0f },
+        8
+    );
 
-    GuiLabel(Rectangle{ TEX_PATH_BOX.x, TEX_PATH_BOX.y - 12.0f }, "Textures Path");
-    if (GuiTextBox(TEX_PATH_BOX, _texPathBuffer, TEXT_FIELD_MAX, _texPathEdit))
-    {
+    // Textures directory
+    GuiLabel(textBoxes[0], "Textures Directory");
+    if (GuiTextBox(textBoxes[1], _texPathBuffer, TEXT_FIELD_MAX, _texPathEdit))
         _texPathEdit = !_texPathEdit;
-    }
+    
+    // Default texture
+    GuiLabel(textBoxes[2], "Default Texture Path");
+    if (GuiTextBox(textBoxes[3], _defaultTexBuffer, TEXT_FIELD_MAX, _defaultTexEdit))
+        _defaultTexEdit = !_defaultTexEdit;
 
-    const Rectangle SHAPE_PATH_BOX = Rectangle {
-        .x = TEX_PATH_BOX.x,
-        .y = TEX_PATH_BOX.y + TEX_PATH_BOX.height + 24.0f,
-        .width = TEX_PATH_BOX.width,
-        .height = TEX_PATH_BOX.height
-    };
-    GuiLabel(Rectangle { SHAPE_PATH_BOX.x, SHAPE_PATH_BOX.y - 12.0f }, "Shapes Path");
-    if (GuiTextBox(SHAPE_PATH_BOX, _shapePathBuffer, TEXT_FIELD_MAX, _shapePathEdit))
-    {
+    // Shape directory
+    GuiLabel(textBoxes[4], "Shapes Directory");
+    if (GuiTextBox(textBoxes[5], _shapePathBuffer, TEXT_FIELD_MAX, _shapePathEdit))
         _shapePathEdit = !_shapePathEdit;
-    }
 
+    // Default shape
+    GuiLabel(textBoxes[6], "Default Shape Path");
+    if (GuiTextBox(textBoxes[7], _defaultShapeBuffer, TEXT_FIELD_MAX, _defaultShapeEdit))
+        _defaultShapeEdit = !_defaultShapeEdit;
+
+    // Submission buttons
     const Rectangle BUTTON_REGION = Rectangle {
         .x = DRECT.x + 8.0f,
         .y = DRECT.y + DRECT.height - 48.0f,
@@ -416,11 +422,18 @@ bool AssetPathDialog::Draw()
 
     if (GuiButton(buttonRecs[0], "Confirm"))
     {
+        // Validate all of the entered paths
         bool bad = false;
         fs::directory_entry texEntry { _texPathBuffer };
         if (!texEntry.exists() || !texEntry.is_directory())
         {
             strcpy(_texPathBuffer, "Invalid!");
+            bad = true;
+        }
+        fs::directory_entry defTexEntry { _defaultTexBuffer };
+        if (!defTexEntry.exists() || !defTexEntry.is_regular_file())
+        {
+            strcpy(_defaultTexBuffer, "Invalid!");
             bad = true;
         }
         fs::directory_entry shapeEntry { _shapePathBuffer };
@@ -429,10 +442,18 @@ bool AssetPathDialog::Draw()
             strcpy(_shapePathBuffer, "Invalid!");
             bad = true;
         }
+        fs::directory_entry defShapeEntry { _defaultShapeBuffer };
+        if (!defShapeEntry.exists() || !defShapeEntry.is_regular_file())
+        {
+            strcpy(_defaultShapeBuffer, "Invalid!");
+            bad = true;
+        }
         if (!bad) 
         {
             _settings.texturesDir = texEntry.path().string();
+            _settings.defaultTexturePath = defTexEntry.path().string();
             _settings.shapesDir = shapeEntry.path().string();
+            _settings.defaultShapePath = defShapeEntry.path().string();
             App::Get()->SaveSettings();
             return false;
         }
