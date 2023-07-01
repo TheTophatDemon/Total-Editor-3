@@ -340,26 +340,28 @@ void PlaceMode::UpdateCursor()
             //Remove tiles RECTANGLE
             _mapMan.ExecuteTileAction(i, j, k, w, h, l, Tile {NO_MODEL, 0, NO_TEX, false});
         }
-        else if (IsKeyDown(KEY_G) && !multiSelect) 
+        else if (IsKeyPressed(KEY_G) && !multiSelect) 
         {
             //(G)rab the shape from the tile under the cursor
             if (underTile) 
             {
-                _tileCursor.model = Assets::GetModel(_mapMan.PathFromModelID(underTile.shape));
+                std::cout << "ID: " << underTile.shape << std::endl;
+                auto path = _mapMan.PathFromModelID(underTile.shape);
+                std::cout << "PATH: " << path << std::endl;
+                _tileCursor.model = Assets::GetModel(path);
                 _tileCursor.angle = underTile.angle;
                 _tileCursor.pitch = underTile.pitch;
             }
         } 
-        else if (IsKeyDown(KEY_T) && !multiSelect) 
+        else if (IsKeyPressed(KEY_T) && !multiSelect) 
         {
             //Pick the (T)exture from the tile under the cursor.
             if (underTile) 
             {
                 std::cout << "ID: " << underTile.texture << std::endl;
                 auto path = _mapMan.PathFromTexID(underTile.texture);
-                std::cout << "MAPMAN PATH: " << path << std::endl;
+                std::cout << "PATH: " << path << std::endl;
                 _tileCursor.tex = Assets::GetTexture(path);
-                std::cout << "ASSETS PATH: " << _tileCursor.tex->GetPath() << std::endl;
             }
         }
     }
