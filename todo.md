@@ -1,7 +1,5 @@
 # TODO
 
-- Optimize file format using runs
-
 - Add .ti importer
 
 - Add setting for grid scale?

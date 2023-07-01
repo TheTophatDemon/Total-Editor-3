@@ -246,13 +246,70 @@ std::string TileGrid::GetTileDataBase64() const
     return base64::encode(bin);
 }
 
+std::string TileGrid::GetOptimizedTileDataBase64() const
+{
+    std::vector<uint8_t> bin;
+    bin.reserve(_grid.size() * sizeof(Tile));
+
+    int runLength = 0;
+    for (size_t i = 0; i < _grid.size(); ++i)
+    {
+        Tile savedTile = _grid[i];
+
+        if (!savedTile && i < _grid.size() - 1)
+        {
+            // Blank tiles (except for the last tile in the grid) are represented as runs.
+            ++runLength;
+        }
+        else
+        { 
+            if (runLength > 0)
+            {
+                //Insert a special tile signifying the number of empty tiles preceding this one.
+                Tile runTile = { -runLength, runLength, -runLength, runLength };
+                const char *tileBin = reinterpret_cast<const char *>(&runTile);
+                for (size_t b = 0; b < sizeof(Tile); ++b)
+                {
+                    bin.push_back(tileBin[b]);
+                }
+                runLength = 0;
+            }
+            
+            //Reinterpret the tile as a series of bytes and push them onto the vector.
+            const char *tileBin = reinterpret_cast<const char *>(&savedTile);
+            for (size_t b = 0; b < sizeof(Tile); ++b)
+            {
+                bin.push_back(tileBin[b]);
+            }
+        }
+    }
+
+    return base64::encode(bin);
+}
+
 void TileGrid::SetTileDataBase64(std::string data)
 {
     std::vector<uint8_t> bin = base64::decode(data);
-    for (size_t i = 0; i < bin.size() / sizeof(Tile) && i < _grid.size(); ++i)
+    size_t gridIndex = 0;
+    for (size_t b = 0; b < bin.size(); b += sizeof(Tile))
     {
-        //Reinterpret groups of bytes as tiles and place them into the grid.
-        _grid[i] = *(reinterpret_cast<Tile *>(&bin[i * sizeof(Tile)]));
+        // Reinterpret groups of bytes as tiles and place them into the grid.
+        Tile loadedTile = *(reinterpret_cast<Tile *>(&bin[b]));
+        if (loadedTile.shape < 0)
+        {
+            // This tile represents a run of blank tiles
+            int j = 0;
+            for (j = 0; j < -loadedTile.shape; ++j)
+            {
+                _grid[gridIndex + j] = Tile { NO_MODEL, 0, NO_TEX, 0 };
+            }
+            gridIndex += j;
+        }
+        else
+        {
+            _grid[gridIndex] = loadedTile;
+            ++gridIndex;
+        }
     }
     std::cout << std::endl;
 }

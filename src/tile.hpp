@@ -63,7 +63,7 @@ struct Tile
 
     inline operator bool() const
     {
-        return shape != NO_MODEL && texture != NO_TEX;
+        return shape > NO_MODEL && texture > NO_TEX;
     }
 };
 
@@ -119,6 +119,8 @@ public:
 
     //Returns a base64 encoded string with the binary representations of all tiles.
     std::string GetTileDataBase64() const;
+
+    std::string GetOptimizedTileDataBase64() const;
 
     //Assigns tiles based on the binary data encoded in base 64. Assumes that the sizes of the data and the current grid are the same.
     void SetTileDataBase64(std::string data);

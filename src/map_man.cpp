@@ -96,16 +96,16 @@ bool MapMan::SaveTE3Map(fs::path filePath)
         //Make new texture & model lists containing only used assets
         //This prevents extraneous assets from accumulating in the file every time it's saved
         auto [usedTexIDs, usedModelIDs] = _tileGrid.GetUsedIDs();
-        std::vector<fs::path> usedTexPaths, usedModelPaths;
+        std::vector<std::string> usedTexPaths, usedModelPaths;
         usedTexPaths.resize(usedTexIDs.size());
         usedModelPaths.resize(usedModelIDs.size());
         std::transform(usedTexIDs.begin(), usedTexIDs.end(), usedTexPaths.begin(), 
             [&](TexID id){
-                return _textureList[id]->GetPath();
+                return _textureList[id]->GetPath().generic_string();
             });
         std::transform(usedModelIDs.begin(), usedModelIDs.end(), usedModelPaths.begin(),
             [&](ModelID id){
-                return _modelList[id]->GetPath();
+                return _modelList[id]->GetPath().generic_string();
             });
 
         jData["tiles"]["textures"] = usedTexPaths;
@@ -137,7 +137,7 @@ bool MapMan::SaveTE3Map(fs::path filePath)
         }
 
         //Save the modified tile data
-        jData["tiles"]["data"] = optimizedGrid.GetTileDataBase64();
+        jData["tiles"]["data"] = optimizedGrid.GetOptimizedTileDataBase64();
 
         jData["ents"] = _entGrid.GetEntList();
 
@@ -182,6 +182,7 @@ bool MapMan::LoadTE3Map(fs::path filePath)
         {
             _textureList.push_back(Assets::GetTexture(fs::path(path)));
         }
+
         //Same with models
         std::vector<std::string> shapePaths = tData.at("shapes");
         _modelList.clear();
