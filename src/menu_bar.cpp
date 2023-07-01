@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022 Alexander Lunsford
+ * Copyright (c) 2022-present Alexander Lunsford
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -43,23 +43,9 @@ MenuBar::MenuBar(App::Settings& settings)
 {
     //map menu
     Menu mapMenu = { "MAP" };
-    mapMenu.items.push_back(Item{ "NEW",          [&]() { _activeDialog.reset(new NewMapDialog()); } });
-    mapMenu.items.push_back(Item{ "OPEN",         [&](){
-                                                    auto callback = [](fs::path path) { App::Get()->TryOpenMap(path); };
-                                                    _activeDialog.reset(new FileDialog("Open Map (*.te3)", { ".te3" }, callback));
-                                                }
-                                            });
-    mapMenu.items.push_back(Item { "SAVE",        [&]() {
-                                                        if (!App::Get()->GetLastSavedPath().empty())
-                                                        {
-                                                            App::Get()->TrySaveMap(App::Get()->GetLastSavedPath());
-                                                        }
-                                                        else
-                                                        {
-                                                            OpenSaveMapDialog();
-                                                        }
-                                                    }
-                                                });
+    mapMenu.items.push_back(Item{ "NEW",          [&]() { _activeDialog.reset(new NewMapDialog()); }});
+    mapMenu.items.push_back(Item{ "OPEN",         [&]() { OpenOpenMapDialog(); }});
+    mapMenu.items.push_back(Item{ "SAVE",         [&]() { SaveMap(); }});
     mapMenu.items.push_back(Item{ "SAVE AS",      [&]() { OpenSaveMapDialog(); } });
     mapMenu.items.push_back(Item{ "EXPORT",       [&]() { _activeDialog.reset(new ExportDialog(_settings)); } });
     mapMenu.items.push_back(Item{ "EXPAND GRID",  [&]() { _activeDialog.reset(new ExpandMapDialog()); } });
@@ -78,15 +64,15 @@ MenuBar::MenuBar(App::Settings& settings)
 
     //config menu
     Menu config = { "CONFIG" };
-    config.items.push_back(Item{ "ASSET PATHS", [&]() { _activeDialog.reset(new AssetPathDialog(_settings)); } });
-    config.items.push_back(Item{ "SETTINGS",    [&]() { _activeDialog.reset(new SettingsDialog(_settings)); } });
+    config.items.push_back(Item{ "ASSET PATHS",  [&]() { _activeDialog.reset(new AssetPathDialog(_settings)); } });
+    config.items.push_back(Item{ "SETTINGS",     [&]() { _activeDialog.reset(new SettingsDialog(_settings)); } });
     _menus.push_back(config);
 
     // info menu
     Menu info = { "INFO" };
-    info.items.push_back(Item{ "ABOUT", [&]() { _activeDialog.reset(new AboutDialog()); } });
+    info.items.push_back(Item{ "ABOUT",          [&]() { _activeDialog.reset(new AboutDialog()); } });
     info.items.push_back(Item{ "KEYS/SHORTCUTS", [&]() { _activeDialog.reset(new ShortcutsDialog()); } });
-    info.items.push_back(Item{ "INSTRUCTIONS", [&]() { _activeDialog.reset(new InstructionsDialog()); } });
+    info.items.push_back(Item{ "INSTRUCTIONS",   [&]() { _activeDialog.reset(new InstructionsDialog()); } });
 
     _menus.push_back(info);
 
@@ -101,10 +87,37 @@ MenuBar::MenuBar(App::Settings& settings)
     }
 }
 
+void MenuBar::DisplayStatusMessage(std::string message, float durationSeconds, int priority)
+{
+    if (priority >= _messagePriority)
+    {
+        _statusMessage = message;
+        _messageTimer = durationSeconds;
+    }
+}
+
 void MenuBar::OpenSaveMapDialog()
 {
     auto callback = [](fs::path path){ App::Get()->TrySaveMap(path); };
     _activeDialog.reset(new FileDialog("Save Map (*.te3)", { ".te3" }, callback)); 
+}
+
+void MenuBar::OpenOpenMapDialog()
+{
+    auto callback = [](fs::path path) { App::Get()->TryOpenMap(path); };
+    _activeDialog.reset(new FileDialog("Open Map (*.te3, *.ti)", { ".te3", ".ti" }, callback));
+}
+
+void MenuBar::SaveMap()
+{
+    if (!App::Get()->GetLastSavedPath().empty())
+    {
+        App::Get()->TrySaveMap(App::Get()->GetLastSavedPath());
+    }
+    else
+    {
+        OpenSaveMapDialog();
+    }
 }
 
 void MenuBar::Update()

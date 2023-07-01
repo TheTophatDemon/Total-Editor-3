@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022 Alexander Lunsford
+ * Copyright (c) 2022-present Alexander Lunsford
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -289,7 +289,7 @@ bool FileDialog::Draw()
             .height = rect.height 
         };
 
-        if (GuiLabelButton(BUTT_RECT, name.c_str()))
+        if (CheckCollisionRecs(BUTT_RECT, scissor) && GuiLabelButton(BUTT_RECT, name.c_str()))
         {
             if (entry.is_directory()) 
             {

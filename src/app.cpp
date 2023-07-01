@@ -278,10 +278,7 @@ void App::TryOpenMap(fs::path path)
             if (_mapMan->LoadTE3Map(path))
             {
                 _lastSavedPath = path;
-                std::string msg = "Loaded .te3 map '";
-                msg += path.filename().string();
-                msg += "'.";
-                DisplayStatusMessage(msg, 5.0f, 100);
+                DisplayStatusMessage("Loaded .te3 map '" + path.filename().string() + "'.", 5.0f, 100);
             }
             else
             {
@@ -292,7 +289,16 @@ void App::TryOpenMap(fs::path path)
         }
         else if (path.extension() == ".ti")
         {
-            DisplayStatusMessage("Loaded .ti map.", 5.0f, 100);
+            if (_mapMan->LoadTE2Map(path))
+            {
+                DisplayStatusMessage("Loaded .ti map '" + path.filename().string() + "'.", 5.0f, 100);
+            }
+            else
+            {
+                DisplayStatusMessage("ERROR: Failed to load .te3 map. Check the console.", 5.0f, 100);
+            }
+            _tilePlaceMode->ResetCamera();
+            _tilePlaceMode->ResetGrid();
         }
         else
         {

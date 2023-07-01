@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022 Alexander Lunsford
+ * Copyright (c) 2022-present Alexander Lunsford
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -71,6 +71,22 @@ inline int GetStringWidth(Font font, float fontSize, const std::string &string)
     }
     maxWidth = Max(lineWidth, maxWidth);
     return maxWidth;
+}
+
+// Returns sections of the input string that are located between occurances of the delimeter.
+inline std::vector<std::string> SplitString(const std::string& input, const std::string delimeter)
+{
+    std::vector<std::string> result;
+    size_t tokenStart = 0, tokenEnd = 0;
+    while ((tokenEnd = input.find(delimeter, tokenStart)) != std::string::npos)
+    {
+        result.push_back(input.substr(tokenStart, tokenEnd - tokenStart));
+        tokenStart = tokenEnd + delimeter.length();
+    }
+    // Add the remaining text after the last delimeter
+    if (tokenStart < input.length())
+        result.push_back(input.substr(tokenStart));
+    return result;
 }
 
 #endif

@@ -46,20 +46,10 @@ public:
     class TileAction : public Action
     {
     public:
-        inline TileAction(size_t i, size_t j, size_t k, TileGrid prevState, TileGrid newState)
-            : _i(i), _j(j), _k(k), _prevState(prevState), _newState(newState)
-        {
-        }
+        TileAction(size_t i, size_t j, size_t k, TileGrid prevState, TileGrid newState);
         
-        inline virtual void Do(MapMan &map) const override
-        {
-            map._tileGrid.CopyTiles(_i, _j, _k, _newState);
-        }
-
-        inline virtual void Undo(MapMan &map) const override
-        {
-            map._tileGrid.CopyTiles(_i, _j, _k, _prevState);
-        }
+        virtual void Do(MapMan& map) const override;
+        virtual void Undo(MapMan& map) const override;
 
         size_t _i, _j, _k;
         TileGrid _prevState;
@@ -69,34 +59,10 @@ public:
     class EntAction : public Action
     {
     public:
-        inline EntAction(size_t i, size_t j, size_t k, bool overwrite, bool removed, Ent oldEnt, Ent newEnt)
-            : _i(i), _j(j), _k(k), _overwrite(overwrite), _removed(removed), _oldEnt(oldEnt), _newEnt(newEnt)
-        {
-        }
+        EntAction(size_t i, size_t j, size_t k, bool overwrite, bool removed, Ent oldEnt, Ent newEnt);
 
-        inline virtual void Do(MapMan &map) const override
-        {
-            if (_removed)
-            {
-                map._entGrid.RemoveEnt(_i, _j, _k);
-            }
-            else
-            {
-                map._entGrid.AddEnt(_i, _j, _k, _newEnt);
-            }
-        }
-
-        inline virtual void Undo(MapMan &map) const override
-        {
-            if (_overwrite || _removed)
-            {
-                map._entGrid.AddEnt(_i, _j, _k, _oldEnt);
-            }
-            else
-            {
-                map._entGrid.RemoveEnt(_i, _j, _k);
-            }
-        }
+        virtual void Do(MapMan &map) const override;
+        virtual void Undo(MapMan &map) const override;
     protected:
         size_t _i, _j, _k;
         bool _overwrite; //Indicates if there was an entity underneath the one placed that must be restored when undoing.
@@ -200,6 +166,9 @@ public:
 
     //Loads a .te3 map from the given path. Returns false if there was an error.
     bool LoadTE3Map(fs::path filePath);
+
+    //Loads and converts a Total Invasion II .ti map from the given path. Returns false on error.
+    bool LoadTE2Map(fs::path filePath);
 
     //Exports the map as a .gltf file, returning false on error.
     //If separateGeometry is true, then the geometry will be put into separate

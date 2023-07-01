@@ -30,6 +30,69 @@
 
 #include "app.hpp"
 #include "assets.hpp"
+#include "text_util.hpp"
+
+#define TE2_FORMAT_ERR "ERROR: This is not a properly formatted .ti file."
+
+// ======================================================================
+// TILE ACTION
+// ======================================================================
+
+MapMan::TileAction::TileAction(size_t i, size_t j, size_t k, TileGrid prevState, TileGrid newState)
+    : _i(i), _j(j), _k(k), 
+    _prevState(prevState), 
+    _newState(newState)
+{}
+
+void MapMan::TileAction::Do(MapMan& map) const
+{
+    map._tileGrid.CopyTiles(_i, _j, _k, _newState);
+}
+
+void MapMan::TileAction::Undo(MapMan& map) const
+{
+    map._tileGrid.CopyTiles(_i, _j, _k, _prevState);
+}
+
+// ======================================================================
+// ENT ACTION
+// ======================================================================
+
+MapMan::EntAction::EntAction(size_t i, size_t j, size_t k, bool overwrite, bool removed, Ent oldEnt, Ent newEnt)
+    : _i(i), _j(j), _k(k), 
+    _overwrite(overwrite), 
+    _removed(removed), 
+    _oldEnt(oldEnt), 
+    _newEnt(newEnt)
+{}
+
+void MapMan::EntAction::Do(MapMan& map) const
+{
+    if (_removed)
+    {
+        map._entGrid.RemoveEnt(_i, _j, _k);
+    }
+    else
+    {
+        map._entGrid.AddEnt(_i, _j, _k, _newEnt);
+    }
+}
+
+void MapMan::EntAction::Undo(MapMan& map) const
+{
+    if (_overwrite || _removed)
+    {
+        map._entGrid.AddEnt(_i, _j, _k, _oldEnt);
+    }
+    else
+    {
+        map._entGrid.RemoveEnt(_i, _j, _k);
+    }
+}
+
+// ======================================================================
+// MAP MAN
+// ======================================================================
 
 void MapMan::_Execute(std::shared_ptr<Action> action)
 {
@@ -200,6 +263,288 @@ bool MapMan::LoadTE3Map(fs::path filePath)
         {
             Vector3 gridPos = _entGrid.WorldToGridPos(e.position);
             _entGrid.AddEnt((int) gridPos.x, (int) gridPos.y, (int) gridPos.z, e);
+        }
+    }
+    catch (const std::exception &e)
+    {
+        std::cout << e.what() << std::endl;
+        return false;
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    if (file.fail()) return false;
+
+    return true;
+}
+
+bool MapMan::LoadTE2Map(fs::path filePath)
+{
+    _undoHistory.clear();
+    _redoHistory.clear();
+
+    std::ifstream file(filePath);
+
+    try
+    {
+        _textureList.clear();
+
+        _modelList.clear();
+        ModelID cubeID = GetOrAddModelID(fs::path(App::Get()->GetShapesDir()) / "cube.obj");
+        ModelID panelID = GetOrAddModelID(fs::path(App::Get()->GetShapesDir()) / "panel.obj");
+
+        // Since the .ti format has no specific grid size (or origin), we must keep track of the map's extents manually.
+        int minX, minZ, maxX, maxZ;
+        minX = minZ = std::numeric_limits<int>::max();
+        maxX = maxZ = std::numeric_limits<int>::min();
+
+        // Stores tiles to add along with their grid positions (i, j, k) after the extents are calculated.
+        std::vector<std::tuple<int, int, int, Tile>> tilesToAdd;
+
+        // Parse the text file line by line
+        std::string line;
+        
+        //TILES (walls)
+        std::getline(file, line);
+        if (line.compare("TILES") != 0)
+        {
+            std::cerr << TE2_FORMAT_ERR << std::endl;
+            return false;
+        }
+        std::getline(file, line);
+        int tileCount = atoi(line.c_str());
+        tilesToAdd.reserve(tileCount);
+        for (int t = 0; t < tileCount; ++t)
+        {
+            std::getline(file, line);
+            std::vector<std::string> tokens = SplitString(line, ",");
+            
+            // Original grid position (needs to be offset by minX/minZ)
+            int i = atoi(tokens[0].c_str()) / 16;
+            minX = Min(minX, i);
+            maxX = Max(maxX, i);
+            int k = atoi(tokens[1].c_str()) / 16;
+            minZ = Min(minZ, k);
+            maxZ = Max(maxZ, k);
+
+            Tile tile(NO_MODEL, 0, NO_TEX, 0);
+
+            std::string textureName = tokens[3] + ".png";
+            tile.texture = GetOrAddTexID(fs::path(App::Get()->GetTexturesDir()) / textureName);
+            
+            int flag = atoi(tokens[4].c_str());
+            int link = atoi(tokens[5].c_str());
+
+            // Set angles for doors & panels
+            if (flag == 7)
+                tile.angle = (link == 0) ? 0 : 90;
+            if (flag == 2 || flag == 9)
+                tile.angle = 90;
+            
+            // Set shape to cube or panel or nothing depending on tile type
+            switch (flag)
+            {
+            case 1: case 2: case 7: case 8: case 9:
+                tile.shape = panelID;
+                break;
+            default:
+                tile.shape = cubeID;
+                break;
+            }
+            
+            tilesToAdd.push_back({i, 1, k, tile});
+        }
+
+        //SECTORS (floors and ceilings)
+        std::getline(file, line);
+        if (line.compare("SECTORS") != 0)
+        {
+            std::cerr << TE2_FORMAT_ERR << std::endl;
+            return false;
+        }
+        std::getline(file, line);
+        int floorCount = atoi(line.c_str());
+        tilesToAdd.reserve(tileCount + floorCount);
+        for (int t = 0; t < floorCount; ++t)
+        {
+            std::getline(file, line);
+            std::vector<std::string> tokens = SplitString(line, ",");
+            
+            // Original grid position (needs to be offset by minX/minZ)
+            int i = atoi(tokens[0].c_str()) / 16;
+            minX = Min(minX, i);
+            maxX = Max(maxX, i);
+            int k = atoi(tokens[1].c_str()) / 16;
+            minZ = Min(minZ, k);
+            maxZ = Max(maxZ, k);
+
+            Tile tile(cubeID, 0, NO_TEX, 0);
+
+            std::string textureName = tokens[5];
+            textureName.append(".png");
+            tile.texture = GetOrAddTexID(fs::path(App::Get()->GetTexturesDir()) / textureName);
+            
+            bool isCeiling = (bool)atoi(tokens[4].c_str());
+            
+            tilesToAdd.push_back({i, isCeiling ? 2 : 0, k, tile});
+        }
+        
+        // Calculate grid bounds
+        size_t width = (maxX - minX) + 1;
+        size_t length = (maxZ - minZ) + 1;
+
+        // Fill tile grid
+        _tileGrid = TileGrid(this, width, 3, length, TILE_SPACING_DEFAULT, Tile());
+        for (const auto[i, j, k, tile] : tilesToAdd)
+        {
+            // Add the tiles to the grid, offset from the top left corner
+            _tileGrid.SetTile(i - minX, j, k - minZ, tile);
+        }
+        
+        // Get & convert entities
+        _entGrid = EntGrid(_tileGrid.GetWidth(), _tileGrid.GetHeight(), _tileGrid.GetLength());
+        std::getline(file, line);
+        if (line.compare("THINGS") != 0)
+        {
+            std::cerr << TE2_FORMAT_ERR << std::endl;
+            return false;
+        }
+        std::getline(file, line);
+        int entCount = atoi(line.c_str());
+        for (int e = 0; e < entCount; ++e)
+        {
+            std::getline(file, line);
+            std::vector<std::string> tokens = SplitString(line, ",");
+
+            int i = (atoi(tokens[0].c_str()) / 16) - minX;
+            int k = (atoi(tokens[1].c_str()) / 16) - minZ;
+            // Ignore out of bounds entities. I don't think the original game even has any...?
+            if (i < 0 || k < 0 || i >= width || k >= length)
+                continue;
+
+            Ent ent;
+            ent.position = Vector3 { 
+                (float)i * _tileGrid.GetSpacing(), 
+                1.0f * _tileGrid.GetSpacing(), 
+                (float)k * _tileGrid.GetSpacing() 
+            };
+            ent.yaw = atoi(tokens[4].c_str()) * 45;
+            ent.pitch = 0;
+            ent.radius = 1.0f;
+            ent.color = WHITE;
+            ent.properties = std::map<std::string, std::string>();
+            
+            int type = atoi(tokens[2].c_str());
+            switch(type)
+            {
+            case 0: // Player
+                ent.color = BROWN;
+                ent.properties["type"] = "player";
+                ent.properties["name"] = "player";
+                break;
+            case 1: // Prop
+                ent.properties["type"] = "prop";
+                ent.properties["prop"] = tokens[3];
+                ent.properties["name"] = tokens[3];
+                break;
+            case 2: // Item
+                ent.properties["type"] = "item";
+                ent.properties["item"] = tokens[3];
+                ent.properties["name"] = tokens[3];
+                ent.color = YELLOW;
+                ent.radius = 0.5f;
+                break;
+            case 3: // Weapon
+                ent.properties["type"] = "weapon";
+                ent.properties["weapon"] = tokens[3];
+                ent.properties["name"] = tokens[3];
+                ent.color = ORANGE;
+                ent.radius = 0.5f;
+                break;
+            case 4: // Wraith
+                ent.properties["type"] = "enemy";
+                ent.properties["enemy"] = "wraith";
+                ent.properties["name"] = ent.properties["enemy"];
+                ent.color = BLUE;
+                break;
+            case 5: // Fire Wraith
+                ent.properties["type"] = "enemy";
+                ent.properties["enemy"] = "fire wraith";
+                ent.properties["name"] = ent.properties["enemy"];
+                ent.color = RED;
+                break;
+            case 6: // Dummkopf
+                ent.properties["type"] = "enemy";
+                ent.properties["enemy"] = "dummkopf";
+                ent.properties["name"] = ent.properties["enemy"];
+                ent.color = PURPLE;
+                break;
+            case 7: // Caco wraith
+                ent.properties["type"] = "enemy";
+                ent.properties["enemy"] = "caco wraith";
+                ent.properties["name"] = ent.properties["enemy"];
+                ent.color = Color { 41, 120, 255, 255 }; // Teal-ish
+                break;
+            case 8: // Prisrak
+                ent.properties["type"] = "enemy";
+                ent.properties["enemy"] = "prisrak";
+                ent.properties["name"] = ent.properties["enemy"];
+                ent.color = ORANGE;
+                break;
+            case 9: // Providence (first boss)
+                ent.properties["type"] = "enemy";
+                ent.properties["enemy"] = "providence";
+                ent.properties["name"] = ent.properties["enemy"];
+                ent.properties["boss"] = "true";
+                ent.color = YELLOW;
+                ent.radius = 2.0f;
+                break;
+            case 10: // Fundie (secret level)
+                ent.properties["type"] = "enemy";
+                ent.properties["enemy"] = "fundie";
+                ent.properties["name"] = ent.properties["enemy"];
+                ent.color = BROWN;
+                break;
+            case 11: // Banshee
+                ent.properties["type"] = "enemy";
+                ent.properties["enemy"] = "banshee";
+                ent.properties["name"] = ent.properties["enemy"];
+                ent.color = DARKGRAY;
+                break;
+            case 12: // Mutant wraith
+                ent.properties["type"] = "enemy";
+                ent.properties["enemy"] = "mutant wraith";
+                ent.properties["name"] = ent.properties["enemy"];
+                ent.color = GRAY;
+                break;
+            case 13: // Mecha (second boss)
+                ent.properties["type"] = "enemy";
+                ent.properties["enemy"] = "mecha";
+                ent.properties["name"] = ent.properties["enemy"];
+                ent.properties["boss"] = "true";
+                ent.color = RED;
+                ent.radius = 2.0f;
+                break;
+            case 14: // Dummkopf (disguised)
+                ent.properties["type"] = "enemy";
+                ent.properties["enemy"] = "dummkopf";
+                ent.properties["name"] = ent.properties["enemy"];
+                ent.properties["disguised"] = "true";
+                ent.color = PURPLE;
+                break;
+            case 15: // Tophat demon (final boss)
+                ent.properties["type"] = "enemy";
+                ent.properties["enemy"] = "tophat demon";
+                ent.properties["name"] = ent.properties["enemy"];
+                ent.properties["boss"] = "true";
+                ent.color = DARKPURPLE;
+                ent.radius = 4.0f;
+                break;
+            }
+
+            _entGrid.AddEnt(i, 1, k, ent);
         }
     }
     catch (const std::exception &e)

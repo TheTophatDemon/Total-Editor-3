@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022 Alexander Lunsford
+ * Copyright (c) 2022-present Alexander Lunsford
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -53,19 +53,14 @@ public:
     void Update();
     void Draw();
     void OpenSaveMapDialog();
+    void OpenOpenMapDialog();
+    void SaveMap();
 
     inline bool IsMouseOn() const { return _mouseOn; }
     inline bool IsFocused() const { return _focused; }
     inline Rectangle GetTopBar() const { return _topBar; }
 
-    inline void DisplayStatusMessage(std::string message, float durationSeconds, int priority)
-    {
-        if (priority >= _messagePriority)
-        {
-            _statusMessage = message;
-            _messageTimer = durationSeconds;
-        }
-    }
+    void DisplayStatusMessage(std::string message, float durationSeconds, int priority);
 protected:
     //Turns the menu's item list into a single string of semicolon separated names for use with RayGUI
     std::string _GetMenuString(const Menu &menu) const;
