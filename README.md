@@ -11,12 +11,12 @@ This is mainly for my own use, though I have included instructions and have trie
 I don't know if I'll add many more features to it, unless people are actually using it for stuff.
 
 As for the code, it is written in C++17, though I started it in C and that shows in certain places.
-For libraries, I used [Raylib 4.2](https://github.com/raysan5/raylib) for rendering, [CPPCodec](https://github.com/tplgy/cppcodec) for base64 conversion, and [Nlohmann's JSON lib](https://github.com/nlohmann/json) for JSON'ing.
+For libraries, I used [Raylib 4.5](https://github.com/raysan5/raylib) for rendering, [CPPCodec](https://github.com/tplgy/cppcodec) for base64 conversion, and [Nlohmann's JSON lib](https://github.com/nlohmann/json) for JSON'ing.
 
 ## Building
 
-I use SCONS v4.3.0 as a build system.
-All the dependencies are statically linked, so make sure you have a RayLIB (release 4.2) libary file (libraylib.a) in libraries/lib and run:
+I use SCONS as a build system.
+All the dependencies are statically linked, so make sure you have a RayLIB (release 4.5) libary file (libraylib.a) in libraries/lib and run:
 
 > scons
 > 
