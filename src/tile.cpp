@@ -157,7 +157,7 @@ void TileGrid::_RegenBatches(Vector3 position, int fromY, int toY)
     _regenBatches = false;
 
     const size_t layerArea = _width * _length;
-    //Create a hash map of dynamic arrays for each combination of texture and mesh
+    // Create a hash map of dynamic arrays for each combination of texture and mesh
     for (int y = fromY; y <= toY; ++y)
     {
         for (size_t t = y * layerArea; t < (y + 1) * layerArea; ++t) 
@@ -165,21 +165,48 @@ void TileGrid::_RegenBatches(Vector3 position, int fromY, int toY)
             const Tile& tile = _grid[t];
             if (tile)
             {
-                //Calculate world space matrix for the tile
+                // Calculate world space matrix for the tile
                 Vector3 gridPos = UnflattenIndex(t);
                 Vector3 worldPos = Vector3Add(position, GridToWorldPos(gridPos, true));
-                Matrix matrix = MatrixMultiply(
-                    TileRotationMatrix(tile), 
-                    MatrixTranslate(worldPos.x, worldPos.y, worldPos.z));
+                Matrix rotMatrix = TileRotationMatrix(tile);
+                Matrix matrix = MatrixMultiply(rotMatrix, MatrixTranslate(worldPos.x, worldPos.y, worldPos.z));
 
                 const Model &shape = _mapMan->ModelFromID(tile.shape);
                 for (int m = 0; m < shape.meshCount; ++m) 
                 {
-                    //Add the tile's transform to the instance arrays for each mesh
+                    // Check neighboring tiles to see if this mesh gets culled
+                    Assets::CullGroup cullGroup = _mapMan->CullGroupFromID(tile.shape, m);
+                    // if (cullGroup == Assets::CullGroup::CULL_D || cullGroup == Assets::CullGroup::CULL_U) continue;
+                    Vector3 worldSpaceCullVector = Vector3Transform(Assets::CullGroupVector(cullGroup), rotMatrix);
+                    int nborX = (int)(gridPos.x + worldSpaceCullVector.x);
+                    int nborY = (int)(gridPos.y + worldSpaceCullVector.y);
+                    int nborZ = (int)(gridPos.z + worldSpaceCullVector.z);
+                    bool cull = false;
+                    if (nborX >= 0 && nborY >= 0 && nborZ >= 0 && nborX < _width && nborY < _height && nborZ < _length)
+                    {
+                        Tile neighbor = GetTile(nborX, nborY, nborZ);
+                        if (neighbor.shape != tile.shape) goto skip;
+                        Matrix nborRotation = TileRotationMatrix(neighbor);
+                        int nborMeshCount = _mapMan->ModelFromID(neighbor.shape).meshCount;
+                        for (int nm = 0; nm < nborMeshCount; ++nm)
+                        {
+                            Assets::CullGroup nborCull = _mapMan->CullGroupFromID(neighbor.shape, nm);
+                            Vector3 nborWSVec = Vector3Transform(Assets::CullGroupVector(nborCull), nborRotation);
+                            if (Vector3DotProduct(nborWSVec, worldSpaceCullVector) < -0.9f)
+                            {
+                                cull = true;
+                                break;
+                            }
+                        }
+                    }
+                    skip:
+                    if (cull) continue;
+
+                    // Add the tile's transform to the instance arrays for each mesh
                     auto pair = std::make_pair(tile.texture, &shape.meshes[m]);
                     if (_drawBatches.find(pair) == _drawBatches.end()) 
                     {
-                        //Put in a vector for this pair if there hasn't been one already
+                        // Put in a vector for this pair if there hasn't been one already
                         _drawBatches[pair] = std::vector<Matrix>();
                     }
                     _drawBatches[pair].push_back(matrix);
@@ -334,7 +361,7 @@ std::pair<std::vector<TexID>, std::vector<ModelID>> TileGrid::GetUsedIDs() const
 }
 
 #define MAX_MATERIAL_MAPS 12
-Model *TileGrid::_GenerateModel()
+Model* TileGrid::_GenerateModel()
 {
     if (!_mapMan) return nullptr;
 
@@ -345,7 +372,6 @@ Model *TileGrid::_GenerateModel()
         std::vector<float> positions;
         std::vector<float> texCoords;
         std::vector<float> normals;
-        std::vector<unsigned char> colors;
         std::vector<unsigned short> indices;
         int triCount; //Independent form indices count since some models may not have indices
     };
@@ -356,7 +382,6 @@ Model *TileGrid::_GenerateModel()
         dynMesh.positions = std::vector<float>();
         dynMesh.texCoords = std::vector<float>();
         dynMesh.normals = std::vector<float>();
-        dynMesh.colors = std::vector<unsigned char>();
         dynMesh.indices = std::vector<unsigned short>();
         dynMesh.triCount = 0;
     }
@@ -368,7 +393,8 @@ Model *TileGrid::_GenerateModel()
         //Generate vertex data for this tile.
         for (const Matrix &matrix : matrices)
         {
-            int vBase = mesh.positions.size();
+            // The index of the first vertex belonging to this shape.
+            int vBase = mesh.positions.size() / 3;
             mesh.triCount += shape.triangleCount;
             for (int v = 0; v < shape.vertexCount; v++)
             {
@@ -402,15 +428,6 @@ Model *TileGrid::_GenerateModel()
                     //Tex coordinates are just copied into the aggregate mesh
                     mesh.texCoords.push_back(shape.texcoords[v*2]);
                     mesh.texCoords.push_back(shape.texcoords[v*2 + 1]);
-                }
-
-                if (shape.colors != NULL)
-                {
-                    //Vertex colors are not supported in shapes, so just fill it with white.
-                    mesh.colors.push_back(shape.colors[v*4 + 0]);
-                    mesh.colors.push_back(shape.colors[v*4 + 1]);
-                    mesh.colors.push_back(shape.colors[v*4 + 2]);
-                    mesh.colors.push_back(shape.colors[v*4 + 3]);
                 }
             }
             if (shape.indices != NULL)
@@ -464,16 +481,12 @@ Model *TileGrid::_GenerateModel()
             model->meshes[i].normals = (float *) RL_CALLOC(dMesh.normals.size(), sizeof(float));
             memcpy(model->meshes[i].normals, dMesh.normals.data(), dMesh.normals.size() * sizeof(float));
         }
-        if (dMesh.colors.size() > 0)
-        {
-            model->meshes[i].colors = (unsigned char *) RL_CALLOC(dMesh.colors.size(), sizeof(float));
-            memcpy(model->meshes[i].colors, dMesh.colors.data(), dMesh.colors.size() * sizeof(float));
-        }
         if (dMesh.indices.size() > 0)
         {
-            model->meshes[i].indices = (unsigned short *) RL_CALLOC(dMesh.indices.size(), sizeof(unsigned char));
-            memcpy(model->meshes[i].indices, dMesh.indices.data(), dMesh.indices.size() * sizeof(float));
+            model->meshes[i].indices = (unsigned short *) RL_CALLOC(dMesh.indices.size(), sizeof(unsigned short));
+            memcpy(model->meshes[i].indices, dMesh.indices.data(), dMesh.indices.size() * sizeof(unsigned short));
         }
+        //TODO: Fix index bullshit
 
         UploadMesh(&model->meshes[i], false);
     }

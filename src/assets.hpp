@@ -49,17 +49,26 @@ public:
         fs::path _path;
     };
 
+    // Determines which cardinal direction in which to cull certain faces when the neighboring tile is occupied.
+    enum class CullGroup { NO_CULL, CULL_N, CULL_S, CULL_E, CULL_W, CULL_U, CULL_D };
+    // Returns a unit vector pointing in the direction represented by the cull group.
+    static Vector3 CullGroupVector(const CullGroup group);
+
     //A RAII wrapper for a Raylib Model (unloads on destruction)
     class ModelHandle
     {
     public:
-        inline ModelHandle(Model model, fs::path path) { _model = model; _path = path; }
-        inline ~ModelHandle() { UnloadModel(_model); }
+        // Loads an .obj model from the given path and initializes a handle for it.
+        ModelHandle(const fs::path path); 
+        ~ModelHandle();
         inline Model GetModel() const { return _model; }
         inline fs::path GetPath() const { return _path; }
+        CullGroup GetCullGroup(const Mesh* mesh);
+        CullGroup GetCullGroup(const size_t meshIndex);
     private:
         Model _model;
         fs::path _path;
+        CullGroup* _cullGroups; // Indexed by the mesh index of the model, returns the culling group assigned to the mesh.
     };
 
     static std::shared_ptr<TexHandle>   GetTexture(fs::path path); //Returns a shared pointer to the cached texture at `path`, loading it if it hasn't been loaded.

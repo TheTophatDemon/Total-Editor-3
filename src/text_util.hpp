@@ -22,6 +22,7 @@
 #define TEXT_UTIL_H
 
 #include "raylib.h"
+#include "math_stuff.hpp"
 
 #include <string>
 #include <initializer_list>

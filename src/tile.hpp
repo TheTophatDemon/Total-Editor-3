@@ -132,11 +132,13 @@ public:
 protected:
     MapMan* _mapMan;
 
-    //Calculates lists of transformations for each tile, separated by texture and shape, to be drawn as instances.
+    // Calculates lists of transformations for each tile, separated by texture and shape, to be drawn as instances.
     void _RegenBatches(Vector3 position, int fromY, int toY);
-    Model *_GenerateModel();
+    // Combines all of the tiles into a single model, for export or for preview.
+    Model* _GenerateModel();
 
     std::map<std::pair<TexID, Mesh*>, std::vector<Matrix>> _drawBatches;
+    
     Vector3 _batchPosition;
     bool _regenBatches;
     bool _regenModel;
