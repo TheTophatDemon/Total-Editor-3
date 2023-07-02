@@ -174,34 +174,6 @@ void TileGrid::_RegenBatches(Vector3 position, int fromY, int toY)
                 const Model &shape = _mapMan->ModelFromID(tile.shape);
                 for (int m = 0; m < shape.meshCount; ++m) 
                 {
-                    // Check neighboring tiles to see if this mesh gets culled
-                    Assets::CullGroup cullGroup = _mapMan->CullGroupFromID(tile.shape, m);
-                    // if (cullGroup == Assets::CullGroup::CULL_D || cullGroup == Assets::CullGroup::CULL_U) continue;
-                    Vector3 worldSpaceCullVector = Vector3Transform(Assets::CullGroupVector(cullGroup), rotMatrix);
-                    int nborX = (int)(gridPos.x + worldSpaceCullVector.x);
-                    int nborY = (int)(gridPos.y + worldSpaceCullVector.y);
-                    int nborZ = (int)(gridPos.z + worldSpaceCullVector.z);
-                    bool cull = false;
-                    if (nborX >= 0 && nborY >= 0 && nborZ >= 0 && nborX < _width && nborY < _height && nborZ < _length)
-                    {
-                        Tile neighbor = GetTile(nborX, nborY, nborZ);
-                        if (neighbor.shape != tile.shape) goto skip;
-                        Matrix nborRotation = TileRotationMatrix(neighbor);
-                        int nborMeshCount = _mapMan->ModelFromID(neighbor.shape).meshCount;
-                        for (int nm = 0; nm < nborMeshCount; ++nm)
-                        {
-                            Assets::CullGroup nborCull = _mapMan->CullGroupFromID(neighbor.shape, nm);
-                            Vector3 nborWSVec = Vector3Transform(Assets::CullGroupVector(nborCull), nborRotation);
-                            if (Vector3DotProduct(nborWSVec, worldSpaceCullVector) < -0.9f)
-                            {
-                                cull = true;
-                                break;
-                            }
-                        }
-                    }
-                    skip:
-                    if (cull) continue;
-
                     // Add the tile's transform to the instance arrays for each mesh
                     auto pair = std::make_pair(tile.texture, &shape.meshes[m]);
                     if (_drawBatches.find(pair) == _drawBatches.end()) 

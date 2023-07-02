@@ -1,6 +1,10 @@
 # TODO
 
-- Fix culling groups on all shapes
+- Add culling back in
+
+    * For generating models only
+
+    * Cull by detecting faces of neighboring tiles that have points matching up with all of the current face's points
 
 - Update documentation
 

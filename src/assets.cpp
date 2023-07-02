@@ -43,24 +43,11 @@ Assets *Assets::_Get()
     return _instance;
 };
 
-Vector3 Assets::CullGroupVector(const Assets::CullGroup group)
-{
-    switch (group)
-    {
-    case CullGroup::CULL_N: return Vector3 { 0.0f,  0.0f, +1.0f };
-    case CullGroup::CULL_S: return Vector3 { 0.0f,  0.0f, -1.0f };
-    case CullGroup::CULL_E: return Vector3 {-1.0f,  0.0f,  0.0f };
-    case CullGroup::CULL_W: return Vector3 {+1.0f,  0.0f,  0.0f };
-    case CullGroup::CULL_U: return Vector3 { 0.0f, +1.0f,  0.0f };
-    case CullGroup::CULL_D: return Vector3 { 0.0f, -1.0f,  0.0f };
-    default: return Vector3 { 0.0f, 0.0f, 0.0f };
-    }
-}
-
 Assets::ModelHandle::ModelHandle(fs::path path) 
 { 
     _path = path; 
 
+    // We are loading the .OBJ file manually because Raylib's loader doesn't take indices into account.
     typedef struct Vertex 
     {
         Vector3 pos;
@@ -68,50 +55,10 @@ Assets::ModelHandle::ModelHandle(fs::path path)
         Vector3 norm;
     } Vertex;
 
-    typedef struct
-    {
-        std::vector<Vertex> verts;
-        std::vector<unsigned short> inds;
-        // This takes a triplet string from the .obj face and points it to a vertex in meshVertices
-        std::map<std::string, int> mapper;
-    } MeshBuild;
-
-    // Maps the .obj group name to its mesh once it's loaded
-    std::map<std::string, MeshBuild> meshBuilds;
-
-    auto completeMesh = [&](const std::string& groupName, const MeshBuild& builder)->Mesh
-    {
-        // Encode the dynamic vertex arrays into a Raylib mesh
-        Mesh mesh = { 0 };
-        mesh.vertices = (float*) malloc(builder.verts.size() * 3 * sizeof(float));
-        mesh.vertexCount = builder.verts.size();
-        mesh.texcoords = (float*) malloc(builder.verts.size() * 2 * sizeof(float));
-        mesh.texcoords2 = mesh.animNormals = mesh.animVertices = mesh.boneWeights = mesh.tangents = nullptr;
-        mesh.boneIds = mesh.colors = nullptr;
-        mesh.normals = (float*) malloc(builder.verts.size() * 3 * sizeof(float));
-        mesh.indices = (unsigned short*) malloc(builder.inds.size() * sizeof(unsigned short));
-        mesh.triangleCount = builder.inds.size() / 3;
-        mesh.vaoId = 0, mesh.vboId = 0;
-
-        for (int v = 0, p = 0, n = 0, u = 0; v < builder.verts.size(); ++v)
-        {
-            mesh.vertices[p++] = builder.verts[v].pos.x;
-            mesh.vertices[p++] = builder.verts[v].pos.y;
-            mesh.vertices[p++] = builder.verts[v].pos.z;
-            mesh.normals[n++] = builder.verts[v].norm.x;
-            mesh.normals[n++] = builder.verts[v].norm.y;
-            mesh.normals[n++] = builder.verts[v].norm.z;
-            mesh.texcoords[u++] = builder.verts[v].uv.x;
-            mesh.texcoords[u++] = builder.verts[v].uv.y;
-        }
-        for (int i = 0; i < builder.inds.size(); ++i)
-        {
-            mesh.indices[i] = builder.inds[i];
-        }
-        UploadMesh(&mesh, false);
-
-        return mesh;
-    };
+    std::vector<Vertex> meshVerts;
+    std::vector<unsigned short> meshInds;
+    // This takes a triplet string from the .obj face and points it to a vertex in meshVertices
+    std::map<std::string, int> vertMapper;
 
     // These track the vertex data as laid out in the .obj file
     // (Since attributes are reused between vertices, they don't map directly onto the mesh's attributes)
@@ -126,13 +73,14 @@ Assets::ModelHandle::ModelHandle(fs::path path)
     std::ifstream objFile(path);
     std::string line;
     std::string objectName;
-    std::string currentGroup;
 
     while (std::getline(objFile, line), !line.empty())
     {
+        // Get the items between spaces
         std::vector<std::string> tokens = SplitString(line, " ");
         if (tokens.empty()) continue;
-        if (tokens[0].compare("v") == 0)
+
+        if (tokens[0].compare("v") == 0) // Vertex positions
         {
             objPositions.push_back(
                 Vector3 {
@@ -141,7 +89,7 @@ Assets::ModelHandle::ModelHandle(fs::path path)
                     (float)atof(tokens[3].c_str())
                 });
         }
-        else if (tokens[0].compare("vt") == 0)
+        else if (tokens[0].compare("vt") == 0) // Vertex texture coordinates
         {
             objUVs.push_back(
                 Vector2 {
@@ -149,7 +97,7 @@ Assets::ModelHandle::ModelHandle(fs::path path)
                     1.0f - (float)atof(tokens[2].c_str())
                 });
         }
-        else if (tokens[0].compare("vn") == 0)
+        else if (tokens[0].compare("vn") == 0) // Vertex normals
         {
             objNormals.push_back(
                 Vector3 {
@@ -158,7 +106,7 @@ Assets::ModelHandle::ModelHandle(fs::path path)
                     (float)atof(tokens[3].c_str())
                 });
         }
-        else if (tokens[0].compare("f") == 0)
+        else if (tokens[0].compare("f") == 0) // Faces
         {
             if (tokens.size() > 4)
                 std::cerr << "Error: Shape loaded from " << path << " should be triangulated!" << std::endl;
@@ -181,16 +129,16 @@ Assets::ModelHandle::ModelHandle(fs::path path)
                     break;
                 }
 
-                MeshBuild& builder = meshBuilds[currentGroup];
-                if (builder.mapper.find(tokens[i]) != builder.mapper.end())
+                // Add indices to mesh
+                if (vertMapper.find(tokens[i]) != vertMapper.end())
                 {
-                    builder.inds.push_back(builder.mapper[tokens[i]]);
+                    meshInds.push_back(vertMapper[tokens[i]]);
                 }
                 else
                 {
-                    builder.mapper[tokens[i]] = builder.verts.size();
-                    builder.inds.push_back(builder.verts.size());
-                    builder.verts.push_back(
+                    vertMapper[tokens[i]] = meshVerts.size();
+                    meshInds.push_back(meshVerts.size());
+                    meshVerts.push_back(
                         Vertex { 
                             objPositions[posIdx], 
                             objUVs[uvIdx], 
@@ -199,23 +147,7 @@ Assets::ModelHandle::ModelHandle(fs::path path)
                 }
             }
         }
-        else if (tokens[0].compare("g") == 0)
-        {
-            currentGroup = tokens[1];
-            
-            // Initialize mesh building structure
-            if (meshBuilds.find(currentGroup) == meshBuilds.end())
-            {
-                meshBuilds[currentGroup] = MeshBuild {
-                    .verts = std::vector<Vertex>(),
-                    .inds = std::vector<unsigned short>(),
-                    .mapper = std::map<std::string, int>()
-                };
-                meshBuilds[currentGroup].verts.reserve(64);
-                meshBuilds[currentGroup].inds.reserve(32);
-            }
-        }
-        else if (tokens[0].compare("o") == 0)
+        else if (tokens[0].compare("o") == 0) // Objects
         {
             if (objectName.empty())
                 objectName = tokens[1];
@@ -229,7 +161,7 @@ Assets::ModelHandle::ModelHandle(fs::path path)
     _model.bindPose = nullptr;
     _model.boneCount = 0;
     _model.bones = nullptr;
-    _model.materialCount = meshBuilds.size();
+    _model.materialCount = 1;
     _model.materials = (Material*) RL_MALLOC(sizeof(Material) * _model.materialCount);
     _model.meshCount = _model.materialCount;
     _model.meshes = (Mesh*) RL_MALLOC(sizeof(Mesh) * _model.meshCount);
@@ -237,48 +169,44 @@ Assets::ModelHandle::ModelHandle(fs::path path)
     _model.transform = MatrixIdentity();
 
     int m = 0;
-    _cullGroups = new CullGroup[_model.meshCount];
-    for (const auto& [key, value] : meshBuilds)
-    {
-        _model.materials[m] = LoadMaterialDefault();
-        _model.meshMaterial[m] = m;
-        _model.meshes[m] = completeMesh(key, value);
+    _model.materials[m] = LoadMaterialDefault();
+    _model.meshMaterial[m] = m;
 
-        // Assign culling groups
-        if (key.find("culln") != std::string::npos)      _cullGroups[m] = CullGroup::CULL_N;
-        else if (key.find("culls") != std::string::npos) _cullGroups[m] = CullGroup::CULL_S;
-        else if (key.find("culle") != std::string::npos) _cullGroups[m] = CullGroup::CULL_E;
-        else if (key.find("cullw") != std::string::npos) _cullGroups[m] = CullGroup::CULL_W;
-        else if (key.find("cullu") != std::string::npos) _cullGroups[m] = CullGroup::CULL_U;
-        else if (key.find("culld") != std::string::npos) _cullGroups[m] = CullGroup::CULL_D;
-        else                                             _cullGroups[m] = CullGroup::NO_CULL;
-        ++m;
+    // Encode the dynamic vertex arrays into a Raylib mesh
+    Mesh mesh = { 0 };
+    mesh.vertices = (float*) malloc(meshVerts.size() * 3 * sizeof(float));
+    mesh.vertexCount = meshVerts.size();
+    mesh.texcoords = (float*) malloc(meshVerts.size() * 2 * sizeof(float));
+    mesh.texcoords2 = mesh.animNormals = mesh.animVertices = mesh.boneWeights = mesh.tangents = nullptr;
+    mesh.boneIds = mesh.colors = nullptr;
+    mesh.normals = (float*) malloc(meshVerts.size() * 3 * sizeof(float));
+    mesh.indices = (unsigned short*) malloc(meshInds.size() * sizeof(unsigned short));
+    mesh.triangleCount = meshInds.size() / 3;
+    mesh.vaoId = 0, mesh.vboId = 0;
+
+    for (int v = 0, p = 0, n = 0, u = 0; v < meshVerts.size(); ++v)
+    {
+        mesh.vertices[p++] = meshVerts[v].pos.x;
+        mesh.vertices[p++] = meshVerts[v].pos.y;
+        mesh.vertices[p++] = meshVerts[v].pos.z;
+        mesh.normals[n++] = meshVerts[v].norm.x;
+        mesh.normals[n++] = meshVerts[v].norm.y;
+        mesh.normals[n++] = meshVerts[v].norm.z;
+        mesh.texcoords[u++] = meshVerts[v].uv.x;
+        mesh.texcoords[u++] = meshVerts[v].uv.y;
     }
+    for (int i = 0; i < meshInds.size(); ++i)
+    {
+        mesh.indices[i] = meshInds[i];
+    }
+    UploadMesh(&mesh, false);
+    
+    _model.meshes[m] = mesh;
 }
 
 Assets::ModelHandle::~ModelHandle() 
 { 
-    delete[] _cullGroups;
     UnloadModel(_model); 
-}
-
-Assets::CullGroup Assets::ModelHandle::GetCullGroup(const Mesh* mesh)
-{
-    for (int i = 0; i < _model.meshCount; ++i)
-    {
-        if (&_model.meshes[i] == mesh)
-        {
-            return _cullGroups[i];
-        }
-    }
-    std::cerr << "Error: Invalid mesh argument in ModelHandle::GetCullGroup()." << std::endl;
-    return CullGroup::NO_CULL;
-}
-
-Assets::CullGroup Assets::ModelHandle::GetCullGroup(const size_t meshIndex)
-{
-    assert(meshIndex < _model.meshCount);
-    return _cullGroups[meshIndex];
 }
 
 Assets::Assets() 

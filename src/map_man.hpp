@@ -234,12 +234,6 @@ public:
         return _modelList[id]->GetModel();
     }
 
-    inline Assets::CullGroup CullGroupFromID(const ModelID id, const size_t meshIndex) const
-    {
-        if (id == NO_MODEL || id >= _modelList.size()) return Assets::CullGroup::NO_CULL;
-        return _modelList[id]->GetCullGroup(meshIndex);
-    }
-
     inline Texture TexFromID(const TexID id) const
     {
         if (id == NO_TEX || id >= _textureList.size()) return Texture{};
