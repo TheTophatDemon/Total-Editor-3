@@ -27,7 +27,6 @@
 
 EntMode::EntMode()
     : _propsScroll(Vector2Zero()),
-      _ent{ .color = WHITE, .radius = 1.0f, .position = Vector3Zero(), .yaw = 0, .pitch = 0 },
       _keyNameEdit(false),
       _changeConfirmed(false)
 {

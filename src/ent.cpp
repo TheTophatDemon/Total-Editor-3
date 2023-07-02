@@ -31,6 +31,24 @@
 #include "assets.hpp"
 #include "map_man.hpp"
 
+Ent::Ent()
+{
+    color = WHITE;
+    radius = 0.0f;
+    position = Vector3Zero();
+    yaw = pitch = 0;
+    properties = std::map<std::string, std::string>();
+}
+
+Ent::Ent(float radius)
+{
+    color = WHITE;
+    this->radius = radius;
+    position = Vector3Zero();
+    yaw = pitch = 0;
+    properties = std::map<std::string, std::string>();
+}
+
 void EntGrid::Draw(Camera &camera, int fromY, int toY)
 {
     for (size_t i = 0; i < _grid.size(); ++i)

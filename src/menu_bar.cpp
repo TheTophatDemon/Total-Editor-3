@@ -93,6 +93,7 @@ void MenuBar::DisplayStatusMessage(std::string message, float durationSeconds, i
     {
         _statusMessage = message;
         _messageTimer = durationSeconds;
+        _messagePriority = priority;
     }
 }
 

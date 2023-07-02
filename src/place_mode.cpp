@@ -64,10 +64,7 @@ PlaceMode::PlaceMode(MapMan &mapMan)
 
     _brushCursor.brush = TileGrid(&mapMan, 1, 1, 1);
     
-    _entCursor.ent = Ent {
-        .color = WHITE,
-        .radius = 1.0f
-    };
+    _entCursor.ent = Ent(1.0f);
     _entCursor.ent.properties["name"] = "entity";
 
     _cursor = &_tileCursor;

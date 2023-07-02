@@ -45,6 +45,9 @@ struct Ent
     //Entity properties are key/value pairs. No data types are enforced, values are parsed as strings.
     std::map<std::string, std::string> properties; 
 
+    Ent();
+    Ent(float radius);
+
     inline Matrix GetMatrix() const
     {
         return MatrixMultiply(
@@ -80,7 +83,7 @@ public:
 
     //Creates ent grid of given dimensions, default spacing.
     inline EntGrid(size_t width, size_t height, size_t length)
-        : Grid<Ent>(width, height, length, ENT_SPACING_DEFAULT, Ent { 0 }) //Nullptr means no entity in the cel
+        : Grid<Ent>(width, height, length, ENT_SPACING_DEFAULT, Ent())
     {
     }
 
@@ -92,7 +95,7 @@ public:
 
     inline void RemoveEnt(int i, int j, int k)
     {
-        SetCel(i, j, k, Ent { 0 });
+        SetCel(i, j, k, Ent());
     }
     
     inline bool HasEnt(int i, int j, int k) const

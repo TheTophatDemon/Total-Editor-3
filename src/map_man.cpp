@@ -131,7 +131,7 @@ void MapMan::ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h,
 
 void MapMan::ExecuteEntPlacement(int i, int j, int k, Ent newEnt)
 {
-    Ent prevEnt = _entGrid.HasEnt(i, j, k) ? _entGrid.GetEnt(i, j, k) : Ent{ 0 };
+    Ent prevEnt = _entGrid.HasEnt(i, j, k) ? _entGrid.GetEnt(i, j, k) : Ent();
     _Execute(std::static_pointer_cast<Action>(
         std::make_shared<EntAction>(i, j, k, _entGrid.HasEnt(i, j, k), false, prevEnt, newEnt)
     ));
@@ -140,7 +140,7 @@ void MapMan::ExecuteEntPlacement(int i, int j, int k, Ent newEnt)
 void MapMan::ExecuteEntRemoval(int i, int j, int k)
 {
     _Execute(std::static_pointer_cast<Action>(
-        std::make_shared<EntAction>(i, j, k, true, true, _entGrid.GetEnt(i, j, k), Ent{ 0 })
+        std::make_shared<EntAction>(i, j, k, true, true, _entGrid.GetEnt(i, j, k), Ent())
     ));
 }
 
@@ -294,6 +294,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
         _modelList.clear();
         ModelID cubeID = GetOrAddModelID(fs::path(App::Get()->GetShapesDir()) / "cube.obj");
         ModelID panelID = GetOrAddModelID(fs::path(App::Get()->GetShapesDir()) / "panel.obj");
+        ModelID barsID = GetOrAddModelID(fs::path(App::Get()->GetShapesDir()) / "bars.obj");
 
         // Since the .ti format has no specific grid size (or origin), we must keep track of the map's extents manually.
         int minX, minZ, maxX, maxZ;
@@ -302,6 +303,8 @@ bool MapMan::LoadTE2Map(fs::path filePath)
 
         // Stores tiles to add along with their grid positions (i, j, k) after the extents are calculated.
         std::vector<std::tuple<int, int, int, Tile>> tilesToAdd;
+        // Stores entities that are placed inside of "dynamic" tiles to give them behavior.
+        std::vector<std::tuple<int, int, int, Ent>> tileEntities;
 
         // Parse the text file line by line
         std::string line;
@@ -343,7 +346,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             if (flag == 2 || flag == 9)
                 tile.angle = 90;
             
-            // Set shape to cube or panel or nothing depending on tile type
+            // Set shape depending on tile type
             switch (flag)
             {
             case 1: case 2: case 7: case 8: case 9:
@@ -352,6 +355,85 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             default:
                 tile.shape = cubeID;
                 break;
+            }
+            if (textureName.find("bars") != std::string::npos)
+                tile.shape = barsID;
+
+            // Create entities for dynamic tiles
+            if (flag > 0 && flag != 6 && flag != 7)
+            {
+                Ent ent = Ent(0.5f);
+                switch (flag)
+                {
+                case 1: case 2: case 5: case 8: case 9: case 10: // Moving door like objects
+                    ent.properties["type"] = "door";
+
+                    switch (flag)
+                    {
+                    case 1: case 8: // Horizontal doors
+                        ent.properties["direction"] = std::to_string(0);
+                        break;
+                    case 2: case 9: // Vertical doors
+                        ent.properties["direction"] = std::to_string(90);
+                        break;
+                    case 5: // Push walls
+                        ent.properties["direction"] = std::to_string(link * 90);
+                        break;
+                    case 10: // "Disappearing" walls
+                        ent.properties["direction"] = "down";
+                        break;
+                    }
+
+                    // Space doors move up instead
+                    if (textureName.find("spacedoor") != std::string::npos)
+                        ent.properties["direction"] = "up";
+
+                    ent.properties["distance"] = std::to_string((flag == 5 || flag == 10) ? 4.0f : 1.8f);
+
+                    if (flag == 8 || flag == 9) // Locked doors
+                    {
+                        switch(link)
+                        {
+                        case 0: ent.properties["key"] = "blue"; break;
+                        case 1: ent.properties["key"] = "brown"; break;
+                        case 2: ent.properties["key"] = "yellow"; break;
+                        case 3: ent.properties["key"] = "gray"; break;
+                        }
+                    }
+                    ent.color = BROWN;
+
+                    break;
+                case 3:
+                    ent.properties["type"] = "switch";
+                    ent.properties["destination"] = std::to_string(link);
+                    ent.color = SKYBLUE;
+                    break;
+                case 4: case 11: case 12: case 13:
+                    ent.properties["type"] = "trigger";
+
+                    switch (flag)
+                    {
+                    case 4:
+                        ent.properties["action"] = "teleport";
+                        ent.properties["destination"] = std::to_string(link);
+                        break;
+                    case 11:
+                        ent.properties["action"] = "activate";
+                        ent.properties["destination"] = (link == 255) ? "secret" : std::to_string(link);
+                        break;
+                    case 12:
+                        ent.properties["action"] = "end level";
+                        ent.properties["destination"] = (link == 255) ? "secret" : "next";
+                        break;
+                    case 13:
+                        ent.properties["action"] = "push";
+                        ent.properties["direction"] = std::to_string(link * 90);
+                        break;
+                    }
+                    ent.color = MAGENTA;
+                    break;
+                }
+                tileEntities.push_back({i, 1, k, ent});
             }
             
             tilesToAdd.push_back({i, 1, k, tile});
@@ -401,6 +483,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
         {
             // Add the tiles to the grid, offset from the top left corner
             _tileGrid.SetTile(i - minX, j, k - minZ, tile);
+
         }
         
         // Get & convert entities
@@ -424,13 +507,13 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             if (i < 0 || k < 0 || i >= width || k >= length)
                 continue;
 
-            Ent ent;
+            Ent ent = Ent();
             ent.position = Vector3 { 
                 (float)i * _tileGrid.GetSpacing(), 
                 1.0f * _tileGrid.GetSpacing(), 
                 (float)k * _tileGrid.GetSpacing() 
             };
-            ent.yaw = atoi(tokens[4].c_str()) * 45;
+            ent.yaw = atoi(tokens[4].c_str()) * 45 + 90;
             ent.pitch = 0;
             ent.radius = 1.0f;
             ent.color = WHITE;
@@ -545,6 +628,12 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             }
 
             _entGrid.AddEnt(i, 1, k, ent);
+        }
+
+        // Insert tile entities
+        for (const auto[i, j, k, ent] : tileEntities)
+        {
+            _entGrid.AddEnt(i - minX, j, k - minZ, ent);
         }
     }
     catch (const std::exception &e)
