@@ -1,20 +1,24 @@
 # TODO
 
-- Add culling back in
+- Fix gltf export issue
 
-    * For generating models only
+    * It probably needs to include the indices of the model
 
-    * Cull by detecting faces of neighboring tiles that have points matching up with all of the current face's points
+- Optimize all shapes for cullability
+
+- Fix issue of culling with transparent textures
 
 - Update documentation
 
-- Giving entities some viewing mode that allows them to be visible from within tiles  
+- Add .glb export, embedding textures in file.
+
+    * Can maybe use cgltf, which is already linked through Raylib
 
 - Use instancing when rendering entities
 
-- Shape icons zoom out for bigger shapes
+- Giving entities some viewing mode that allows them to be visible from within tiles  
 
-- Add .glb export, embedding textures in file.
+- Shape icons zoom out for bigger shapes
 
 - Refactor UI code or replace with ImGUI
 

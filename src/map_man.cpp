@@ -771,24 +771,12 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
                 COMP_TYPE_FLOAT
                 );
 
-            // int colorIdx = buffers.size();
-            // size_t colorBytes = mapModel.meshes[i].vertexCount * sizeof(unsigned char) * 4;
-            // pushVertexAttrib(
-            //     colorIdx, 
-            //     GetDataURI((void *)mapModel.meshes[i].colors, colorBytes), 
-            //     colorBytes, 
-            //     mapModel.meshes[i].vertexCount, 
-            //     "VEC4",
-            //     COMP_TYPE_UBYTE
-            //     );
-
             mapPrims.push_back({
                 {"mode", 4}, //Triangles
                 {"attributes", {
                     {"POSITION", posIdx},
                     {"TEXCOORD_0", texCoordIdx},
                     {"NORMAL", normalIdx}
-                    // {"COLOR_0", colorIdx}
                 }},
                 {"material", i}
             });

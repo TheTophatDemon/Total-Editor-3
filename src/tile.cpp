@@ -332,7 +332,6 @@ std::pair<std::vector<TexID>, std::vector<ModelID>> TileGrid::GetUsedIDs() const
         std::vector(usedModelIDs.begin(), usedModelIDs.end()));
 }
 
-#define MAX_MATERIAL_MAPS 12
 Model* TileGrid::_GenerateModel()
 {
     if (!_mapMan) return nullptr;
@@ -340,7 +339,8 @@ Model* TileGrid::_GenerateModel()
     _RegenBatches(Vector3Zero(), 0, _height - 1);
 
     //Collects vertex data for a given texture's portion of the model
-    struct DynMesh {
+    struct DynMesh 
+    {
         std::vector<float> positions;
         std::vector<float> texCoords;
         std::vector<float> normals;
@@ -367,7 +367,7 @@ Model* TileGrid::_GenerateModel()
         {
             // The index of the first vertex belonging to this shape.
             int vBase = mesh.positions.size() / 3;
-            mesh.triCount += shape.triangleCount;
+            // Add vertex data
             for (int v = 0; v < shape.vertexCount; v++)
             {
                 if (shape.vertices != NULL)
@@ -402,12 +402,107 @@ Model* TileGrid::_GenerateModel()
                     mesh.texCoords.push_back(shape.texcoords[v*2 + 1]);
                 }
             }
+            // Add face data
             if (shape.indices != NULL)
             {
-                for (int i = 0; i < shape.triangleCount * 3; i++)
+                for (int tri = 0; tri < shape.triangleCount; ++tri)
                 {
-                    //Add indicies, but with the offset of the current tile's vertices.
-                    mesh.indices.push_back((unsigned short)(vBase + shape.indices[i]));
+                    // Vertex indices
+                    unsigned short v0Index = (unsigned short)(vBase + shape.indices[tri * 3 + 0]);
+                    unsigned short v1Index = (unsigned short)(vBase + shape.indices[tri * 3 + 1]);
+                    unsigned short v2Index = (unsigned short)(vBase + shape.indices[tri * 3 + 2]);
+
+                    // Vertices
+                    Vector3 v0 = Vector3 { mesh.positions[v0Index * 3 + 0], mesh.positions[v0Index * 3 + 1], mesh.positions[v0Index * 3 + 2] };
+                    Vector3 v1 = Vector3 { mesh.positions[v1Index * 3 + 0], mesh.positions[v1Index * 3 + 1], mesh.positions[v1Index * 3 + 2] };
+                    Vector3 v2 = Vector3 { mesh.positions[v2Index * 3 + 0], mesh.positions[v2Index * 3 + 1], mesh.positions[v2Index * 3 + 2] };
+
+                    // Figure out if this triangle is near the border of the grid cel so it can be culled
+                    Vector3 planeNormal = Vector3CrossProduct(
+                        Vector3Subtract(v1, v0),
+                        Vector3Subtract(v2, v0)
+                    );
+                    planeNormal = Vector3Normalize(planeNormal);
+
+                    float planeDistance = -Vector3DotProduct(planeNormal, v0);
+
+                    Vector3 tileGridPosition = WorldToGridPos(Vector3 { matrix.m12, matrix.m13, matrix.m14 });
+                    
+                    // Determine the direction of the tile neighboring this face
+                    int neighborX = (int)tileGridPosition.x;
+                    int neighborY = (int)tileGridPosition.y; 
+                    int neighborZ = (int)tileGridPosition.z;
+                    if      (Vector3Equals(planeNormal, Vector3 { +1.0f,  0.0f,  0.0f })) neighborX += 1;
+                    else if (Vector3Equals(planeNormal, Vector3 { -1.0f,  0.0f,  0.0f })) neighborX -= 1;
+                    else if (Vector3Equals(planeNormal, Vector3 {  0.0f,  0.0f, -1.0f })) neighborZ -= 1;
+                    else if (Vector3Equals(planeNormal, Vector3 {  0.0f,  0.0f, +1.0f })) neighborZ += 1;
+                    else if (Vector3Equals(planeNormal, Vector3 {  0.0f, +1.0f,  0.0f })) neighborY += 1;
+                    else if (Vector3Equals(planeNormal, Vector3 {  0.0f, -1.0f,  0.0f })) neighborY -= 1;
+                    else goto nocull;
+
+                    // Look at the neighboring tile's faces to determine whether to cull this triangle or not.
+                    if (neighborX >= 0 && neighborY >= 0 && neighborZ >= 0 && neighborX < _width && neighborY < _height && neighborZ < _length)
+                    {
+                        Tile neighborTile = GetTile(neighborX, neighborY, neighborZ);
+                        if (!neighborTile) 
+                            goto nocull;
+                        
+                        Vector3 nWorldPos = GridToWorldPos(Vector3 { (float)neighborX, (float)neighborY, (float)neighborZ }, true);
+                        Matrix nRotMatrix = TileRotationMatrix(neighborTile);
+                        Matrix nMatrix = MatrixMultiply(nRotMatrix, MatrixTranslate(nWorldPos.x, nWorldPos.y, nWorldPos.z));
+
+                        Model neighborModel = _mapMan->ModelFromID(neighborTile.shape);
+                        for (int nm = 0; nm < neighborModel.meshCount; ++nm)
+                        {
+                            Mesh neighborMesh = neighborModel.meshes[nm];
+                            for (int nt = 0; nt < neighborMesh.triangleCount; ++nt)
+                            {
+                                // Indices
+                                unsigned short nV0Index = neighborMesh.indices[nt * 3 + 0];
+                                unsigned short nV1Index = neighborMesh.indices[nt * 3 + 1];
+                                unsigned short nV2Index = neighborMesh.indices[nt * 3 + 2];
+
+                                // Vertices
+                                Vector3 nV0 = Vector3 { neighborMesh.vertices[nV0Index * 3 + 0], neighborMesh.vertices[nV0Index * 3 + 1], neighborMesh.vertices[nV0Index * 3 + 2] };
+                                nV0 = Vector3Transform(nV0, nMatrix);
+                                Vector3 nV1 = Vector3 { neighborMesh.vertices[nV1Index * 3 + 0], neighborMesh.vertices[nV1Index * 3 + 1], neighborMesh.vertices[nV1Index * 3 + 2] };
+                                nV1 = Vector3Transform(nV1, nMatrix);
+                                Vector3 nV2 = Vector3 { neighborMesh.vertices[nV2Index * 3 + 0], neighborMesh.vertices[nV2Index * 3 + 1], neighborMesh.vertices[nV2Index * 3 + 2] };
+                                nV2 = Vector3Transform(nV2, nMatrix);
+
+                                // Get neighbor's plane
+                                Vector3 nPlaneNormal = Vector3CrossProduct(
+                                    Vector3Subtract(nV1, nV0),
+                                    Vector3Subtract(nV2, nV0)
+                                );
+                                nPlaneNormal = Vector3Normalize(nPlaneNormal);
+
+                                float nPlaneDistance = -Vector3DotProduct(nPlaneNormal, nV0);
+
+                                // If the plane of the cullable triangle and the plane of the neighbor's triangle are in the same spot but opposite directions...
+                                if (FloatEquals(fabs(nPlaneDistance), fabs(planeDistance)) && FloatEquals(Vector3DotProduct(nPlaneNormal, planeNormal), -1.0f))
+                                {
+                                    // Cull if all of the checked triangle's points correspond one of the neighbor's.
+                                    if (
+                                        (Vector3Equals(v0, nV0) || Vector3Equals(v0, nV1) || Vector3Equals(v0, nV2)) && 
+                                        (Vector3Equals(v1, nV0) || Vector3Equals(v1, nV1) || Vector3Equals(v1, nV2)) && 
+                                        (Vector3Equals(v2, nV0) || Vector3Equals(v2, nV1) || Vector3Equals(v2, nV2)))
+                                    {
+                                        goto cull;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    nocull:
+                    // Add indices, but with the offset of the current tile's vertices.
+                    mesh.indices.push_back(v0Index);
+                    mesh.indices.push_back(v1Index);
+                    mesh.indices.push_back(v2Index);
+                    ++mesh.triCount;
+                    cull:
+                    continue;
                 }
             }
         }
@@ -458,7 +553,6 @@ Model* TileGrid::_GenerateModel()
             model->meshes[i].indices = (unsigned short *) RL_CALLOC(dMesh.indices.size(), sizeof(unsigned short));
             memcpy(model->meshes[i].indices, dMesh.indices.data(), dMesh.indices.size() * sizeof(unsigned short));
         }
-        //TODO: Fix index bullshit
 
         UploadMesh(&model->meshes[i], false);
     }
