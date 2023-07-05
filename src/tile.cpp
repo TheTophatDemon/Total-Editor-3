@@ -29,6 +29,7 @@
 #include "assets.hpp"
 #include "app.hpp"
 #include "map_man.hpp"
+#include "c_helpers.hpp"
 
 TileGrid::TileGrid()
     : TileGrid(nullptr, 0, 0, 0)
@@ -338,14 +339,15 @@ Model* TileGrid::_GenerateModel()
 
     _RegenBatches(Vector3Zero(), 0, _height - 1);
 
-    //Collects vertex data for a given texture's portion of the model
+    // Collects vertex data for one of the model's meshes
+    // There is one mesh per texture in the model, which contains all of the geometry with said texture.
     struct DynMesh 
     {
         std::vector<float> positions;
         std::vector<float> texCoords;
         std::vector<float> normals;
         std::vector<unsigned short> indices;
-        int triCount; //Independent form indices count since some models may not have indices
+        int triCount; // Independent form indices count since some models may not have indices
     };
 
     DynMesh meshMap[_mapMan->GetNumTextures()];
@@ -509,12 +511,12 @@ Model* TileGrid::_GenerateModel()
     }
 
     //Create Raylib mesh
-    Model *model = (Model *)RL_MALLOC(sizeof(Model));
+    Model *model = SAFE_MALLOC(Model, 1);
     model->materialCount = _mapMan->GetNumTextures();
     model->meshCount = _mapMan->GetNumTextures();
-    model->meshMaterial = (int *)RL_CALLOC(_mapMan->GetNumTextures(), sizeof(int));
-    model->materials = (Material *)RL_CALLOC(_mapMan->GetNumTextures(), sizeof(Material));
-    model->meshes = (Mesh *)RL_CALLOC(_mapMan->GetNumTextures(), sizeof(Mesh));
+    model->meshMaterial = SAFE_MALLOC(int, _mapMan->GetNumTextures());
+    model->materials = SAFE_MALLOC(Material, _mapMan->GetNumTextures());
+    model->meshes = SAFE_MALLOC(Mesh, _mapMan->GetNumTextures());
     model->transform = MatrixIdentity();
     model->bindPose = NULL;
     model->boneCount = 0;
@@ -535,22 +537,22 @@ Model* TileGrid::_GenerateModel()
         
         if (dMesh.positions.size() > 0)
         {
-            model->meshes[i].vertices = (float *) RL_CALLOC(dMesh.positions.size(), sizeof(float));
+            model->meshes[i].vertices = SAFE_MALLOC(float, dMesh.positions.size());
             memcpy(model->meshes[i].vertices, dMesh.positions.data(), dMesh.positions.size() * sizeof(float));
         }
         if (dMesh.texCoords.size() > 0)
         {
-            model->meshes[i].texcoords = (float *) RL_CALLOC(dMesh.texCoords.size(), sizeof(float));
+            model->meshes[i].texcoords = SAFE_MALLOC(float, dMesh.texCoords.size());
             memcpy(model->meshes[i].texcoords, dMesh.texCoords.data(), dMesh.texCoords.size() * sizeof(float));
         }
         if (dMesh.normals.size() > 0)
         {
-            model->meshes[i].normals = (float *) RL_CALLOC(dMesh.normals.size(), sizeof(float));
+            model->meshes[i].normals = SAFE_MALLOC(float, dMesh.normals.size());
             memcpy(model->meshes[i].normals, dMesh.normals.data(), dMesh.normals.size() * sizeof(float));
         }
         if (dMesh.indices.size() > 0)
         {
-            model->meshes[i].indices = (unsigned short *) RL_CALLOC(dMesh.indices.size(), sizeof(unsigned short));
+            model->meshes[i].indices = SAFE_MALLOC(unsigned short, dMesh.indices.size());
             memcpy(model->meshes[i].indices, dMesh.indices.data(), dMesh.indices.size() * sizeof(unsigned short));
         }
 

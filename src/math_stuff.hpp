@@ -11,12 +11,26 @@ const Vector3 VEC3_UP = Vector3 { 0.0f, 1.0f, 0.0f };
 const Vector3 VEC3_FORWARD = Vector3 { 0.0f, 0.0f, -1.0f };
 
 //Returns the parameter that is lower in value.
-inline int Min(int a, int b) {
+inline int Min(int a, int b) 
+{
+    return a < b ? a : b;
+}
+
+//Returns the parameter that is lower in value.
+inline float Minf(float a, float b) 
+{
     return a < b ? a : b;
 }
 
 //Returns the parameter that is higher in value.
-inline int Max(int a, int b) {
+inline int Max(int a, int b) 
+{
+    return a < b ? b : a;
+}
+
+//Returns the parameter that is higher in value.
+inline float Maxf(float a, float b) 
+{
     return a < b ? b : a;
 }
 

@@ -172,7 +172,7 @@ public:
 
     //Exports the map as a .gltf file, returning false on error.
     //If separateGeometry is true, then the geometry will be put into separate
-    //GLTF nodes according to their tile shape and texture.
+    //GLTF nodes according to their tile texture.
     bool ExportGLTFScene(fs::path filePath, bool separateGeometry);
 
     //Executes a undoable tile action for filling an area with one tile

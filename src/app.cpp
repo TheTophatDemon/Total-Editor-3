@@ -352,11 +352,11 @@ void App::TryExportMap(fs::path path, bool separateGeometry)
 
     fs::directory_entry entry {path};
 
-    if (path.extension() == ".gltf") 
+    if (path.extension() == ".gltf" || path.extension() == ".glb") 
     {
         if (_mapMan->ExportGLTFScene(path, separateGeometry))
         {
-            DisplayStatusMessage("Exported .gltf file.", 5.0f, 100);
+            DisplayStatusMessage(std::string("Exported map as ") + path.filename().string(), 5.0f, 100);
         }
         else
         {
