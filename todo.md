@@ -1,16 +1,14 @@
 # TODO
 
-- Allow entities to be marked as "tile entities" that take control of the tile they are inside of
+- Fix 0 length gltf bufferViews and accessors
 
-    * Will prevent the tile from being culled when exporting, and will assign its geometry to its own node
+- Allow entities to be assigned models & textures in order to act as dynamic tiles
 
-- Consider only culling triangles with the same texture
+- Don't render entity axes when far away
 
-- Add culling option to gltf export?
+- Use instancing when rendering entity spheres?
 
 - Update documentation
-
-- Use instancing when rendering entities
 
 ## Future updates
 
@@ -19,5 +17,3 @@
 - Shape icons zoom out for bigger shapes
 
 - Refactor UI code or replace with ImGUI
-
-- Consider giving entities billboard / model viewing modes

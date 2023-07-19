@@ -134,8 +134,8 @@ protected:
 
     // Calculates lists of transformations for each tile, separated by texture and shape, to be drawn as instances.
     void _RegenBatches(Vector3 position, int fromY, int toY);
-    // Combines all of the tiles into a single model, for export or for preview.
-    Model* _GenerateModel();
+    // Combines all of the tiles into a single model, for export or for preview. When culling is true, redundant faces between tiles are removed.
+    Model* _GenerateModel(bool culling = true);
 
     std::map<std::pair<TexID, Mesh*>, std::vector<Matrix>> _drawBatches;
     
@@ -146,6 +146,7 @@ protected:
     int _batchToY;
 
     Model *_model;
+    bool _modelCulled;
 };
 
 #endif

@@ -61,6 +61,7 @@ App::App()
         .undoMax = 30UL,
         .mouseSensitivity = 0.5f,
         .exportSeparateGeometry = false,
+        .cullFaces = true,
         .defaultTexturePath = "assets/textures/tiles/brickwall.png",
         .defaultShapePath = "assets/models/shapes/cube.obj",
         .framesPerPage = 72,

@@ -635,25 +635,30 @@ bool ExportDialog::Draw()
 
     bool clicked = GuiWindowBox(DRECT, "Export .gltf scene");
 
-    const Rectangle FILEPATH_RECT = Rectangle { DRECT.x + 8.0f, DRECT.y + 48.0f, DRECT.width - 16.0f, 24.0f };
+    auto layoutRects = ArrangeVertical(Rectangle { DRECT.x + 8.0f, DRECT.y + 48.0f, DRECT.width - 16.0f, DRECT.height - 104.0f }, { 
+        Rectangle { 0.0f, 0.0f, DRECT.width - 16.0f, 24.0f }, // File path box
+        Rectangle { 0.0f, -6.0f, 128.0f, 32.0f }, // Browse button
+        Rectangle { 0.0f, 0.0f, 32.0f, 32.0f }, // Separate nodes checkbox
+        Rectangle { 0.0f, 0.0f, 32.0f, 32.0f }, // Cull faces checkbox
+    });
+
     strcpy(_filePathBuffer, _settings.exportFilePath.c_str());
-    if (GuiTextBox(FILEPATH_RECT, _filePathBuffer, TEXT_FIELD_MAX, _filePathEdit))
+    if (GuiTextBox(layoutRects[0], _filePathBuffer, TEXT_FIELD_MAX, _filePathEdit))
     {
         _filePathEdit = !_filePathEdit;
     }   
     _settings.exportFilePath = _filePathBuffer;
-    GuiLabel(Rectangle { .x = FILEPATH_RECT.x, .y = FILEPATH_RECT.y - 12.0f }, "File path");
+    GuiLabel(Rectangle { .x = layoutRects[0].x, .y = layoutRects[0].y - 12.0f }, "File path");
 
-    const Rectangle BROWSE_BUTT_RECT = Rectangle { FILEPATH_RECT.x, FILEPATH_RECT.y + FILEPATH_RECT.height + 4.0f, 128.0f, 32.0f };
-    if (GuiButton(BROWSE_BUTT_RECT, "Browse"))
+    if (GuiButton(layoutRects[1], "Browse"))
     {
         _dialog.reset(new FileDialog(std::string("Save .GLTF file"), {std::string(".gltf")}, [&](fs::path path){
             _settings.exportFilePath = fs::relative(path).string();
         }));
     }
 
-    const Rectangle SEP_BUTT_RECT = Rectangle { BROWSE_BUTT_RECT.x, BROWSE_BUTT_RECT.y + BROWSE_BUTT_RECT.height + 32.0f, 32.0f, 32.0f };
-    _settings.exportSeparateGeometry = GuiCheckBox(SEP_BUTT_RECT, "Separate nodes for each texture", _settings.exportSeparateGeometry);
+    _settings.exportSeparateGeometry = GuiCheckBox(layoutRects[2], "Separate nodes for each texture", _settings.exportSeparateGeometry);
+    _settings.cullFaces = GuiCheckBox(layoutRects[3], "Cull redundant faces between tiles", _settings.cullFaces);
 
     const Rectangle EXPORT_BUTT_RECT = Rectangle { DRECT.x + DRECT.width / 2.0f - 64.0f, DRECT.y + DRECT.height - 40.0f, 128.0f, 32.0f };
     if (GuiButton(EXPORT_BUTT_RECT, "Export"))

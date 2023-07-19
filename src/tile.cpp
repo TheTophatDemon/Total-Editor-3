@@ -51,6 +51,7 @@ TileGrid::TileGrid(MapMan* mapMan, size_t width, size_t height, size_t length, f
     _model = nullptr;
     _regenBatches = true;
     _regenModel = true;
+    _modelCulled = false;
 }
 
 TileGrid::~TileGrid()
@@ -333,7 +334,7 @@ std::pair<std::vector<TexID>, std::vector<ModelID>> TileGrid::GetUsedIDs() const
         std::vector(usedModelIDs.begin(), usedModelIDs.end()));
 }
 
-Model* TileGrid::_GenerateModel()
+Model* TileGrid::_GenerateModel(bool culling)
 {
     if (!_mapMan) return nullptr;
 
@@ -414,83 +415,87 @@ Model* TileGrid::_GenerateModel()
                     unsigned short v1Index = (unsigned short)(vBase + shape.indices[tri * 3 + 1]);
                     unsigned short v2Index = (unsigned short)(vBase + shape.indices[tri * 3 + 2]);
 
-                    // Vertices
-                    Vector3 v0 = Vector3 { mesh.positions[v0Index * 3 + 0], mesh.positions[v0Index * 3 + 1], mesh.positions[v0Index * 3 + 2] };
-                    Vector3 v1 = Vector3 { mesh.positions[v1Index * 3 + 0], mesh.positions[v1Index * 3 + 1], mesh.positions[v1Index * 3 + 2] };
-                    Vector3 v2 = Vector3 { mesh.positions[v2Index * 3 + 0], mesh.positions[v2Index * 3 + 1], mesh.positions[v2Index * 3 + 2] };
-
-                    // Figure out if this triangle is near the border of the grid cel so it can be culled
-                    Vector3 planeNormal = Vector3CrossProduct(
-                        Vector3Subtract(v1, v0),
-                        Vector3Subtract(v2, v0)
-                    );
-                    planeNormal = Vector3Normalize(planeNormal);
-
-                    float planeDistance = -Vector3DotProduct(planeNormal, v0);
-
-                    Vector3 tileGridPosition = WorldToGridPos(Vector3 { matrix.m12, matrix.m13, matrix.m14 });
-                    
-                    // Determine the direction of the tile neighboring this face
-                    int neighborX = (int)tileGridPosition.x;
-                    int neighborY = (int)tileGridPosition.y; 
-                    int neighborZ = (int)tileGridPosition.z;
-                    if      (Vector3Equals(planeNormal, Vector3 { +1.0f,  0.0f,  0.0f })) neighborX += 1;
-                    else if (Vector3Equals(planeNormal, Vector3 { -1.0f,  0.0f,  0.0f })) neighborX -= 1;
-                    else if (Vector3Equals(planeNormal, Vector3 {  0.0f,  0.0f, -1.0f })) neighborZ -= 1;
-                    else if (Vector3Equals(planeNormal, Vector3 {  0.0f,  0.0f, +1.0f })) neighborZ += 1;
-                    else if (Vector3Equals(planeNormal, Vector3 {  0.0f, +1.0f,  0.0f })) neighborY += 1;
-                    else if (Vector3Equals(planeNormal, Vector3 {  0.0f, -1.0f,  0.0f })) neighborY -= 1;
-                    else goto nocull;
-
-                    // Look at the neighboring tile's faces to determine whether to cull this triangle or not.
-                    if (neighborX >= 0 && neighborY >= 0 && neighborZ >= 0 && neighborX < _width && neighborY < _height && neighborZ < _length)
+                    // Do face culling
+                    if (culling)
                     {
-                        Tile neighborTile = GetTile(neighborX, neighborY, neighborZ);
-                        if (!neighborTile) 
-                            goto nocull;
+                        // Vertices
+                        Vector3 v0 = Vector3 { mesh.positions[v0Index * 3 + 0], mesh.positions[v0Index * 3 + 1], mesh.positions[v0Index * 3 + 2] };
+                        Vector3 v1 = Vector3 { mesh.positions[v1Index * 3 + 0], mesh.positions[v1Index * 3 + 1], mesh.positions[v1Index * 3 + 2] };
+                        Vector3 v2 = Vector3 { mesh.positions[v2Index * 3 + 0], mesh.positions[v2Index * 3 + 1], mesh.positions[v2Index * 3 + 2] };
+
+                        // Figure out if this triangle is near the border of the grid cel so it can be culled
+                        Vector3 planeNormal = Vector3CrossProduct(
+                            Vector3Subtract(v1, v0),
+                            Vector3Subtract(v2, v0)
+                        );
+                        planeNormal = Vector3Normalize(planeNormal);
+
+                        float planeDistance = -Vector3DotProduct(planeNormal, v0);
+
+                        Vector3 tileGridPosition = WorldToGridPos(Vector3 { matrix.m12, matrix.m13, matrix.m14 });
                         
-                        Vector3 nWorldPos = GridToWorldPos(Vector3 { (float)neighborX, (float)neighborY, (float)neighborZ }, true);
-                        Matrix nRotMatrix = TileRotationMatrix(neighborTile);
-                        Matrix nMatrix = MatrixMultiply(nRotMatrix, MatrixTranslate(nWorldPos.x, nWorldPos.y, nWorldPos.z));
+                        // Determine the direction of the tile neighboring this face
+                        int neighborX = (int)tileGridPosition.x;
+                        int neighborY = (int)tileGridPosition.y; 
+                        int neighborZ = (int)tileGridPosition.z;
+                        if      (Vector3Equals(planeNormal, Vector3 { +1.0f,  0.0f,  0.0f })) neighborX += 1;
+                        else if (Vector3Equals(planeNormal, Vector3 { -1.0f,  0.0f,  0.0f })) neighborX -= 1;
+                        else if (Vector3Equals(planeNormal, Vector3 {  0.0f,  0.0f, -1.0f })) neighborZ -= 1;
+                        else if (Vector3Equals(planeNormal, Vector3 {  0.0f,  0.0f, +1.0f })) neighborZ += 1;
+                        else if (Vector3Equals(planeNormal, Vector3 {  0.0f, +1.0f,  0.0f })) neighborY += 1;
+                        else if (Vector3Equals(planeNormal, Vector3 {  0.0f, -1.0f,  0.0f })) neighborY -= 1;
+                        else goto nocull;
 
-                        Model neighborModel = _mapMan->ModelFromID(neighborTile.shape);
-                        for (int nm = 0; nm < neighborModel.meshCount; ++nm)
+                        // Look at the neighboring tile's faces to determine whether to cull this triangle or not.
+                        if (neighborX >= 0 && neighborY >= 0 && neighborZ >= 0 && neighborX < _width && neighborY < _height && neighborZ < _length)
                         {
-                            Mesh neighborMesh = neighborModel.meshes[nm];
-                            for (int nt = 0; nt < neighborMesh.triangleCount; ++nt)
+                            Tile neighborTile = GetTile(neighborX, neighborY, neighborZ);
+                            if (!neighborTile) 
+                                goto nocull;
+                            
+                            Vector3 nWorldPos = GridToWorldPos(Vector3 { (float)neighborX, (float)neighborY, (float)neighborZ }, true);
+                            Matrix nRotMatrix = TileRotationMatrix(neighborTile);
+                            Matrix nMatrix = MatrixMultiply(nRotMatrix, MatrixTranslate(nWorldPos.x, nWorldPos.y, nWorldPos.z));
+
+                            Model neighborModel = _mapMan->ModelFromID(neighborTile.shape);
+                            for (int nm = 0; nm < neighborModel.meshCount; ++nm)
                             {
-                                // Indices
-                                unsigned short nV0Index = neighborMesh.indices[nt * 3 + 0];
-                                unsigned short nV1Index = neighborMesh.indices[nt * 3 + 1];
-                                unsigned short nV2Index = neighborMesh.indices[nt * 3 + 2];
-
-                                // Vertices
-                                Vector3 nV0 = Vector3 { neighborMesh.vertices[nV0Index * 3 + 0], neighborMesh.vertices[nV0Index * 3 + 1], neighborMesh.vertices[nV0Index * 3 + 2] };
-                                nV0 = Vector3Transform(nV0, nMatrix);
-                                Vector3 nV1 = Vector3 { neighborMesh.vertices[nV1Index * 3 + 0], neighborMesh.vertices[nV1Index * 3 + 1], neighborMesh.vertices[nV1Index * 3 + 2] };
-                                nV1 = Vector3Transform(nV1, nMatrix);
-                                Vector3 nV2 = Vector3 { neighborMesh.vertices[nV2Index * 3 + 0], neighborMesh.vertices[nV2Index * 3 + 1], neighborMesh.vertices[nV2Index * 3 + 2] };
-                                nV2 = Vector3Transform(nV2, nMatrix);
-
-                                // Get neighbor's plane
-                                Vector3 nPlaneNormal = Vector3CrossProduct(
-                                    Vector3Subtract(nV1, nV0),
-                                    Vector3Subtract(nV2, nV0)
-                                );
-                                nPlaneNormal = Vector3Normalize(nPlaneNormal);
-
-                                float nPlaneDistance = -Vector3DotProduct(nPlaneNormal, nV0);
-
-                                // If the plane of the cullable triangle and the plane of the neighbor's triangle are in the same spot but opposite directions...
-                                if (FloatEquals(fabs(nPlaneDistance), fabs(planeDistance)) && FloatEquals(Vector3DotProduct(nPlaneNormal, planeNormal), -1.0f))
+                                Mesh neighborMesh = neighborModel.meshes[nm];
+                                for (int nt = 0; nt < neighborMesh.triangleCount; ++nt)
                                 {
-                                    // Cull if all of the checked triangle's points correspond one of the neighbor's.
-                                    if (
-                                        (Vector3Equals(v0, nV0) || Vector3Equals(v0, nV1) || Vector3Equals(v0, nV2)) && 
-                                        (Vector3Equals(v1, nV0) || Vector3Equals(v1, nV1) || Vector3Equals(v1, nV2)) && 
-                                        (Vector3Equals(v2, nV0) || Vector3Equals(v2, nV1) || Vector3Equals(v2, nV2)))
+                                    // Indices
+                                    unsigned short nV0Index = neighborMesh.indices[nt * 3 + 0];
+                                    unsigned short nV1Index = neighborMesh.indices[nt * 3 + 1];
+                                    unsigned short nV2Index = neighborMesh.indices[nt * 3 + 2];
+
+                                    // Vertices
+                                    Vector3 nV0 = Vector3 { neighborMesh.vertices[nV0Index * 3 + 0], neighborMesh.vertices[nV0Index * 3 + 1], neighborMesh.vertices[nV0Index * 3 + 2] };
+                                    nV0 = Vector3Transform(nV0, nMatrix);
+                                    Vector3 nV1 = Vector3 { neighborMesh.vertices[nV1Index * 3 + 0], neighborMesh.vertices[nV1Index * 3 + 1], neighborMesh.vertices[nV1Index * 3 + 2] };
+                                    nV1 = Vector3Transform(nV1, nMatrix);
+                                    Vector3 nV2 = Vector3 { neighborMesh.vertices[nV2Index * 3 + 0], neighborMesh.vertices[nV2Index * 3 + 1], neighborMesh.vertices[nV2Index * 3 + 2] };
+                                    nV2 = Vector3Transform(nV2, nMatrix);
+
+                                    // Get neighbor's plane
+                                    Vector3 nPlaneNormal = Vector3CrossProduct(
+                                        Vector3Subtract(nV1, nV0),
+                                        Vector3Subtract(nV2, nV0)
+                                    );
+                                    nPlaneNormal = Vector3Normalize(nPlaneNormal);
+
+                                    float nPlaneDistance = -Vector3DotProduct(nPlaneNormal, nV0);
+
+                                    // If the plane of the cullable triangle and the plane of the neighbor's triangle are in the same spot but opposite directions...
+                                    if (FloatEquals(fabs(nPlaneDistance), fabs(planeDistance)) && FloatEquals(Vector3DotProduct(nPlaneNormal, planeNormal), -1.0f))
                                     {
-                                        goto cull;
+                                        // Cull if all of the checked triangle's points correspond one of the neighbor's.
+                                        if (
+                                            (Vector3Equals(v0, nV0) || Vector3Equals(v0, nV1) || Vector3Equals(v0, nV2)) && 
+                                            (Vector3Equals(v1, nV0) || Vector3Equals(v1, nV1) || Vector3Equals(v1, nV2)) && 
+                                            (Vector3Equals(v2, nV0) || Vector3Equals(v2, nV1) || Vector3Equals(v2, nV2)))
+                                        {
+                                            goto cull;
+                                        }
                                     }
                                 }
                             }
@@ -565,14 +570,15 @@ Model* TileGrid::_GenerateModel()
 const Model TileGrid::GetModel()
 {
     if (!_mapMan) return Model{};
-
-    if (_regenModel || _model == nullptr)
+    bool newCull = App::Get()->IsCullingEnabled();
+    if (_regenModel || _model == nullptr || newCull != _modelCulled)
     {
         if (_model != nullptr)
         {
             UnloadModel(*_model);
         }
-        _model = _GenerateModel();
+        _modelCulled = newCull;
+        _model = _GenerateModel(_modelCulled);
         _regenModel = false;
     }
 

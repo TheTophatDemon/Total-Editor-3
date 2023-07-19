@@ -48,7 +48,7 @@ public:
         std::string shapesDir;
         size_t undoMax;
         float mouseSensitivity;
-        bool exportSeparateGeometry; //For GLTF export
+        bool exportSeparateGeometry, cullFaces; //For GLTF export
         std::string exportFilePath; //For GLTF export
         std::string defaultTexturePath;
         std::string defaultShapePath;
@@ -61,6 +61,7 @@ public:
         undoMax, 
         mouseSensitivity, 
         exportSeparateGeometry, 
+        cullFaces,
         exportFilePath, 
         defaultTexturePath, 
         defaultShapePath, 
@@ -91,6 +92,7 @@ public:
     inline std::string GetDefaultTexturePath() { return _settings.defaultTexturePath; }
     inline std::string GetDefaultShapePath() { return _settings.defaultShapePath; }
     inline size_t      GetFramesPerPage() { return _settings.framesPerPage; }
+    inline bool        IsCullingEnabled() { return _settings.cullFaces; }
 
     //Indicates if rendering should be done in "preview mode", i.e. without editor widgets being drawn.
     inline bool IsPreviewing() const { return _previewDraw; }
