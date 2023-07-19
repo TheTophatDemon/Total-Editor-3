@@ -56,12 +56,12 @@ App *App::Get()
 
 App::App()
     : _settings { 
-        .texturesDir = "assets/textures",
+        .texturesDir = "assets/textures/tiles/",
         .shapesDir = "assets/models/shapes/",
         .undoMax = 30UL,
         .mouseSensitivity = 0.5f,
         .exportSeparateGeometry = false,
-        .defaultTexturePath = "assets/textures/brickwall.png",
+        .defaultTexturePath = "assets/textures/tiles/brickwall.png",
         .defaultShapePath = "assets/models/shapes/cube.obj",
         .framesPerPage = 72,
     },
