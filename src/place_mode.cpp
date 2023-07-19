@@ -193,7 +193,7 @@ void PlaceMode::MoveCamera()
     }
     _cameraMoveSpeed = Clamp(_cameraMoveSpeed, CAMERA_MOVE_SPEED_MIN, CAMERA_MOVE_SPEED_MAX);
     
-    if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) 
+    if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE) || (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsKeyDown(KEY_LEFT_ALT))) 
     {
         _cameraYaw -= GetMouseDelta().x * App::Get()->GetMouseSensitivity() * GetFrameTime();
         _cameraPitch -= GetMouseDelta().y * App::Get()->GetMouseSensitivity() * GetFrameTime();
@@ -279,7 +279,7 @@ void PlaceMode::UpdateCursor()
             _brushCursor.position.y + ((_brushCursor.brush.GetHeight() - 1) * _brushCursor.brush.GetSpacing()),
             _brushCursor.position.z + ((_brushCursor.brush.GetLength() - 1) * _brushCursor.brush.GetSpacing()),
         };
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !IsKeyDown(KEY_LEFT_ALT))
         {
             _mapMan.ExecuteTileAction(i, j, k, w, h, l, _brushCursor.brush);
         }
@@ -311,7 +311,7 @@ void PlaceMode::UpdateCursor()
 
         Tile cursorTile = _tileCursor.GetTile(_mapMan);
 
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !multiSelect) 
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !IsKeyDown(KEY_LEFT_ALT) && !multiSelect) 
         {
             //Place tiles
             if (underTile != cursorTile)
@@ -392,7 +392,7 @@ void PlaceMode::UpdateCursor()
             _entCursor.ent.yaw = _entCursor.ent.pitch = 0;
         }
 
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !IsKeyDown(KEY_LEFT_ALT))
         {
             //Placement
             _mapMan.ExecuteEntPlacement(i, j, k, _entCursor.ent);

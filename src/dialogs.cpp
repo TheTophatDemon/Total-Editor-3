@@ -547,7 +547,7 @@ bool ShortcutsDialog::Draw()
     static const int N_SHORTCUTS = 26;
     static const char *SHORTCUTS_TEXT[N_SHORTCUTS] = {
         "W/A/S/D - Move camera",
-        "Middle click - Look around",
+        "Hold Middle click or LEFT ALT+LEFT CLICK - Look around",
         "Scroll wheel - Move grid up/down",
         "Left click - Place tile/entity/brush",
         "Right click - Remove tile/entity (Does not work in brush mode)",
