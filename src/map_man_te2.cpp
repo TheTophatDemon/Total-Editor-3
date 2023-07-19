@@ -23,6 +23,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
 
         _modelList.clear();
         ModelID cubeID = GetOrAddModelID(fs::path(App::Get()->GetShapesDir()) / "cube.obj");
+        ModelID markerID = GetOrAddModelID(fs::path(App::Get()->GetShapesDir()) / "cube_marker.obj");
         ModelID panelID = GetOrAddModelID(fs::path(App::Get()->GetShapesDir()) / "panel.obj");
         ModelID barsID = GetOrAddModelID(fs::path(App::Get()->GetShapesDir()) / "bars.obj");
 
@@ -88,6 +89,8 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             }
             if (textureName.find("bars") != std::string::npos)
                 tile.shape = barsID;
+            else if (textureName.find("invisible") != std::string::npos)
+                tile.shape = markerID;
 
             // Create entities for dynamic tiles
             if (flag > 0 && flag != 6 && flag != 7)
@@ -163,6 +166,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                     ent.color = MAGENTA;
                     break;
                 }
+                ent.properties["name"] = ent.properties["type"];
                 tileEntities.push_back({i, 1, k, ent});
             }
             
