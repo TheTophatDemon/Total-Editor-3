@@ -1,10 +1,12 @@
 # TODO
 
-- Update space textures to match color
-
 - Allow entities to be marked as "tile entities" that take control of the tile they are inside of
 
     * Will prevent the tile from being culled when exporting, and will assign its geometry to its own node
+
+- Consider only culling triangles with the same texture
+
+- Add culling option to gltf export?
 
 - Update documentation
 
