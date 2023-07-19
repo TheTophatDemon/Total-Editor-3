@@ -43,7 +43,8 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
         // Automates the addition of bufferViews and accessors for a given vertex attribute
         auto pushVertexAttrib = [&](size_t elemSize, size_t nElems, std::string elemType, int componentType, int target = TARGET_ARRAY_BUFFER)->size_t
         {
-            size_t nBytes = elemSize * nElems;
+            // Always allocate at least one element's worth of data just to avoid errors
+            size_t nBytes = Max(1, elemSize) * nElems;
             
             // Pad the offset so that the total offset of the accessor is divisible by the element size
             // This is a requirement of the gltf specifications
@@ -117,8 +118,15 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
         // Encode materials and textures
         for (int m = 0; m < mapModel.materialCount; ++m)
         {
+            // Image paths in the GLTF are relative to the file.
+            fs::path imagePath = PathFromTexID(m);
+            fs::path imagePathFromGLTF = fs::relative(
+                fs::current_path() / imagePath, 
+                fs::current_path() / filePath.parent_path()); 
+            
             // Push material
             materials.push_back({
+                {"name", imagePathFromGLTF.generic_string()},
                 {"pbrMetallicRoughness", {
                     {"baseColorTexture", {
                         {"index", textures.size()},
@@ -135,15 +143,9 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
                 {"sampler", 0}
             });
 
-            // Image paths in the GLTF are relative to the file.
-            fs::path imagePath = PathFromTexID(m);
-            fs::path imagePathFromGLTF = fs::relative(
-                fs::current_path() / imagePath, 
-                fs::current_path() / filePath.parent_path()); 
-
             // Push image
             images.push_back({
-                {"uri", imagePathFromGLTF.generic_string().c_str()}
+                {"uri", imagePathFromGLTF.generic_string()}
             });
 
             if (separateGeometry)
