@@ -21,13 +21,7 @@
 #ifndef MENU_BAR_H
 #define MENU_BAR_H
 
-#include "raylib.h"
-
-#include <initializer_list>
 #include <string>
-#include <map>
-#include <vector>
-#include <functional>
 #include <memory>
 
 #include "app.hpp"

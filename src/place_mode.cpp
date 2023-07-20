@@ -420,6 +420,9 @@ void PlaceMode::UpdateCursor()
 
 void PlaceMode::Update() 
 {
+    // Don't update this when using the GUI
+    if (ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard) return;
+
     MoveCamera();
 
     if (!App::Get()->IsPreviewing())
@@ -464,10 +467,7 @@ void PlaceMode::Update()
         }
 
         //Update cursor
-        if (!ImGui::GetIO().WantCaptureMouse) //Don't update when using the menus
-        {
-            UpdateCursor();
-        }
+        UpdateCursor();
 
         //Undo and redo
         if (IsKeyDown(KEY_LEFT_CONTROL))

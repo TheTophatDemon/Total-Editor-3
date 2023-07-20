@@ -84,180 +84,232 @@ ExpandMapDialog::ExpandMapDialog()
 
 bool ExpandMapDialog::Draw()
 {
-    static const float DW = 512.0f;
-    static const float DHW = DW / 2.0f;
-    static const float DH = 160.0f;
-    static const float DHH = DH / 2.0f;
-    static const float MARGIN = 8.0f;
-    static const float SPINNER_W = 96.0f;
-    static const float SPINNER_H = 32.0f;
-    static const float SPINNER_HH = SPINNER_H / 2.0f;
-    static const std::string SPINNER_LABEL = "# of grid cels to expand";
-
-    Rectangle dRect = DialogRec(DW, DH);
-
-    bool clicked = GuiWindowBox(dRect, "Expand map grid");
-    //Confirm button
-    if (GuiButton(CenteredRect(dRect.x + DHW, dRect.y + DH - MARGIN - SPINNER_HH, 128.0f, SPINNER_H), "EXPAND"))
+    bool open = true;
+    ImGui::OpenPopup("EXPAND GRID");
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("EXPAND GRID", &open, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        App::Get()->ExpandMap(_direction, _amount);
-        return false;
+        ImGui::Combo("Direction", (int*)(&_direction), "Back (+Z)\0Front (-Z)\0Right (+X)\0Left (-X)\0Top (+Y)\0Bottom (-Y)\0");
+
+        ImGui::InputInt("# of grid cels", &_amount, 1, 10);
+        
+        if (ImGui::Button("EXPAND"))
+        {
+            App::Get()->ExpandMap(_direction, _amount);
+            ImGui::EndPopup();
+            return false;
+        }
+
+        ImGui::EndPopup();
+        return true;
     }
-
-    std::vector<Rectangle> recs = ArrangeHorzCentered(dRect, {
-        Rectangle { .width = 128.0f, .height = 32.0f }, //Direction chooser
-        Rectangle { .width = 96.0f, .height = 32.0f } //Amount spinner
-    });
-
-    //Direction chooser
-    if (GuiDropdownBox(recs[0], "Back (+Z);Front (-Z);Right (+X);Left (-X);Top (+Y);Bottom (-Y)", (int *)&_direction, _chooserActive))
-    {
-        _chooserActive = !_chooserActive;
-    }
-    GuiLabel(Rectangle { .x = recs[0].x, .y = recs[0].y - MARGIN }, "Direction");
-
-    //Amount spinner
-    if (GuiSpinner(recs[1], "", &_amount, 1, 1000, _spinnerActive))
-    {
-        _spinnerActive = !_spinnerActive;
-    }
-    GuiLabel(Rectangle { .x = recs[1].x, .y = recs[1].y - MARGIN }, "# of cels");
-
-
-    return !clicked;
+    return open;
 }
 
 bool ShrinkMapDialog::Draw()
 {
-    int choice = GuiMessageBox(DialogRec(352.0f, 96.0f), "Shrink Grid", "Shrink the grid to fit around the tiles?", "Yes;No");
-    switch (choice)
+    bool open = true;
+    ImGui::OpenPopup("SHRINK GRID");
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("SHRINK GRID", &open, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        case 0:
-        case 2: 
-            return false; 
-        case 1: 
+        ImGui::TextUnformatted("Shrink the grid to fit around the existing tiles?");
+
+        if (ImGui::Button("Yes"))
+        {
             App::Get()->ShrinkMap();
+            ImGui::EndPopup();
             return false;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("No"))
+        {
+            ImGui::EndPopup();
+            return false;
+        }
+
+        ImGui::EndPopup();
+        return true;
     }
-    return true;
+    return open;
 }
 
 bool FileDialog::Draw()
 {
-    const Rectangle DRECT = DialogRec(512.0f, 400.0f);
-    bool clicked = GuiWindowBox(DRECT, _title.c_str());
-
-    const Rectangle FILE_ENTRY_RECT = Rectangle { 
-        .x = DRECT.x + 4.0f, 
-        .y = DRECT.y + DRECT.height - 24.0f, 
-        .width = DRECT.width - 64.0f - 8.0f, 
-        .height = 20.0f
-    };
-
-    const Rectangle FILES_RECT = Rectangle {
-        .x = DRECT.x + 4.0f,
-        .y = DRECT.y + 28.0f,
-        .width = DRECT.width - 8.0f,
-        .height = DRECT.height - (FILES_RECT.y - DRECT.y) - FILE_ENTRY_RECT.height - 8.0f
-    };
-
-    //Collect file information to display on the screen
-    Rectangle content = Rectangle { .width = FILES_RECT.width - 8.0f, .height = 8.0f };
-    std::map<const fs::directory_entry, Rectangle> fileRects;
-
-    const float FILE_RECT_HEIGHT = 16.0f;
-
-    float y = 4.0f;
-    //Add the parent directory to the list of files as [parent folder]
-    if (_currentDir.has_parent_path())
+    bool open = true;
+    ImGui::OpenPopup(_title.c_str());
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal(_title.c_str(), &open, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        fileRects[fs::directory_entry(_currentDir.parent_path())] = Rectangle { 4.0f, y, content.width - 8.0f, FILE_RECT_HEIGHT };
-        y += FILE_RECT_HEIGHT;
-        content.height += FILE_RECT_HEIGHT;
-    }
-
-    //Calculate rectangles and total height for all the files
-    for (auto const& entry : fs::directory_iterator{_currentDir})
-    {
-        if (entry.is_directory() || 
-            (entry.is_regular_file() && _extensions.find(entry.path().extension().string()) != _extensions.end()))
+        // Parent directory button & other controls
+        // if (!_currentDir.has_parent_path()) ImGui::BeginDisabled();
+        if (ImGui::Button("Parent directory") && _currentDir.has_parent_path())
         {
-            Rectangle fileRect = Rectangle {
-                .x = 4.0f,
-                .y = y,
-                .width = content.width - 8.0f,
-                .height = FILE_RECT_HEIGHT,
-            };
-            fileRects[entry] = fileRect;
-            y += fileRect.height;
-            content.height += fileRect.height;
+            _currentDir = _currentDir.parent_path();
         }
-    }
+        // if (!_currentDir.has_parent_path()) ImGui::EndDisabled();
 
-    //Directory view drawing
-    Rectangle scissor = GuiScrollPanel(FILES_RECT, NULL, content, &_scroll);
-    BeginScissorMode(scissor.x, scissor.y, int(scissor.width), int(scissor.height));
-
-    for (auto const& [entry, rect] : fileRects)
-    {
-        std::string name;
-        if (_currentDir.has_parent_path() && entry.path() == _currentDir.parent_path())
+        if (ImGui::BeginListBox("Files", ImVec2(504.0f, 350.0f)))
         {
-            name = "[parent directory]";
-        }
-        else
-        {
-            name = entry.path().filename().string();
-        }
-
-        const Rectangle BUTT_RECT = Rectangle { 
-            .x = scissor.x + rect.x + _scroll.x, 
-            .y = scissor.y + rect.y + _scroll.y, 
-            .width = rect.width, 
-            .height = rect.height 
-        };
-
-        if (CheckCollisionRecs(BUTT_RECT, scissor) && GuiLabelButton(BUTT_RECT, name.c_str()))
-        {
-            if (entry.is_directory()) 
+            // File list
+            for (auto const& entry : fs::directory_iterator{_currentDir})
             {
-                _currentDir = entry.path();
-                memset(_fileNameBuffer, 0, sizeof(char) * TEXT_FIELD_MAX);
+                if (entry.is_directory() || 
+                    (entry.is_regular_file() && _extensions.find(entry.path().extension().string()) != _extensions.end()))
+                {
+                    std::string entry_str = 
+                        entry.is_directory() ? entry.path().stem().string()
+                                             : entry.path().filename().string();
+                    
+                    bool selected = (strcmp(entry_str.c_str(), _fileNameBuffer) == 0);
+                    if (ImGui::Selectable(entry_str.c_str(), selected))
+                    {
+                        if (entry.is_directory())
+                        {
+                            _currentDir = entry.path();
+                            memset(_fileNameBuffer, 0, sizeof(char) * TEXT_FIELD_MAX);
+                        }
+                        else
+                        {
+                            strcpy(_fileNameBuffer, entry_str.c_str());
+                        }
+                    }
+                }
             }
-            else 
-            {
-                strcpy(_fileNameBuffer, entry.path().filename().string().c_str());
-            }
+            ImGui::EndListBox();
         }
-    }
 
-    EndScissorMode();
-
-    //File name entry
-
-    if (GuiTextBox(FILE_ENTRY_RECT, _fileNameBuffer, TEXT_FIELD_MAX, _fileNameEdit))
-    {
-        _fileNameEdit = !_fileNameEdit;
-    }
-
-    //Select button
-    const Rectangle SELECT_BUTT_RECT = Rectangle {
-        .x = FILE_ENTRY_RECT.x + FILE_ENTRY_RECT.width + 4.0f,
-        .y = FILE_ENTRY_RECT.y,
-        .width = DRECT.width - (SELECT_BUTT_RECT.x - DRECT.x) - 4.0f,
-        .height = FILE_ENTRY_RECT.height
-    }; 
-
-    if (GuiButton(SELECT_BUTT_RECT, "Select"))
-    {
-        if (strlen(_fileNameBuffer) > 0)
+        ImGui::InputText("File name", _fileNameBuffer, TEXT_FIELD_MAX);
+        
+        if (ImGui::Button("SELECT") && strlen(_fileNameBuffer) > 0)
         {
             _callback(_currentDir.append(_fileNameBuffer));
+            ImGui::EndPopup();
             return false;
         }
-    }
 
-    return !clicked;
+        ImGui::EndPopup();
+        return true;
+    }
+    return open;
+
+    // const Rectangle DRECT = DialogRec(512.0f, 400.0f);
+    // bool clicked = GuiWindowBox(DRECT, _title.c_str());
+
+    // const Rectangle FILE_ENTRY_RECT = Rectangle { 
+    //     .x = DRECT.x + 4.0f, 
+    //     .y = DRECT.y + DRECT.height - 24.0f, 
+    //     .width = DRECT.width - 64.0f - 8.0f, 
+    //     .height = 20.0f
+    // };
+
+    // const Rectangle FILES_RECT = Rectangle {
+    //     .x = DRECT.x + 4.0f,
+    //     .y = DRECT.y + 28.0f,
+    //     .width = DRECT.width - 8.0f,
+    //     .height = DRECT.height - (FILES_RECT.y - DRECT.y) - FILE_ENTRY_RECT.height - 8.0f
+    // };
+
+    // //Collect file information to display on the screen
+    // Rectangle content = Rectangle { .width = FILES_RECT.width - 8.0f, .height = 8.0f };
+    // std::map<const fs::directory_entry, Rectangle> fileRects;
+
+    // const float FILE_RECT_HEIGHT = 16.0f;
+
+    // float y = 4.0f;
+    // //Add the parent directory to the list of files as [parent folder]
+    // if (_currentDir.has_parent_path())
+    // {
+    //     fileRects[fs::directory_entry(_currentDir.parent_path())] = Rectangle { 4.0f, y, content.width - 8.0f, FILE_RECT_HEIGHT };
+    //     y += FILE_RECT_HEIGHT;
+    //     content.height += FILE_RECT_HEIGHT;
+    // }
+
+    // //Calculate rectangles and total height for all the files
+    // for (auto const& entry : fs::directory_iterator{_currentDir})
+    // {
+    //     if (entry.is_directory() || 
+    //         (entry.is_regular_file() && _extensions.find(entry.path().extension().string()) != _extensions.end()))
+    //     {
+    //         Rectangle fileRect = Rectangle {
+    //             .x = 4.0f,
+    //             .y = y,
+    //             .width = content.width - 8.0f,
+    //             .height = FILE_RECT_HEIGHT,
+    //         };
+    //         fileRects[entry] = fileRect;
+    //         y += fileRect.height;
+    //         content.height += fileRect.height;
+    //     }
+    // }
+
+    // //Directory view drawing
+    // Rectangle scissor = GuiScrollPanel(FILES_RECT, NULL, content, &_scroll);
+    // BeginScissorMode(scissor.x, scissor.y, int(scissor.width), int(scissor.height));
+
+    // for (auto const& [entry, rect] : fileRects)
+    // {
+    //     std::string name;
+    //     if (_currentDir.has_parent_path() && entry.path() == _currentDir.parent_path())
+    //     {
+    //         name = "[parent directory]";
+    //     }
+    //     else
+    //     {
+    //         name = entry.path().filename().string();
+    //     }
+
+    //     const Rectangle BUTT_RECT = Rectangle { 
+    //         .x = scissor.x + rect.x + _scroll.x, 
+    //         .y = scissor.y + rect.y + _scroll.y, 
+    //         .width = rect.width, 
+    //         .height = rect.height 
+    //     };
+
+    //     if (CheckCollisionRecs(BUTT_RECT, scissor) && GuiLabelButton(BUTT_RECT, name.c_str()))
+    //     {
+    //         if (entry.is_directory()) 
+    //         {
+    //             _currentDir = entry.path();
+    //             memset(_fileNameBuffer, 0, sizeof(char) * TEXT_FIELD_MAX);
+    //         }
+    //         else 
+    //         {
+    //             strcpy(_fileNameBuffer, entry.path().filename().string().c_str());
+    //         }
+    //     }
+    // }
+
+    // EndScissorMode();
+
+    // //File name entry
+
+    // if (GuiTextBox(FILE_ENTRY_RECT, _fileNameBuffer, TEXT_FIELD_MAX, _fileNameEdit))
+    // {
+    //     _fileNameEdit = !_fileNameEdit;
+    // }
+
+    // //Select button
+    // const Rectangle SELECT_BUTT_RECT = Rectangle {
+    //     .x = FILE_ENTRY_RECT.x + FILE_ENTRY_RECT.width + 4.0f,
+    //     .y = FILE_ENTRY_RECT.y,
+    //     .width = DRECT.width - (SELECT_BUTT_RECT.x - DRECT.x) - 4.0f,
+    //     .height = FILE_ENTRY_RECT.height
+    // }; 
+
+    // if (GuiButton(SELECT_BUTT_RECT, "Select"))
+    // {
+    //     if (strlen(_fileNameBuffer) > 0)
+    //     {
+    //         _callback(_currentDir.append(_fileNameBuffer));
+    //         return false;
+    //     }
+    // }
+
+    // return !clicked;
 }
 
 static const int N_QUIT_MESSAGES = 9;

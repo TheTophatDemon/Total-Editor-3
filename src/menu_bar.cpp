@@ -20,20 +20,12 @@
 
 #include "menu_bar.hpp"
 
-#include "extras/raygui.h"
-#include "imgui/rlImGui.h"
 #include "imgui/imgui.h"
 
 #include <filesystem>
 namespace fs = std::filesystem;
 
-#include "math_stuff.hpp"
-#include "text_util.hpp"
-#include "assets.hpp"
 #include "map_man.hpp"
-
-#define BUTTON_MARGIN 4.0f
-#define MENUBAR_FONT_SIZE 24.0f
 
 MenuBar::MenuBar(App::Settings& settings)
     : _settings(settings),
@@ -140,9 +132,14 @@ void MenuBar::Draw()
             if (ImGui::MenuItem("INSTRUCTIONS"))   _activeDialog.reset(new InstructionsDialog());
             ImGui::EndMenu();
         }
-        ImGui::SameLine();
     
-        if (_messageTimer > 0.0f) ImGui::TextUnformatted(_statusMessage.c_str());
+        ImGui::SameLine();
+        ImGui::TextUnformatted(" | ");
+        if (_messageTimer > 0.0f) 
+        {
+            ImGui::SameLine();
+            ImGui::TextUnformatted(_statusMessage.c_str());
+        }
 
         ImGui::EndMainMenuBar();
     }
