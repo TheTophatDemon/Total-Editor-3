@@ -1,7 +1,5 @@
 # TODO
 
-- Fix 0 length gltf bufferViews and accessors
-
 - Allow entities to be assigned models & textures in order to act as dynamic tiles
 
 - Don't render entity axes when far away
@@ -9,6 +7,8 @@
 - Use instancing when rendering entity spheres?
 
 - Update documentation
+
+- Change the version number
 
 ## Future updates
 

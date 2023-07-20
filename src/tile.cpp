@@ -517,16 +517,26 @@ Model* TileGrid::_GenerateModel(bool culling)
 
     //Create Raylib mesh
     Model *model = SAFE_MALLOC(Model, 1);
-    model->materialCount = _mapMan->GetNumTextures();
-    model->meshCount = _mapMan->GetNumTextures();
-    model->meshMaterial = SAFE_MALLOC(int, _mapMan->GetNumTextures());
-    model->materials = SAFE_MALLOC(Material, _mapMan->GetNumTextures());
-    model->meshes = SAFE_MALLOC(Mesh, _mapMan->GetNumTextures());
+
+    //Count the number of meshes (that aren't empty.)
+    int numMeshes = 0;
+    for (const auto& dynMesh : meshMap) 
+    {
+        if (dynMesh.triCount > 0) ++numMeshes;
+    }
+    //We don't want to include any empty meshes, because that will cause an error in certain .gltf parsers.
+
+    model->materialCount = numMeshes;
+    model->meshCount = numMeshes;
+    model->meshMaterial = SAFE_MALLOC(int, numMeshes);
+    model->materials = SAFE_MALLOC(Material, numMeshes);
+    model->meshes = SAFE_MALLOC(Mesh, numMeshes);
     model->transform = MatrixIdentity();
     model->bindPose = NULL;
     model->boneCount = 0;
     model->bones = NULL;
     
+    int d = 0;
     for (int i = 0; i < model->materialCount; ++i)
     {
         model->materials[i] = LoadMaterialDefault();
@@ -535,30 +545,36 @@ Model* TileGrid::_GenerateModel(bool culling)
         model->meshMaterial[i] = i;
 
         //Copy mesh data into Raylib mesh
-        DynMesh &dMesh = meshMap[i];
+        DynMesh* dMesh;
+        do 
+        {
+            dMesh = &meshMap[d++];
+        }
+        while (dMesh->triCount <= 0);
+
         model->meshes[i] = Mesh { 0 };
-        model->meshes[i].vertexCount = dMesh.positions.size() / 3;
-        model->meshes[i].triangleCount = dMesh.triCount;
+        model->meshes[i].vertexCount = dMesh->positions.size() / 3;
+        model->meshes[i].triangleCount = dMesh->triCount;
         
-        if (dMesh.positions.size() > 0)
+        if (dMesh->positions.size() > 0)
         {
-            model->meshes[i].vertices = SAFE_MALLOC(float, dMesh.positions.size());
-            memcpy(model->meshes[i].vertices, dMesh.positions.data(), dMesh.positions.size() * sizeof(float));
+            model->meshes[i].vertices = SAFE_MALLOC(float, dMesh->positions.size());
+            memcpy(model->meshes[i].vertices, dMesh->positions.data(), dMesh->positions.size() * sizeof(float));
         }
-        if (dMesh.texCoords.size() > 0)
+        if (dMesh->texCoords.size() > 0)
         {
-            model->meshes[i].texcoords = SAFE_MALLOC(float, dMesh.texCoords.size());
-            memcpy(model->meshes[i].texcoords, dMesh.texCoords.data(), dMesh.texCoords.size() * sizeof(float));
+            model->meshes[i].texcoords = SAFE_MALLOC(float, dMesh->texCoords.size());
+            memcpy(model->meshes[i].texcoords, dMesh->texCoords.data(), dMesh->texCoords.size() * sizeof(float));
         }
-        if (dMesh.normals.size() > 0)
+        if (dMesh->normals.size() > 0)
         {
-            model->meshes[i].normals = SAFE_MALLOC(float, dMesh.normals.size());
-            memcpy(model->meshes[i].normals, dMesh.normals.data(), dMesh.normals.size() * sizeof(float));
+            model->meshes[i].normals = SAFE_MALLOC(float, dMesh->normals.size());
+            memcpy(model->meshes[i].normals, dMesh->normals.data(), dMesh->normals.size() * sizeof(float));
         }
-        if (dMesh.indices.size() > 0)
+        if (dMesh->indices.size() > 0)
         {
-            model->meshes[i].indices = SAFE_MALLOC(unsigned short, dMesh.indices.size());
-            memcpy(model->meshes[i].indices, dMesh.indices.data(), dMesh.indices.size() * sizeof(unsigned short));
+            model->meshes[i].indices = SAFE_MALLOC(unsigned short, dMesh->indices.size());
+            memcpy(model->meshes[i].indices, dMesh->indices.data(), dMesh->indices.size() * sizeof(unsigned short));
         }
 
         UploadMesh(&model->meshes[i], false);
