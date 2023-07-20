@@ -6,7 +6,7 @@
 
 - Use instancing when rendering entity spheres?
 
-- Update documentation
+- Update documentation (integrate into the editor?)
 
 - Change the version number
 

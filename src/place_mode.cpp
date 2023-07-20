@@ -464,7 +464,7 @@ void PlaceMode::Update()
         }
 
         //Update cursor
-        if (!ImGui::IsAnyItemHovered()) //Don't update when using the menus
+        if (!ImGui::GetIO().WantCaptureMouse) //Don't update when using the menus
         {
             UpdateCursor();
         }
