@@ -23,6 +23,7 @@
 #include "raymath.h"
 #include "rlgl.h"
 #include "extras/raygui.h"
+#include "imgui/imgui.h"
 
 #include "draw_extras.h"
 #include "math_stuff.hpp"
@@ -463,7 +464,7 @@ void PlaceMode::Update()
         }
 
         //Update cursor
-        if (!CheckCollisionPointRec(GetMousePosition(), App::Get()->GetMenuBarRect())) //Don't update when using the menus
+        if (!ImGui::IsAnyItemHovered()) //Don't update when using the menus
         {
             UpdateCursor();
         }
@@ -523,7 +524,7 @@ void PlaceMode::Draw()
             }
             else if (_cursor == &_entCursor)
             {
-                _entCursor.ent.Draw();
+                _entCursor.ent.Draw(_camera, true);
             }
 
             // Draw pink border around the cursor

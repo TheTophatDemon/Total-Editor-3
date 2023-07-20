@@ -26,6 +26,9 @@
 #define RAYGUI_IMPLEMENTATION
 #include "extras/raygui.h"
 
+#include "imgui/rlImGui.h"
+#include "imgui/imgui.h"
+
 #include <stdlib.h>
 #include <vector>
 #include <string>
@@ -136,7 +139,7 @@ void App::Update()
 {
     _menuBar->Update();
 
-    if (!_menuBar->IsFocused()) 
+    if (!ImGui::IsAnyItemFocused()) 
     {
         //Mode switching hotkeys
         if (IsKeyPressed(KEY_TAB))
@@ -179,8 +182,10 @@ void App::Update()
     
     ClearBackground(BLACK);
 
+    rlImGuiBegin();
     _editorMode->Draw();
     _menuBar->Draw();
+    rlImGuiEnd();
 
     if (!_previewDraw) DrawFPS(4, GetScreenHeight() - 24);
 
@@ -215,6 +220,8 @@ int main(int argc, char **argv)
     GuiSetStyle(TEXTBOX, BACKGROUND_COLOR, ColorToInt(DARKGRAY));
     GuiSetStyle(SLIDER, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
 
+    rlImGuiSetup(true);
+
     SetTraceLogLevel(LOG_WARNING);
 
     App::Get()->ChangeEditorMode(App::Mode::PLACE_TILE);
@@ -227,12 +234,12 @@ int main(int argc, char **argv)
         App::Get()->Update();
 	}
     
+    rlImGuiShutdown();
+
 	CloseWindow();
 
 	return 0;
 }
-
-Rectangle App::GetMenuBarRect() { return _menuBar->GetTopBar(); }
 
 void App::DisplayStatusMessage(std::string message, float durationSeconds, int priority)
 {

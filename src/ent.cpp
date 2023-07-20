@@ -31,8 +31,11 @@
 #include "assets.hpp"
 #include "map_man.hpp"
 
+#define DISPLAY_NAME_THRESHOLD 0.9995f
+
 Ent::Ent()
 {
+    display = DisplayMode::SPHERE;
     color = WHITE;
     radius = 0.0f;
     position = Vector3Zero();
@@ -42,6 +45,7 @@ Ent::Ent()
 
 Ent::Ent(float radius)
 {
+    display = DisplayMode::SPHERE;
     color = WHITE;
     this->radius = radius;
     position = Vector3Zero();
@@ -49,71 +53,61 @@ Ent::Ent(float radius)
     properties = std::map<std::string, std::string>();
 }
 
-void EntGrid::Draw(Camera &camera, int fromY, int toY)
+inline Matrix Ent::GetMatrix() const
 {
-    for (size_t i = 0; i < _grid.size(); ++i)
-    {
-        if (_grid[i])
-        {
-            Vector3 gridCoords = UnflattenIndex(i);
-            if (gridCoords.y >= (float)fromY - 0.1f && gridCoords.y <= toY + 0.1f) 
-            {
-                _grid[i].position = GridToWorldPos(gridCoords, true);
-                //Do frustrum culling check
-                Vector3 ndc = GetWorldToNDC(_grid[i].position, camera);
-                if (ndc.z < 1.0f && ndc.x > -1.0f && ndc.x < 1.0f && ndc.y > -1.0f && ndc.y < 1.0f)
-                {
-                    _grid[i].Draw();
-                }
-            }
-        }
-    }
+    return MatrixMultiply(
+        MatrixMultiply(
+            MatrixRotateX(ToRadians((float) pitch)), 
+            MatrixRotateY(ToRadians((float) yaw))
+        ),
+        MatrixTranslate(position.x, position.y, position.z));
 }
 
-void EntGrid::DrawLabels(Camera &camera, int fromY, int toY)
+inline Ent::operator bool() const
 {
-    if (!App::Get()->IsPreviewing())
-    {
-        for (size_t i = 0; i < _grid.size(); ++i)
-        {
-            if (_grid[i])
-            {
-                Vector3 gridCoords = UnflattenIndex(i);
-                if (gridCoords.y >= (float)fromY - 0.1f && gridCoords.y <= toY + 0.1f) 
-                {
-                    if (_grid[i].properties.find("name") != _grid[i].properties.end()) 
-                    {
-                        //Do frustrum culling check
-                        Vector3 ndc = GetWorldToNDC(_grid[i].position, camera);
-                        if (ndc.z < 0.9995f)
-                        {
-                            // std::cout << ndc.z << std::endl;
-                            //Draw label
-                            std::string name = _grid[i].properties.at("name");
-
-                            float fontSize = Assets::GetFont().baseSize;
-                            Vector2 projectPos = Vector2{ (float)GetScreenWidth() * (ndc.x + 1.0f) / 2.0f, (float)GetScreenHeight() * (ndc.y + 1.0f) / 2.0f };
-                            int stringWidth = GetStringWidth(Assets::GetFont(), fontSize, name);
-
-                            float labelX = projectPos.x - (float)stringWidth / 2.0f;
-                            float labelY = projectPos.y - fontSize / 2.0f;
-
-                            DrawRectangle((int)labelX, (int)labelY, (float)stringWidth, fontSize, BLACK);
-                            DrawTextEx(Assets::GetFont(), name.c_str(), Vector2 { labelX, labelY }, fontSize, 0.0f, WHITE);
-                        }
-                    }
-                }
-            }
-        }
-    }
+    return radius != 0.0f;
 }
 
-void Ent::Draw() const
+void Ent::Draw(const Camera camera, const bool drawAxes) const
 {
-    //Draw sphere
-    // DrawSphere(position, radius, color);
-    DrawModel(Assets::GetEntSphere(), position, radius, color);
-    if (!App::Get()->IsPreviewing())
+    switch (display)
+    {
+    case DisplayMode::SPHERE:
+        {
+            DrawModel(Assets::GetEntSphere(), position, radius, color);
+            break;
+        }
+
+    case DisplayMode::MODEL:
+        {
+            if (model == nullptr) break;
+            
+            //Set up material
+            Material mat = LoadMaterialDefault();
+            if (texture != nullptr) SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, texture->GetTexture());
+            mat.shader = Assets::GetMapShader(false);
+            mat.maps[MATERIAL_MAP_ALBEDO].color = color;
+            
+            Model mod = model->GetModel();
+            mod.transform = MatrixMultiply(mod.transform, MatrixScale(radius, radius, radius));
+            for (int m = 0; m < mod.meshCount; ++m)
+            {
+                DrawMesh(mod.meshes[m], mat, mod.transform);
+            }
+
+            RL_FREE(mat.maps);
+            break;
+        }
+
+    case DisplayMode::SPRITE:
+        {
+            if (texture == nullptr) break;
+            DrawBillboard(camera, texture->GetTexture(), position, radius, color);
+            break;
+        }
+    }
+    
+    if (drawAxes)
     {
         //Draw axes to show orientation
         rlPushMatrix();
@@ -129,6 +123,9 @@ void to_json(nlohmann::json& j, const Ent &ent)
     j["color"] = nlohmann::json::array({ent.color.r, ent.color.g, ent.color.b});
     j["position"] = nlohmann::json::array({ent.position.x, ent.position.y, ent.position.z});
     j["angles"] = nlohmann::json::array({ent.pitch, ent.yaw, 0.0f});
+    j["display"] = ent.display;
+    if (ent.model != nullptr) j["model"] = ent.model->GetPath();
+    if (ent.texture != nullptr) j["texture"] = ent.texture->GetPath();
     j["properties"] = ent.properties;
 }
 
@@ -140,4 +137,71 @@ void from_json(const nlohmann::json& j, Ent &ent)
     ent.pitch = j.at("angles").at(0);
     ent.yaw = j.at("angles").at(1);
     ent.properties = j.at("properties");
+
+    if (j.contains("display"))
+        ent.display = j.at("display");
+    else 
+        ent.display = Ent::DisplayMode::SPHERE;
+    
+    switch (ent.display)
+    {
+    case Ent::DisplayMode::MODEL:
+        ent.model = Assets::GetModel(j.at("model"));
+        //fallthrough
+    case Ent::DisplayMode::SPRITE:
+        ent.texture = Assets::GetTexture(j.at("texture"));
+        break;
+    }
+}
+
+EntGrid::EntGrid()
+    : EntGrid(0, 0, 0)
+{
+}
+
+//Creates ent grid of given dimensions, default spacing.
+EntGrid::EntGrid(size_t width, size_t height, size_t length)
+    : Grid<Ent>(width, height, length, ENT_SPACING_DEFAULT, Ent())
+{
+    _labelsToDraw.reserve(_grid.size());
+}
+
+void EntGrid::Draw(Camera &camera, int fromY, int toY)
+{
+    _labelsToDraw.clear();
+
+    for (size_t i = fromY * _width * _length; i < (toY + 1) * _width * _length; ++i)
+    {
+        if (!_grid[i]) continue;
+
+        //Do frustrum culling check
+        Vector3 ndc = GetWorldToNDC(_grid[i].position, camera);
+        if (ndc.z < 1.0f && ndc.x > -1.0f && ndc.x < 1.0f && ndc.y > -1.0f && ndc.y < 1.0f)
+        {
+            bool drawExtras = (ndc.z < DISPLAY_NAME_THRESHOLD);
+
+            if (drawExtras && _grid[i].properties.find("name") != _grid[i].properties.end())
+                _labelsToDraw.push_back(std::make_pair(ndc, _grid[i].properties["name"]));
+            
+            _grid[i].Draw(camera, drawExtras && !App::Get()->IsPreviewing());
+        }
+    }
+}
+
+void EntGrid::DrawLabels(Camera &camera, int fromY, int toY)
+{
+    if (App::Get()->IsPreviewing()) return;
+    
+    for (const auto& [ndc, name] : _labelsToDraw)
+    {
+        float fontSize = Assets::GetFont().baseSize;
+        Vector2 projectPos = Vector2{ (float)GetScreenWidth() * (ndc.x + 1.0f) / 2.0f, (float)GetScreenHeight() * (ndc.y + 1.0f) / 2.0f };
+        int stringWidth = GetStringWidth(Assets::GetFont(), fontSize, name);
+
+        float labelX = projectPos.x - (float)stringWidth / 2.0f;
+        float labelY = projectPos.y - fontSize / 2.0f;
+
+        DrawRectangle((int)labelX, (int)labelY, (float)stringWidth, fontSize, BLACK);
+        DrawTextEx(Assets::GetFont(), name.c_str(), Vector2 { labelX, labelY }, fontSize, 0.0f, WHITE);
+    }
 }

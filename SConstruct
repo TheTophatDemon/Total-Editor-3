@@ -34,4 +34,7 @@ else:
 bin_dir = 'debug' if is_debug else 'release'
 
 env.Append(OBJPREFIX='../obj/%s/' % bin_dir)
-env.Program(target='./bin/%s/%s' % (bin_dir, project_name), source=Glob('src/*.cpp'))
+sources = []
+sources.append(Glob('src/*.cpp'))
+sources.append(Glob('libraries/src/imgui/*.cpp'))
+env.Program(target='./bin/%s/%s' % (bin_dir, project_name), source=sources)

@@ -102,8 +102,7 @@ public:
 
     inline bool IsQuitting() const { return _quit; }
     inline void Quit() { _quit = true; }
-
-    Rectangle GetMenuBarRect();
+    
     void DisplayStatusMessage(std::string message, float durationSeconds, int priority);
 
     void Update();

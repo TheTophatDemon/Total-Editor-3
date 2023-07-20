@@ -34,61 +34,11 @@
 #include "map_man.hpp"
 #include "text_util.hpp"
 #include "draw_extras.h"
+#include "gui.hpp"
 
 Rectangle DialogRec(float w, float h)
 {
     return CenteredRect((float)GetScreenWidth() / 2.0f, (float)GetScreenHeight() / 2.0f, w, h);
-}
-
-//Takes the given rectangles and returns a vector of new rectangles of the same sizes, that are arranged evenly spaced in a horizontal strip along the `bounds` rectangle.
-std::vector<Rectangle> ArrangeHorzCentered(Rectangle bounds, std::initializer_list<Rectangle> rects)
-{
-    const float boundsHH = bounds.height / 2.0f;
-
-    const float OFFSET = bounds.width / (rects.size() + 1);
-    std::vector<Rectangle> out = rects;
-    float xCenter = OFFSET;
-    for (Rectangle &r : out)
-    {
-        r.x = bounds.x + xCenter - (r.width / 2.0f);
-        r.y = bounds.y + boundsHH - (r.height / 2.0f);
-        xCenter += OFFSET;
-    }
-
-    return out;
-}
-
-//Takes some rectangles and returns copies of them, repositioned to be vertically laid out inside of the `area` rectangle.
-std::vector<Rectangle> ArrangeVertical(Rectangle area, std::initializer_list<Rectangle> rects)
-{
-    const float REGION_HEIGHT = area.height / rects.size();
-
-    std::vector<Rectangle> out = rects;
-    int i = 0;;
-    for (Rectangle& r : out)
-    {
-        r.x += area.x;
-        r.y += area.y + (i * REGION_HEIGHT) + (REGION_HEIGHT / 2.0f) - (r.height / 2.0f);
-        ++i;
-    }
-    return out;
-}
-
-//Takes some rectangles, that are all the same size, and returns copies of them, repositioned to be vertically laid out inside of the `area` rectangle.
-std::vector<Rectangle> ArrangeVertical(Rectangle area, Rectangle templ, int count)
-{
-    const float REGION_HEIGHT = area.height / count;
-
-    std::vector<Rectangle> out(count);
-    int i = 0;
-    for (Rectangle& r : out)
-    {
-        r = templ;
-        r.x += area.x;
-        r.y += area.y + (i * REGION_HEIGHT) + (REGION_HEIGHT / 2.0f) - (r.height / 2.0f);
-        ++i;
-    }
-    return out;
 }
 
 NewMapDialog::NewMapDialog()

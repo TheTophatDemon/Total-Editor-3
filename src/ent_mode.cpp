@@ -22,6 +22,7 @@
 
 #include "raylib.h"
 #include "extras/raygui.h"
+#include "gui.hpp"
 
 #include <cstring>
 

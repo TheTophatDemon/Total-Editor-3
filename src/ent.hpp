@@ -31,16 +31,27 @@
 
 #include "grid.hpp"
 #include "math_stuff.hpp"
+#include "assets.hpp"
 
 #define ENT_SPACING_DEFAULT 2.0f
 
 //This is short for "entity", because "entity" is difficult to type.
 struct Ent
 {
+    enum class DisplayMode {
+        SPHERE,
+        MODEL,
+        SPRITE,
+    };
+
+    DisplayMode display;
     Color color;
     float radius;
     Vector3 position; //World space coordinates
     int yaw, pitch; //Degrees angle orientation
+
+    std::shared_ptr<Assets::ModelHandle> model;
+    std::shared_ptr<Assets::TexHandle> texture;
 
     //Entity properties are key/value pairs. No data types are enforced, values are parsed as strings.
     std::map<std::string, std::string> properties; 
@@ -48,23 +59,12 @@ struct Ent
     Ent();
     Ent(float radius);
 
-    inline Matrix GetMatrix() const
-    {
-        return MatrixMultiply(
-            MatrixMultiply(
-                MatrixRotateX(ToRadians((float) pitch)), 
-                MatrixRotateY(ToRadians((float) yaw))
-            ),
-            MatrixTranslate(position.x, position.y, position.z));
-    }
+    Matrix GetMatrix() const;
 
     //Entity is considered empty if the radius is zero;
-    inline operator bool() const
-    {
-        return radius != 0.0f;
-    }
+    operator bool() const;
 
-    void Draw() const;
+    void Draw(const Camera camera, const bool drawAxes) const;
 };
 
 void to_json(nlohmann::json& j, const Ent &ent);
@@ -76,20 +76,15 @@ class EntGrid : public Grid<Ent>
 {
 public:
     //Creates an empty entgrid of zero size
-    inline EntGrid()
-        : EntGrid(0, 0, 0)
-    {
-    }
+    EntGrid();
 
     //Creates ent grid of given dimensions, default spacing.
-    inline EntGrid(size_t width, size_t height, size_t length)
-        : Grid<Ent>(width, height, length, ENT_SPACING_DEFAULT, Ent())
-    {
-    }
+    EntGrid(size_t width, size_t height, size_t length);
 
     //Will set the given ent to occupy the grid space, replacing any existing entity in that space.
-    inline void AddEnt(int i, int j, int k, const Ent &ent)
+    inline void AddEnt(int i, int j, int k, Ent ent)
     {
+        ent.position = GridToWorldPos(Vector3{(float)i, (float)j, (float)k}, true);
         SetCel(i, j, k, ent);
     }
 
@@ -127,7 +122,7 @@ public:
         return newGrid;
     }
 
-    //Returns a continuous array of all active entities.
+    //Returns a contiguous array of all active entities.
     inline std::vector<Ent> GetEntList() const
     {
         std::vector<Ent> out;
@@ -140,6 +135,8 @@ public:
 
     void Draw(Camera &camera, int fromY, int toY);
     void DrawLabels(Camera &camera, int fromY, int toY);
+private:
+    std::vector<std::pair<Vector3, std::string>> _labelsToDraw;
 };
 
 #endif

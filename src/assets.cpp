@@ -241,9 +241,6 @@ Assets::Assets()
     _missingTexture = LoadTextureFromImage(texImg);
     free(texImg.data);
 
-    //Generate entity sphere
-    _entSphere = LoadModelFromMesh(GenMeshSphere(1.0f, 8, 8));
-
     //Initialize instanced shader for map geometry
     _mapShaderInstanced = LoadShaderFromMemory(MAP_SHADER_INSTANCED_V_SRC, MAP_SHADER_F_SRC);
     _mapShaderInstanced.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(_mapShaderInstanced, "mvp");
@@ -253,6 +250,11 @@ Assets::Assets()
     _mapShader = LoadShaderFromMemory(MAP_SHADER_V_SRC, MAP_SHADER_F_SRC);
     _mapShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(_mapShader, "mvp");
     _mapShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(_mapShader, "viewPos");
+
+    //Generate entity sphere
+    _entSphere = LoadModelFromMesh(GenMeshSphere(1.0f, 8, 8));
+    for (int m = 0; m < _entSphere.materialCount; ++m)
+        _entSphere.materials[m].shader = _mapShader;
 
     _font = LoadFont_Dejavu();
 }
