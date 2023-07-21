@@ -387,97 +387,10 @@ bool AssetPathDialog::Draw()
     }
 
     return open;
-
-    // const Rectangle DRECT = DialogRec(632.0f, 320.0f);
-    
-    // bool clicked = GuiWindowBox(DRECT, "Asset Paths");
-
-    // auto textBoxes = ArrangeVertical (
-    //     Rectangle { DRECT.x + 8.0f, DRECT.y + 32.0f, DRECT.width - 16.0f, DRECT.height - 80.0f }, 
-    //     Rectangle { .width = DRECT.width - 16.0f, .height = 24.0f },
-    //     8
-    // );
-
-    // // Textures directory
-    // GuiLabel(textBoxes[0], "Textures Directory");
-    // if (GuiTextBox(textBoxes[1], _texPathBuffer, TEXT_FIELD_MAX, _texPathEdit))
-    //     _texPathEdit = !_texPathEdit;
-    
-    // // Default texture
-    // GuiLabel(textBoxes[2], "Default Texture Path");
-    // if (GuiTextBox(textBoxes[3], _defaultTexBuffer, TEXT_FIELD_MAX, _defaultTexEdit))
-    //     _defaultTexEdit = !_defaultTexEdit;
-
-    // // Shape directory
-    // GuiLabel(textBoxes[4], "Shapes Directory");
-    // if (GuiTextBox(textBoxes[5], _shapePathBuffer, TEXT_FIELD_MAX, _shapePathEdit))
-    //     _shapePathEdit = !_shapePathEdit;
-
-    // // Default shape
-    // GuiLabel(textBoxes[6], "Default Shape Path");
-    // if (GuiTextBox(textBoxes[7], _defaultShapeBuffer, TEXT_FIELD_MAX, _defaultShapeEdit))
-    //     _defaultShapeEdit = !_defaultShapeEdit;
-
-    // // Submission buttons
-    // const Rectangle BUTTON_REGION = Rectangle {
-    //     .x = DRECT.x + 8.0f,
-    //     .y = DRECT.y + DRECT.height - 48.0f,
-    //     .width = DRECT.width - (BUTTON_REGION.x - DRECT.x) - 8.0f,
-    //     .height = 48.0f
-    // };
-    // std::vector<Rectangle> buttonRecs = ArrangeHorzCentered(BUTTON_REGION, { 
-    //     Rectangle{ .width = 96.0f, .height = 32.0f }, 
-    //     Rectangle{ .width = 96.0f, .height = 32.0f } });
-
-    // if (GuiButton(buttonRecs[0], "Confirm"))
-    // {
-    //     // Validate all of the entered paths
-    //     bool bad = false;
-    //     fs::directory_entry texEntry { _texPathBuffer };
-    //     if (!texEntry.exists() || !texEntry.is_directory())
-    //     {
-    //         strcpy(_texPathBuffer, "Invalid!");
-    //         bad = true;
-    //     }
-    //     fs::directory_entry defTexEntry { _defaultTexBuffer };
-    //     if (!defTexEntry.exists() || !defTexEntry.is_regular_file())
-    //     {
-    //         strcpy(_defaultTexBuffer, "Invalid!");
-    //         bad = true;
-    //     }
-    //     fs::directory_entry shapeEntry { _shapePathBuffer };
-    //     if (!shapeEntry.exists() || !shapeEntry.is_directory())
-    //     {
-    //         strcpy(_shapePathBuffer, "Invalid!");
-    //         bad = true;
-    //     }
-    //     fs::directory_entry defShapeEntry { _defaultShapeBuffer };
-    //     if (!defShapeEntry.exists() || !defShapeEntry.is_regular_file())
-    //     {
-    //         strcpy(_defaultShapeBuffer, "Invalid!");
-    //         bad = true;
-    //     }
-    //     if (!bad) 
-    //     {
-    //         _settings.texturesDir = texEntry.path().string();
-    //         _settings.defaultTexturePath = defTexEntry.path().string();
-    //         _settings.shapesDir = shapeEntry.path().string();
-    //         _settings.defaultShapePath = defShapeEntry.path().string();
-    //         App::Get()->SaveSettings();
-    //         return false;
-    //     }
-    // }
-    // else if (GuiButton(buttonRecs[1], "Cancel"))
-    // {
-    //     return false;
-    // }
-
-    // return !clicked;
 }
 
 SettingsDialog::SettingsDialog(App::Settings &settings)
     : _settings(settings),
-      _undoMaxEdit(false),
       _undoMax(settings.undoMax),
       _sensitivity(settings.mouseSensitivity)
 {
@@ -485,208 +398,205 @@ SettingsDialog::SettingsDialog(App::Settings &settings)
 
 bool SettingsDialog::Draw()
 {
-    const Rectangle DRECT = DialogRec(512.0f, 256.0f);
+    bool open = true;
+    ImGui::OpenPopup("SETTINGS");
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("SETTINGS", &open, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::InputInt("Maximum undo count", &_undoMax, 1, 10);
+        if (_undoMax < 0) _undoMax = 0;
+        
+        ImGui::SliderFloat("Mouse sensitivity", &_sensitivity, 0.05f, 10.0f, "%.1f", ImGuiSliderFlags_NoRoundToFormat);
 
-    bool clicked = GuiWindowBox(DRECT, "Settings");
-
-    const Rectangle SETTINGS_RECT = Rectangle { DRECT.x + 8.0f, DRECT.y + 32.0f, DRECT.width - 16.0f, DRECT.height - 64.0f };
-    std::vector<Rectangle> recs = ArrangeVertical(
-        SETTINGS_RECT,
+        if (ImGui::Button("Confirm"))
         {
-            Rectangle { .x = 16.0f, .width = 128.0f, .height = 32.0f }, //0: Undo max
-            Rectangle { .x = 16.0f, .width = SETTINGS_RECT.width - 64.0f, .height = 32.0f }  //1: Sensitivity
+            _settings.undoMax = _undoMax;
+            _settings.mouseSensitivity = _sensitivity;
+            App::Get()->SaveSettings();
+            ImGui::EndPopup();
+            return false;
         }
-    );
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel"))
+        {
+            ImGui::EndPopup();
+            return false;
+        }
 
-    GuiLabel(Rectangle { recs[0].x, recs[0].y - 12.0f }, "Max Undo Count");
-    if (GuiSpinner(recs[0], "", &_undoMax, 1, 1000, _undoMaxEdit))
-    {
-        _undoMaxEdit = !_undoMaxEdit;
+        ImGui::EndPopup();
+        return true;
     }
-
-    GuiLabel(Rectangle { recs[1].x, recs[1].y - 12.0f }, TextFormat("Mouse sensitivity: %.2f", _sensitivity));
-    _sensitivity = GuiSlider(recs[1], "", "", _sensitivity, 0.05f, 10.0f);
-    _sensitivity = floorf(_sensitivity / 0.05f) * 0.05f;
-
-    //Confirm buttons
-    const Rectangle BUTT_GROUP = Rectangle { DRECT.x + 8.0f, DRECT.y + DRECT.height - 8.0f - 32.0f, DRECT.width - 16.0f, 32.0f };
-    std::vector<Rectangle> buttRecs = ArrangeHorzCentered(BUTT_GROUP, {
-        Rectangle { .width = 128.0f, .height = 32.0f }, //0: Confirm
-        Rectangle { .width = 128.0f, .height = 32.0f }  //1: Cancel
-    });
-
-    if (GuiButton(buttRecs[0], "Confirm"))
-    {
-        _settings.undoMax = _undoMax;
-        _settings.mouseSensitivity = _sensitivity;
-        App::Get()->SaveSettings();
-        return false;
-    }
-
-    if (GuiButton(buttRecs[1], "Cancel"))
-    {
-        return false;
-    }
-
-    return !clicked;
+    return open;
 }
 
 bool AboutDialog::Draw()
 {
-    const Rectangle DRECT = DialogRec(480.0f, 256.0f);
+    bool open = true;
+    ImGui::OpenPopup("ABOUT");
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("ABOUT", &open, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextColored(ImColor(1.0f, 1.0f, 0.0f), "Total Editor 3.1.0");
+        ImGui::TextUnformatted("Written by The Tophat Demon\nWith help from Raylib, Nlohmann JSON, CPPCodec.\nHumble Fonts Gold II font made by Eevie Somepx");
+        ImGui::TextColored(ImColor(0.0f, 0.5f, 0.5f), "Source code: \nhttps://github.com/TheTophatDemon/Total-Editor-3");
 
-    bool clicked = GuiWindowBox(DRECT, "About");
-
-    Font font = Assets::GetFont();
-    DrawTextEx(font, "Total Editor 3.0.0", Vector2 { DRECT.x + 8.0f, DRECT.y + 32.0f }, 32.0f, 0.25f, WHITE);
-
-    DrawTextEx(font, "Written by The Tophat Demon", Vector2 { DRECT.x + 8.0f, DRECT.y + 70.0f }, font.baseSize, 0.0f, WHITE);
-    DrawTextEx(font, "Source code: \nhttps://github.com/TheTophatDemon/Total-Editor-3", Vector2 { DRECT.x + 8.0f, DRECT.y + 96.0f }, font.baseSize, 0.0f, WHITE);
-
-    return !clicked;
-}
-
-ShortcutsDialog::ShortcutsDialog()
-    : _scroll(Vector2Zero())
-{
+        ImGui::EndPopup();
+        return true;
+    }
+    return open;
 }
 
 bool ShortcutsDialog::Draw()
 {
-    static const int N_SHORTCUTS = 26;
-    static const char *SHORTCUTS_TEXT[N_SHORTCUTS] = {
-        "W/A/S/D - Move camera",
-        "Hold Middle click or LEFT ALT+LEFT CLICK - Look around",
-        "Scroll wheel - Move grid up/down",
-        "Left click - Place tile/entity/brush",
-        "Right click - Remove tile/entity (Does not work in brush mode)",
-        "TAB - Switch between texture picker and map editor.",
-        "LEFT SHIFT+TAB - Switch between shape picker and map editor.",
-        "T (Tile mode) - Select texture of tile under cursor",
-        "G (Tile mode) - Select shape of tile under cursor",
-        "HOLD LEFT SHIFT - Expand cursor to place tiles in bulk.",
-        "Q - Turn cursor counterclockwise",
-        "E - Turn cursor clockwise",
-        "R - Reset cursor orientation",
-        "F - Turn cursor upwards",
-        "V - Turn cursor downwards",
-        "H - Isolate the layer of tiles the grid is on.",
-        "H (when layers are isolated) - Unhide hidden layers.",
-        "Hold H while using scrollwheel - Select multiple layers to isolate.",
-        "LEFT SHIFT+B - Capture tiles under cursor as a brush.",
-        "ESCAPE/BACKSPACE - Return cursor to tile mode.",
-        "LEFT CTRL+TAB - Switch between entity editor and map editor.",
-        "LEFT CTRL+E - Put cursor into entity mode.",
-        "T/G (Entity mode) - Copy entity from under cursor.",
-        "LEFT CTRL+S - Save map.",
-        "LEFT CTRL+Z - Undo",
-        "LEFT CTRL+Y - Redo"
+    const char* SHORTCUT_KEYS[] = {
+        "W/A/S/D",
+        "Hold Middle click or LEFT ALT+LEFT CLICK",
+        "Scroll wheel",
+        "Left click",
+        "Right click",
+        "TAB",
+        "LEFT SHIFT+TAB",
+        "T (Tile mode)",
+        "G (Tile mode)",
+        "HOLD LEFT SHIFT",
+        "Q",
+        "E",
+        "R",
+        "F",
+        "V",
+        "H",
+        "H (when layers are isolated)",
+        "Hold H while using scrollwheel",
+        "LEFT SHIFT+B",
+        "ESCAPE/BACKSPACE",
+        "LEFT CTRL+TAB",
+        "LEFT CTRL+E",
+        "T/G (Entity mode)",
+        "LEFT CTRL+S",
+        "LEFT CTRL+Z",
+        "LEFT CTRL+Y"
     };
-    
-    const Rectangle DRECT = DialogRec(608.0f, 468.0f);
 
-    bool clicked = GuiWindowBox(DRECT, "Shortcuts");
+    const char* SHORTCUT_INFO[] = {
+        "Move camera",
+        "Look around",
+        "Move grid up/down",
+        "Place tile/entity/brush",
+        "Remove tile/entity (Does not work in brush mode)",
+        "Switch between texture picker and map editor.",
+        "Switch between shape picker and map editor.",
+        "Select texture of tile under cursor",
+        "Select shape of tile under cursor",
+        "Expand cursor to place tiles in bulk.",
+        "Turn cursor counterclockwise",
+        "Turn cursor clockwise",
+        "Reset cursor orientation",
+        "Turn cursor upwards",
+        "Turn cursor downwards",
+        "Isolate the layer of tiles the grid is on.",
+        "Unhide hidden layers.",
+        "Select multiple layers to isolate.",
+        "Capture tiles under cursor as a brush.",
+        "Return cursor to tile mode.",
+        "Switch between entity editor and map editor.",
+        "Put cursor into entity mode.",
+        "Copy entity from under cursor.",
+        "Save map.",
+        "Undo",
+        "Redo"
+    };
 
-    Rectangle contentRect = Rectangle { 0 };
-    const float TEXT_HEIGHT = 32.0f;
-    contentRect.height = 16.0f;
-    for (int i = 0; i < N_SHORTCUTS; ++i)
+    const int SHORTCUT_COUNT = 26;
+
+    bool open = true;
+    ImGui::OpenPopup("SHORTCUTS");
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(608.0f, 468.0f));
+    if (ImGui::BeginPopupModal("SHORTCUTS", &open, ImGuiWindowFlags_AlwaysVerticalScrollbar))
     {
-        std::string str = SHORTCUTS_TEXT[i];
-        float w = (float)GetStringWidth(Assets::GetFont(), (float)GuiGetStyle(DEFAULT, TEXT_SIZE), str);
-        if (contentRect.width < w) contentRect.width = w;
-        contentRect.height += TEXT_HEIGHT;
+        for (int i = 0; i < SHORTCUT_COUNT; ++i)
+        {
+            ImGui::TextColored(ImColor(1.0f, 1.0f, 0.0f), SHORTCUT_KEYS[i]);
+            ImGui::SameLine();
+            ImGui::TextColored(ImColor(1.0f, 1.0f, 0.0f), "-");
+            ImGui::SameLine();
+            ImGui::TextUnformatted(SHORTCUT_INFO[i]);
+        }
+
+        ImGui::EndPopup();
+        return true;
     }
-    contentRect.width += 100.0f;
-
-    Rectangle scissor = GuiScrollPanel(
-        Rectangle { DRECT.x + 8.0f, DRECT.y + 32.0f, DRECT.width - 16.0f, DRECT.height - 40.0f }, 
-        NULL, contentRect, &_scroll);
-
-    BeginScissorMode((int)scissor.x, (int)scissor.y, (int)scissor.width, (int)scissor.height);
-
-    for (int i = 0; i < N_SHORTCUTS; ++i)
-    {
-        GuiLabel(Rectangle { scissor.x + _scroll.x, scissor.y + _scroll.y + 16.0f + (i * TEXT_HEIGHT) }, SHORTCUTS_TEXT[i]);
-    }
-
-    EndScissorMode();
-
-    return !clicked;
+    return open;
 }
 
 bool InstructionsDialog::Draw()
 {
-    const Rectangle DRECT = DialogRec(512.0f, 128.0f);
+    bool open = true;
+    ImGui::OpenPopup("INSTRUCTIONS");
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(400.0f, 160.0f));
+    if (ImGui::BeginPopupModal("INSTRUCTIONS", &open, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextWrapped("Please refer to the instructions.html file included with the application.");
 
-    bool clicked = GuiWindowBox(DRECT, "Instructions");
-
-    GuiLabel(Rectangle{ .x = DRECT.x + 8.0f, .y = DRECT.y + 64.0f }, "Please refer to the file \n'instructions.html' included with the application.");
-
-    return !clicked;
+        ImGui::EndPopup();
+        return true;
+    }
+    return open;
 }
 
 ExportDialog::ExportDialog(App::Settings &settings)
-    : _settings(settings),
-      _filePathEdit(false)
+    : _settings(settings)
 {
     strcpy(_filePathBuffer, _settings.exportFilePath.c_str());
 }
 
 bool ExportDialog::Draw()
 {
-    const Rectangle DRECT = DialogRec(512.0f, 256.0f);
-
-    if (_dialog.get())
+    if (_dialog)
     {
-        GuiLock();
-    }
-
-    bool clicked = GuiWindowBox(DRECT, "Export .gltf scene");
-
-    auto layoutRects = ArrangeVertical(Rectangle { DRECT.x + 8.0f, DRECT.y + 48.0f, DRECT.width - 16.0f, DRECT.height - 104.0f }, { 
-        Rectangle { 0.0f, 0.0f, DRECT.width - 16.0f, 24.0f }, // File path box
-        Rectangle { 0.0f, -6.0f, 128.0f, 32.0f }, // Browse button
-        Rectangle { 0.0f, 0.0f, 32.0f, 32.0f }, // Separate nodes checkbox
-        Rectangle { 0.0f, 0.0f, 32.0f, 32.0f }, // Cull faces checkbox
-    });
-
-    strcpy(_filePathBuffer, _settings.exportFilePath.c_str());
-    if (GuiTextBox(layoutRects[0], _filePathBuffer, TEXT_FIELD_MAX, _filePathEdit))
-    {
-        _filePathEdit = !_filePathEdit;
-    }   
-    _settings.exportFilePath = _filePathBuffer;
-    GuiLabel(Rectangle { .x = layoutRects[0].x, .y = layoutRects[0].y - 12.0f }, "File path");
-
-    if (GuiButton(layoutRects[1], "Browse"))
-    {
-        _dialog.reset(new FileDialog(std::string("Save .GLTF file"), {std::string(".gltf")}, [&](fs::path path){
-            _settings.exportFilePath = fs::relative(path).string();
-        }));
-    }
-
-    _settings.exportSeparateGeometry = GuiCheckBox(layoutRects[2], "Separate nodes for each texture", _settings.exportSeparateGeometry);
-    _settings.cullFaces = GuiCheckBox(layoutRects[3], "Cull redundant faces between tiles", _settings.cullFaces);
-
-    const Rectangle EXPORT_BUTT_RECT = Rectangle { DRECT.x + DRECT.width / 2.0f - 64.0f, DRECT.y + DRECT.height - 40.0f, 128.0f, 32.0f };
-    if (GuiButton(EXPORT_BUTT_RECT, "Export"))
-    {
-        App::Get()->TryExportMap(fs::path(_settings.exportFilePath), _settings.exportSeparateGeometry);
-        App::Get()->SaveSettings();
-        return false;
-    }
-
-    if (_dialog.get() && GuiIsLocked())
-    {
-        GuiUnlock();
         if (!_dialog->Draw())
-        {
-            _dialog.reset();
-        }
+            _dialog.reset(nullptr);
+        return true;
     }
 
-    if (clicked) App::Get()->SaveSettings();
+    bool open = true;
+    ImGui::OpenPopup("EXPORT .GLTF/.GLB SCENE");
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    
+    if (ImGui::BeginPopupModal("EXPORT .GLTF/.GLB SCENE", &open, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextUnformatted(".gltf and .glb are both supported!");
+        ImGui::InputText("File path", _filePathBuffer, TEXT_FIELD_MAX);
+        ImGui::SameLine();
+        if (ImGui::Button("Browse##gltfexport"))
+        {
+            _dialog.reset(new FileDialog(std::string("Save .GLTF or .GLB file"), {std::string(".gltf"), std::string(".glb")}, [&](fs::path path){
+                _settings.exportFilePath = fs::relative(path).string();
+                strcpy(_filePathBuffer, _settings.exportFilePath.c_str());
+            }));
+        }
+        _settings.exportFilePath = _filePathBuffer;
 
-    return !clicked;
+        ImGui::Checkbox("Seperate nodes for each texture", &_settings.exportSeparateGeometry);
+        ImGui::Checkbox("Cull redundant faces between tiles", &_settings.cullFaces);
+
+        if (ImGui::Button("Export##exportgltf"))
+        {
+            App::Get()->TryExportMap(fs::path(_settings.exportFilePath), _settings.exportSeparateGeometry);
+            App::Get()->SaveSettings();
+            ImGui::EndPopup();
+            return false;
+        }
+
+        ImGui::EndPopup();
+        return true;
+    }
+
+    return open;
 }

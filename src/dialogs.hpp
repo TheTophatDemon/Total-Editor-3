@@ -116,7 +116,6 @@ public:
 protected:
     App::Settings &_settings;
     int _undoMax;
-    bool _undoMaxEdit;
     float _sensitivity;
 };
 
@@ -129,10 +128,7 @@ public:
 class ShortcutsDialog : public Dialog
 {
 public:
-    ShortcutsDialog();
     virtual bool Draw() override;
-protected:
-    Vector2 _scroll;
 };
 
 class InstructionsDialog : public Dialog
@@ -150,7 +146,6 @@ protected:
     App::Settings &_settings;
     std::unique_ptr<FileDialog> _dialog;
     char _filePathBuffer[TEXT_FIELD_MAX];
-    bool _filePathEdit;
 };
 
 #endif
