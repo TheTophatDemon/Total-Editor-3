@@ -2,10 +2,6 @@
 
 - Rewrite UI using ImGui
 
-- Weird "Documents and Settings" folder...?
-
-- Increase font size
-
 - Allow entities to be assigned models & textures in order to act as dynamic tiles
 
 - Use instancing when rendering entity spheres?
@@ -13,6 +9,8 @@
 - Update documentation (integrate into the editor?)
 
 - Change the version number
+
+- Credit "Humble Fonts Gold II by Eeve Somepx"
 
 ## Future updates
 

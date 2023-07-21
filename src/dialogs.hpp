@@ -71,16 +71,7 @@ public:
 class FileDialog : public Dialog
 {
 public:
-    inline FileDialog(std::string title, std::initializer_list<std::string> extensions, std::function<void(std::filesystem::path)> callback) 
-        : _title(title),
-          _extensions(extensions),
-          _callback(callback),
-          _currentDir(fs::current_path()),
-          _scroll(Vector2Zero()),
-          _fileNameEdit(false)
-    {
-        memset(&_fileNameBuffer, 0, sizeof(char) * TEXT_FIELD_MAX);
-    }
+    FileDialog(std::string title, std::initializer_list<std::string> extensions, std::function<void(std::filesystem::path)> callback);
 
     inline virtual ~FileDialog() override 
     {
@@ -93,10 +84,8 @@ protected:
     std::string _title;
     std::set<std::string> _extensions;
     fs::path _currentDir;
-    Vector2 _scroll;
 
     char _fileNameBuffer[TEXT_FIELD_MAX];
-    bool _fileNameEdit;
 };
 
 class CloseDialog : public Dialog

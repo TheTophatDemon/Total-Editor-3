@@ -29,6 +29,8 @@
 #include "imgui/rlImGui.h"
 #include "imgui/imgui.h"
 
+#include "assets/fonts/softball_gold_ttf.h"
+
 #include <stdlib.h>
 #include <vector>
 #include <string>
@@ -139,7 +141,8 @@ void App::Update()
 {
     _menuBar->Update();
 
-    if (!ImGui::IsAnyItemFocused()) 
+    // Prevent editor from being controlled while using the GUI
+    if (auto io = ImGui::GetIO(); !io.WantCaptureMouse && !io.WantCaptureKeyboard) 
     {
         //Mode switching hotkeys
         if (IsKeyPressed(KEY_TAB))
@@ -194,14 +197,14 @@ void App::Update()
 
 int main(int argc, char **argv)
 {
-    //Window stuff
+    // Window stuff
 	InitWindow(1280, 720, "Total Editor 3");
     SetWindowMinSize(640, 480);
     SetWindowState(FLAG_WINDOW_RESIZABLE);
 	InitAudioDevice();
     SetExitKey(KEY_NULL);
 
-    //Set random seed based on system time;
+    // Set random seed based on system time;
     using std::chrono::high_resolution_clock;
     SetRandomSeed((int)high_resolution_clock::now().time_since_epoch().count());
 
@@ -222,12 +225,21 @@ int main(int argc, char **argv)
 
     rlImGuiSetup(true);
 
+    // ImGUI styling
+    
+    ImGuiIO& io = ImGui::GetIO();
+    ImFontConfig config;
+    config.FontDataOwnedByAtlas = false;
+    io.FontDefault = io.Fonts->AddFontFromMemoryTTF((void *) Softball_Gold_ttf, Softball_Gold_ttf_len, 24, &config, io.Fonts->GetGlyphRangesCyrillic());
+
+    rlImGuiReloadFonts();
+
     SetTraceLogLevel(LOG_WARNING);
 
     App::Get()->ChangeEditorMode(App::Mode::PLACE_TILE);
     App::Get()->NewMap(100, 5, 100);
 
-    //Main loop
+    // Main loop
 	SetTargetFPS(60);
 	while (!App::Get()->IsQuitting())
 	{

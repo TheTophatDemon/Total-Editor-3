@@ -136,6 +136,15 @@ bool ShrinkMapDialog::Draw()
     return open;
 }
 
+FileDialog::FileDialog(std::string title, std::initializer_list<std::string> extensions, std::function<void(std::filesystem::path)> callback) 
+    : _title(title),
+        _extensions(extensions),
+        _callback(callback),
+        _currentDir(fs::current_path())
+{
+    memset(&_fileNameBuffer, 0, sizeof(char) * TEXT_FIELD_MAX);
+}
+
 bool FileDialog::Draw()
 {
     bool open = true;
@@ -155,8 +164,22 @@ bool FileDialog::Draw()
         if (ImGui::BeginListBox("Files", ImVec2(504.0f, 350.0f)))
         {
             // File list
-            for (auto const& entry : fs::directory_iterator{_currentDir})
+            fs::directory_iterator fileIter;
+            try 
             {
+                fileIter = fs::directory_iterator{_currentDir};
+            }
+            catch (...)
+            {
+                // For some reason, the directory iterator will show special system folders that aren't even accessible in the file explorer.
+                // Navigating into such a folder causes a crash, which I am preventing with this try/catch block.
+                // So, going into these folders will just show nothing instead of crashing.
+            }
+            std::error_code osError;
+            for (auto i = fs::begin(fileIter); i != fs::end(fileIter); i = i.increment(osError))
+            {
+                if (osError) break;
+                auto entry = *i;
                 if (entry.is_directory() || 
                     (entry.is_regular_file() && _extensions.find(entry.path().extension().string()) != _extensions.end()))
                 {
@@ -195,124 +218,9 @@ bool FileDialog::Draw()
         return true;
     }
     return open;
-
-    // const Rectangle DRECT = DialogRec(512.0f, 400.0f);
-    // bool clicked = GuiWindowBox(DRECT, _title.c_str());
-
-    // const Rectangle FILE_ENTRY_RECT = Rectangle { 
-    //     .x = DRECT.x + 4.0f, 
-    //     .y = DRECT.y + DRECT.height - 24.0f, 
-    //     .width = DRECT.width - 64.0f - 8.0f, 
-    //     .height = 20.0f
-    // };
-
-    // const Rectangle FILES_RECT = Rectangle {
-    //     .x = DRECT.x + 4.0f,
-    //     .y = DRECT.y + 28.0f,
-    //     .width = DRECT.width - 8.0f,
-    //     .height = DRECT.height - (FILES_RECT.y - DRECT.y) - FILE_ENTRY_RECT.height - 8.0f
-    // };
-
-    // //Collect file information to display on the screen
-    // Rectangle content = Rectangle { .width = FILES_RECT.width - 8.0f, .height = 8.0f };
-    // std::map<const fs::directory_entry, Rectangle> fileRects;
-
-    // const float FILE_RECT_HEIGHT = 16.0f;
-
-    // float y = 4.0f;
-    // //Add the parent directory to the list of files as [parent folder]
-    // if (_currentDir.has_parent_path())
-    // {
-    //     fileRects[fs::directory_entry(_currentDir.parent_path())] = Rectangle { 4.0f, y, content.width - 8.0f, FILE_RECT_HEIGHT };
-    //     y += FILE_RECT_HEIGHT;
-    //     content.height += FILE_RECT_HEIGHT;
-    // }
-
-    // //Calculate rectangles and total height for all the files
-    // for (auto const& entry : fs::directory_iterator{_currentDir})
-    // {
-    //     if (entry.is_directory() || 
-    //         (entry.is_regular_file() && _extensions.find(entry.path().extension().string()) != _extensions.end()))
-    //     {
-    //         Rectangle fileRect = Rectangle {
-    //             .x = 4.0f,
-    //             .y = y,
-    //             .width = content.width - 8.0f,
-    //             .height = FILE_RECT_HEIGHT,
-    //         };
-    //         fileRects[entry] = fileRect;
-    //         y += fileRect.height;
-    //         content.height += fileRect.height;
-    //     }
-    // }
-
-    // //Directory view drawing
-    // Rectangle scissor = GuiScrollPanel(FILES_RECT, NULL, content, &_scroll);
-    // BeginScissorMode(scissor.x, scissor.y, int(scissor.width), int(scissor.height));
-
-    // for (auto const& [entry, rect] : fileRects)
-    // {
-    //     std::string name;
-    //     if (_currentDir.has_parent_path() && entry.path() == _currentDir.parent_path())
-    //     {
-    //         name = "[parent directory]";
-    //     }
-    //     else
-    //     {
-    //         name = entry.path().filename().string();
-    //     }
-
-    //     const Rectangle BUTT_RECT = Rectangle { 
-    //         .x = scissor.x + rect.x + _scroll.x, 
-    //         .y = scissor.y + rect.y + _scroll.y, 
-    //         .width = rect.width, 
-    //         .height = rect.height 
-    //     };
-
-    //     if (CheckCollisionRecs(BUTT_RECT, scissor) && GuiLabelButton(BUTT_RECT, name.c_str()))
-    //     {
-    //         if (entry.is_directory()) 
-    //         {
-    //             _currentDir = entry.path();
-    //             memset(_fileNameBuffer, 0, sizeof(char) * TEXT_FIELD_MAX);
-    //         }
-    //         else 
-    //         {
-    //             strcpy(_fileNameBuffer, entry.path().filename().string().c_str());
-    //         }
-    //     }
-    // }
-
-    // EndScissorMode();
-
-    // //File name entry
-
-    // if (GuiTextBox(FILE_ENTRY_RECT, _fileNameBuffer, TEXT_FIELD_MAX, _fileNameEdit))
-    // {
-    //     _fileNameEdit = !_fileNameEdit;
-    // }
-
-    // //Select button
-    // const Rectangle SELECT_BUTT_RECT = Rectangle {
-    //     .x = FILE_ENTRY_RECT.x + FILE_ENTRY_RECT.width + 4.0f,
-    //     .y = FILE_ENTRY_RECT.y,
-    //     .width = DRECT.width - (SELECT_BUTT_RECT.x - DRECT.x) - 4.0f,
-    //     .height = FILE_ENTRY_RECT.height
-    // }; 
-
-    // if (GuiButton(SELECT_BUTT_RECT, "Select"))
-    // {
-    //     if (strlen(_fileNameBuffer) > 0)
-    //     {
-    //         _callback(_currentDir.append(_fileNameBuffer));
-    //         return false;
-    //     }
-    // }
-
-    // return !clicked;
 }
 
-static const int N_QUIT_MESSAGES = 9;
+static const int N_QUIT_MESSAGES = 10;
 static const char *QUIT_MESSAGES[N_QUIT_MESSAGES] = {
     "Only winners take stretch breaks.", 
     "Did I leave the editor on Nightmare difficulty?", 
@@ -322,7 +230,8 @@ static const char *QUIT_MESSAGES[N_QUIT_MESSAGES] = {
     "Click 'Nah' to meet hot singles in your area!",
     "Whelp...I'm going to Grillby's...",
     "100% of people who go outside die!",
-    "Да, я тоже не понимаю это приложение."
+    "Да, я тоже не понимаю это приложение.",
+    "They told me the fancy new UI would make you stay...",
 };
 
 CloseDialog::CloseDialog()
@@ -332,16 +241,31 @@ CloseDialog::CloseDialog()
 
 bool CloseDialog::Draw()
 {
-    switch (GuiMessageBox(DialogRec(480.0f, 160.0f), "Really quit?", QUIT_MESSAGES[_messageIdx], "Quit;Nah"))
+    bool open = true;
+    ImGui::OpenPopup("REALLY QUIT?");
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("REALLY QUIT?", &open, ImGuiWindowFlags_AlwaysAutoResize))
     {
-    case 1:
-        App::Get()->Quit();
-        return false;
-    case -1:
+        ImGui::TextUnformatted(QUIT_MESSAGES[_messageIdx]);
+
+        if (ImGui::Button("Quit"))
+        {
+            App::Get()->Quit();
+            ImGui::EndPopup();
+            return false;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Nah"))
+        {
+            ImGui::EndPopup();
+            return false;
+        }
+
+        ImGui::EndPopup();
         return true;
-    default:
-        return false;
     }
+    return open;
 }
 
 AssetPathDialog::AssetPathDialog(App::Settings &settings)
