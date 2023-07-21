@@ -71,11 +71,8 @@ public:
 class FileDialog : public Dialog
 {
 public:
+    // If extensions is left blank, then only directories are selectable.
     FileDialog(std::string title, std::initializer_list<std::string> extensions, std::function<void(std::filesystem::path)> callback);
-
-    inline virtual ~FileDialog() override 
-    {
-    }
 
     virtual bool Draw() override;
 protected:
@@ -104,14 +101,11 @@ public:
     virtual bool Draw() override;
 protected:
     App::Settings &_settings;
-    char _texPathBuffer[TEXT_FIELD_MAX];
-    char _shapePathBuffer[TEXT_FIELD_MAX];
+    char _texDirBuffer[TEXT_FIELD_MAX];
+    char _shapeDirBuffer[TEXT_FIELD_MAX];
     char _defaultTexBuffer[TEXT_FIELD_MAX];
     char _defaultShapeBuffer[TEXT_FIELD_MAX];
-    bool _texPathEdit;
-    bool _shapePathEdit;
-    bool _defaultTexEdit;
-    bool _defaultShapeEdit;
+    std::unique_ptr<FileDialog> _fileDialog;
 };
 
 class SettingsDialog : public Dialog

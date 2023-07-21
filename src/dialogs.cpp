@@ -207,7 +207,7 @@ bool FileDialog::Draw()
 
         ImGui::InputText("File name", _fileNameBuffer, TEXT_FIELD_MAX);
         
-        if (ImGui::Button("SELECT") && strlen(_fileNameBuffer) > 0)
+        if (ImGui::Button("SELECT") && (strlen(_fileNameBuffer) > 0 || _extensions.empty()))
         {
             _callback(_currentDir.append(_fileNameBuffer));
             ImGui::EndPopup();
@@ -270,104 +270,209 @@ bool CloseDialog::Draw()
 
 AssetPathDialog::AssetPathDialog(App::Settings &settings)
     : _settings(settings),
-      _texPathEdit(false),
-      _shapePathEdit(false),
-      _defaultTexEdit(false),
-      _defaultShapeEdit(false)
+    _fileDialog(nullptr)
 {
-    strcpy(_texPathBuffer, App::Get()->GetTexturesDir().c_str());
-    strcpy(_shapePathBuffer, App::Get()->GetShapesDir().c_str());
+    strcpy(_texDirBuffer, App::Get()->GetTexturesDir().c_str());
+    strcpy(_shapeDirBuffer, App::Get()->GetShapesDir().c_str());
     strcpy(_defaultTexBuffer, App::Get()->GetDefaultTexturePath().c_str());
     strcpy(_defaultShapeBuffer, App::Get()->GetDefaultShapePath().c_str());
 }
 
+#define ASSET_PATH_FILE_DIALOG_CALLBACK(buffer)                         \
+    [&](fs::path path)                                                  \
+    {                                                                           \
+        fs::path relativePath = fs::relative(path, fs::current_path());         \
+        strcpy(buffer, relativePath.generic_string().c_str());           \
+    }                                                                           \
+
 bool AssetPathDialog::Draw()
 {
-    const Rectangle DRECT = DialogRec(632.0f, 320.0f);
-    
-    bool clicked = GuiWindowBox(DRECT, "Asset Paths");
-
-    auto textBoxes = ArrangeVertical (
-        Rectangle { DRECT.x + 8.0f, DRECT.y + 32.0f, DRECT.width - 16.0f, DRECT.height - 80.0f }, 
-        Rectangle { .width = DRECT.width - 16.0f, .height = 24.0f },
-        8
-    );
-
-    // Textures directory
-    GuiLabel(textBoxes[0], "Textures Directory");
-    if (GuiTextBox(textBoxes[1], _texPathBuffer, TEXT_FIELD_MAX, _texPathEdit))
-        _texPathEdit = !_texPathEdit;
-    
-    // Default texture
-    GuiLabel(textBoxes[2], "Default Texture Path");
-    if (GuiTextBox(textBoxes[3], _defaultTexBuffer, TEXT_FIELD_MAX, _defaultTexEdit))
-        _defaultTexEdit = !_defaultTexEdit;
-
-    // Shape directory
-    GuiLabel(textBoxes[4], "Shapes Directory");
-    if (GuiTextBox(textBoxes[5], _shapePathBuffer, TEXT_FIELD_MAX, _shapePathEdit))
-        _shapePathEdit = !_shapePathEdit;
-
-    // Default shape
-    GuiLabel(textBoxes[6], "Default Shape Path");
-    if (GuiTextBox(textBoxes[7], _defaultShapeBuffer, TEXT_FIELD_MAX, _defaultShapeEdit))
-        _defaultShapeEdit = !_defaultShapeEdit;
-
-    // Submission buttons
-    const Rectangle BUTTON_REGION = Rectangle {
-        .x = DRECT.x + 8.0f,
-        .y = DRECT.y + DRECT.height - 48.0f,
-        .width = DRECT.width - (BUTTON_REGION.x - DRECT.x) - 8.0f,
-        .height = 48.0f
-    };
-    std::vector<Rectangle> buttonRecs = ArrangeHorzCentered(BUTTON_REGION, { 
-        Rectangle{ .width = 96.0f, .height = 32.0f }, 
-        Rectangle{ .width = 96.0f, .height = 32.0f } });
-
-    if (GuiButton(buttonRecs[0], "Confirm"))
+    if (_fileDialog)
     {
-        // Validate all of the entered paths
-        bool bad = false;
-        fs::directory_entry texEntry { _texPathBuffer };
-        if (!texEntry.exists() || !texEntry.is_directory())
+        bool open = _fileDialog->Draw();
+        if (!open) _fileDialog.reset(nullptr);
+        return true;
+    }
+
+    bool open = true;
+    ImGui::OpenPopup("CONFIGURE ASSET PATHS");
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("CONFIGURE ASSET PATHS", &open, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        if (ImGui::Button("Browse##texdir"))
         {
-            strcpy(_texPathBuffer, "Invalid!");
-            bad = true;
+            _fileDialog.reset(new FileDialog("Select textures directory", {}, 
+                ASSET_PATH_FILE_DIALOG_CALLBACK(_texDirBuffer)
+            ));
         }
-        fs::directory_entry defTexEntry { _defaultTexBuffer };
-        if (!defTexEntry.exists() || !defTexEntry.is_regular_file())
+        ImGui::SameLine();
+        ImGui::InputText("Textures Directory", _texDirBuffer, TEXT_FIELD_MAX);
+
+        if (ImGui::Button("Browse##deftex"))
         {
-            strcpy(_defaultTexBuffer, "Invalid!");
-            bad = true;
+            _fileDialog.reset(new FileDialog("Select default texture", {".png"}, 
+                ASSET_PATH_FILE_DIALOG_CALLBACK(_defaultTexBuffer)
+            ));
         }
-        fs::directory_entry shapeEntry { _shapePathBuffer };
-        if (!shapeEntry.exists() || !shapeEntry.is_directory())
+        ImGui::SameLine();
+        ImGui::InputText("Default Texture", _defaultTexBuffer, TEXT_FIELD_MAX);
+
+        if (ImGui::Button("Browse##shapedir"))
         {
-            strcpy(_shapePathBuffer, "Invalid!");
-            bad = true;
+            _fileDialog.reset(new FileDialog("Select shapes directory", {}, 
+                ASSET_PATH_FILE_DIALOG_CALLBACK(_shapeDirBuffer)
+            ));
         }
-        fs::directory_entry defShapeEntry { _defaultShapeBuffer };
-        if (!defShapeEntry.exists() || !defShapeEntry.is_regular_file())
+        ImGui::SameLine();
+        ImGui::InputText("Shapes Directory", _shapeDirBuffer, TEXT_FIELD_MAX);
+
+        if (ImGui::Button("Browse##defshape"))
         {
-            strcpy(_defaultShapeBuffer, "Invalid!");
-            bad = true;
+            _fileDialog.reset(new FileDialog("Select default shape", {".obj"}, 
+                ASSET_PATH_FILE_DIALOG_CALLBACK(_defaultShapeBuffer)
+            ));
         }
-        if (!bad) 
+        ImGui::SameLine();
+        ImGui::InputText("Default Shape", _defaultShapeBuffer, TEXT_FIELD_MAX);
+
+        if (ImGui::Button("Confirm"))
         {
-            _settings.texturesDir = texEntry.path().string();
-            _settings.defaultTexturePath = defTexEntry.path().string();
-            _settings.shapesDir = shapeEntry.path().string();
-            _settings.defaultShapePath = defShapeEntry.path().string();
-            App::Get()->SaveSettings();
+            // Validate all of the entered paths
+            bool bad = false;
+            fs::directory_entry texEntry { _texDirBuffer };
+            if (!texEntry.exists() || !texEntry.is_directory())
+            {
+                strcpy(_texDirBuffer, "Invalid!");
+                bad = true;
+            }
+            fs::directory_entry defTexEntry { _defaultTexBuffer };
+            if (!defTexEntry.exists() || !defTexEntry.is_regular_file())
+            {
+                strcpy(_defaultTexBuffer, "Invalid!");
+                bad = true;
+            }
+            fs::directory_entry shapeEntry { _shapeDirBuffer };
+            if (!shapeEntry.exists() || !shapeEntry.is_directory())
+            {
+                strcpy(_shapeDirBuffer, "Invalid!");
+                bad = true;
+            }
+            fs::directory_entry defShapeEntry { _defaultShapeBuffer };
+            if (!defShapeEntry.exists() || !defShapeEntry.is_regular_file())
+            {
+                strcpy(_defaultShapeBuffer, "Invalid!");
+                bad = true;
+            }
+            if (!bad) 
+            {
+                _settings.texturesDir = texEntry.path().string();
+                _settings.defaultTexturePath = defTexEntry.path().string();
+                _settings.shapesDir = shapeEntry.path().string();
+                _settings.defaultShapePath = defShapeEntry.path().string();
+                App::Get()->SaveSettings();
+                ImGui::EndPopup();
+                return false;
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel"))
+        {
+            ImGui::EndPopup();
             return false;
         }
-    }
-    else if (GuiButton(buttonRecs[1], "Cancel"))
-    {
-        return false;
+
+        ImGui::EndPopup();
+        return true;
     }
 
-    return !clicked;
+    return open;
+
+    // const Rectangle DRECT = DialogRec(632.0f, 320.0f);
+    
+    // bool clicked = GuiWindowBox(DRECT, "Asset Paths");
+
+    // auto textBoxes = ArrangeVertical (
+    //     Rectangle { DRECT.x + 8.0f, DRECT.y + 32.0f, DRECT.width - 16.0f, DRECT.height - 80.0f }, 
+    //     Rectangle { .width = DRECT.width - 16.0f, .height = 24.0f },
+    //     8
+    // );
+
+    // // Textures directory
+    // GuiLabel(textBoxes[0], "Textures Directory");
+    // if (GuiTextBox(textBoxes[1], _texPathBuffer, TEXT_FIELD_MAX, _texPathEdit))
+    //     _texPathEdit = !_texPathEdit;
+    
+    // // Default texture
+    // GuiLabel(textBoxes[2], "Default Texture Path");
+    // if (GuiTextBox(textBoxes[3], _defaultTexBuffer, TEXT_FIELD_MAX, _defaultTexEdit))
+    //     _defaultTexEdit = !_defaultTexEdit;
+
+    // // Shape directory
+    // GuiLabel(textBoxes[4], "Shapes Directory");
+    // if (GuiTextBox(textBoxes[5], _shapePathBuffer, TEXT_FIELD_MAX, _shapePathEdit))
+    //     _shapePathEdit = !_shapePathEdit;
+
+    // // Default shape
+    // GuiLabel(textBoxes[6], "Default Shape Path");
+    // if (GuiTextBox(textBoxes[7], _defaultShapeBuffer, TEXT_FIELD_MAX, _defaultShapeEdit))
+    //     _defaultShapeEdit = !_defaultShapeEdit;
+
+    // // Submission buttons
+    // const Rectangle BUTTON_REGION = Rectangle {
+    //     .x = DRECT.x + 8.0f,
+    //     .y = DRECT.y + DRECT.height - 48.0f,
+    //     .width = DRECT.width - (BUTTON_REGION.x - DRECT.x) - 8.0f,
+    //     .height = 48.0f
+    // };
+    // std::vector<Rectangle> buttonRecs = ArrangeHorzCentered(BUTTON_REGION, { 
+    //     Rectangle{ .width = 96.0f, .height = 32.0f }, 
+    //     Rectangle{ .width = 96.0f, .height = 32.0f } });
+
+    // if (GuiButton(buttonRecs[0], "Confirm"))
+    // {
+    //     // Validate all of the entered paths
+    //     bool bad = false;
+    //     fs::directory_entry texEntry { _texPathBuffer };
+    //     if (!texEntry.exists() || !texEntry.is_directory())
+    //     {
+    //         strcpy(_texPathBuffer, "Invalid!");
+    //         bad = true;
+    //     }
+    //     fs::directory_entry defTexEntry { _defaultTexBuffer };
+    //     if (!defTexEntry.exists() || !defTexEntry.is_regular_file())
+    //     {
+    //         strcpy(_defaultTexBuffer, "Invalid!");
+    //         bad = true;
+    //     }
+    //     fs::directory_entry shapeEntry { _shapePathBuffer };
+    //     if (!shapeEntry.exists() || !shapeEntry.is_directory())
+    //     {
+    //         strcpy(_shapePathBuffer, "Invalid!");
+    //         bad = true;
+    //     }
+    //     fs::directory_entry defShapeEntry { _defaultShapeBuffer };
+    //     if (!defShapeEntry.exists() || !defShapeEntry.is_regular_file())
+    //     {
+    //         strcpy(_defaultShapeBuffer, "Invalid!");
+    //         bad = true;
+    //     }
+    //     if (!bad) 
+    //     {
+    //         _settings.texturesDir = texEntry.path().string();
+    //         _settings.defaultTexturePath = defTexEntry.path().string();
+    //         _settings.shapesDir = shapeEntry.path().string();
+    //         _settings.defaultShapePath = defShapeEntry.path().string();
+    //         App::Get()->SaveSettings();
+    //         return false;
+    //     }
+    // }
+    // else if (GuiButton(buttonRecs[1], "Cancel"))
+    // {
+    //     return false;
+    // }
+
+    // return !clicked;
 }
 
 SettingsDialog::SettingsDialog(App::Settings &settings)
