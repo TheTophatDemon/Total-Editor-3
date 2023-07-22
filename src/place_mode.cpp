@@ -421,7 +421,10 @@ void PlaceMode::UpdateCursor()
 void PlaceMode::Update() 
 {
     // Don't update this when using the GUI
-    if (ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard) return;
+    if (auto io = ImGui::GetIO(); io.WantCaptureMouse || io.WantCaptureKeyboard) 
+    {
+        return;
+    }
 
     MoveCamera();
 

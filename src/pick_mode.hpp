@@ -22,6 +22,7 @@
 #define PICK_MODE_H
 
 #include "raylib.h"
+#include "imgui/imgui.h"
 
 #include <vector>
 #include <string>
@@ -42,13 +43,13 @@ public:
     {
         fs::path        filePath;
         std::string     label;
+        Texture         texture;
 
         Frame();
         Frame(const fs::path filePath, const fs::path rootDir);
     };
 
     enum class Mode { TEXTURES, SHAPES };
-    enum class View { GRID, LIST };
 
     PickMode(Mode mode);
     virtual void Update() override;
@@ -57,21 +58,19 @@ public:
     virtual void OnExit() override;
     
     inline Mode GetMode() const { return _mode; }
-    inline View GetView() const { return _view; }
 
     std::shared_ptr<Assets::TexHandle> GetPickedTexture() const;
     std::shared_ptr<Assets::ModelHandle> GetPickedShape() const;
 
 protected:
     //Retrieves files, recursively, and generates frames for each.
-    void _GetFrames(fs::path rootDir);
+    void _GetFrames();
 
-    void _DrawGridView(Rectangle framesView);
-    void _DrawListView(Rectangle framesView);
-    void _DrawFrame(Frame& frame, Rectangle rect);
-
-    Texture2D _GetTexture(const fs::path path);
-    Model _GetModel(const fs::path path);
+    //Load or retrieve cached texture
+    Texture2D       _GetTexture(const fs::path path);
+    //Load or retrieve cached model
+    Model           _GetModel(const fs::path path);
+    //Load or retrieve cached render texture
     RenderTexture2D _GetIcon(const fs::path path);
 
     std::map<fs::path, Texture2D> _loadedTextures;
@@ -89,7 +88,7 @@ protected:
     bool _searchFilterFocused;
 
     Mode _mode;
-    View _view;
+    fs::path _rootDir;
     Vector2 _scroll;
 };
 

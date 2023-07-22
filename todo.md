@@ -1,6 +1,6 @@
 # TODO
 
-- Transition picker UI to ImGUI
+- Transition entity picker UI to IMGui
 
 - Allow entities to be assigned models & textures in order to act as dynamic tiles
 

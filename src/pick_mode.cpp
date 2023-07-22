@@ -22,6 +22,7 @@
 
 #include "extras/raygui.h"
 #include "raymath.h"
+#include "imgui/rlImGui.h"
 
 #include <cstring>
 #include <stack>
@@ -34,10 +35,8 @@
 #include "assets.hpp"
 #include "text_util.hpp"
 
-#define UPPER_MARGIN 48
-#define FRAME_SIZE 64
-#define FRAME_MARGIN 16
-#define FRAME_SPACING (FRAME_SIZE + FRAME_MARGIN * 2)
+#define FRAME_SIZE 196
+#define ICON_SIZE 64
 
 PickMode::Frame::Frame()
     : Frame(fs::path(), fs::path())
@@ -53,7 +52,6 @@ PickMode::PickMode(Mode mode)
     : _mode(mode),
       _scroll(Vector2Zero()),
       _searchFilterFocused(false),
-      _view(mode == Mode::TEXTURES ? View::GRID : View::LIST),
       _longestLabelLength(0)
 {
     memset(_searchFilterBuffer, 0, sizeof(char) * SEARCH_BUFFER_SIZE);
@@ -89,9 +87,12 @@ Texture2D PickMode::_GetTexture(const fs::path path)
 {
     if (_loadedTextures.find(path) == _loadedTextures.end())
     {
-        Texture2D texture = LoadTexture(path.string().c_str());
+        // Before loading the texture, resize it to fit into the frame
+        Image image = LoadImage(path.string().c_str());
+        ImageResize(&image, ICON_SIZE, ICON_SIZE);
+        Texture2D texture = LoadTextureFromImage(image);
+        UnloadImage(image);
         _loadedTextures[path] = texture;
-        return texture;
     }
     return _loadedTextures[path];
 }
@@ -111,20 +112,27 @@ RenderTexture2D PickMode::_GetIcon(const fs::path path)
 {
     if (_loadedIcons.find(path) == _loadedIcons.end())
     {
-        RenderTexture2D icon = LoadRenderTexture(FRAME_SIZE, FRAME_SIZE);
+        RenderTexture2D icon = LoadRenderTexture(ICON_SIZE, ICON_SIZE);
         _loadedIcons[path] = icon;
         return icon;
     }
     return _loadedIcons[path];
 }
 
-void PickMode::_GetFrames(fs::path rootDir)
+void PickMode::_GetFrames()
 {
     _frames.clear();
     
     for (const fs::path path : _foundFiles)
     {
-        Frame frame(path, rootDir);
+        Frame frame(path, _rootDir);
+        frame.texture = Texture {
+            .id = 0,
+            .width = ICON_SIZE,
+            .height = ICON_SIZE,
+            .mipmaps = 0,
+            .format = 0,
+        };
 
         //Filter out files that don't contain the search term
         std::string lowerCaseLabel = TextToLower(frame.label.c_str());
@@ -137,23 +145,23 @@ void PickMode::_GetFrames(fs::path rootDir)
         //Update longest label length
         _longestLabelLength = Max(_longestLabelLength, frame.label.length());
 
-        _frames.push_back(std::move(frame));
+        _frames.push_back(frame);
     }
 }
 
 void PickMode::OnEnter()
 {
     // Get the paths to all assets if this hasn't been done already.
-    auto rootDir = (_mode == Mode::SHAPES) ? fs::path(App::Get()->GetShapesDir()) : fs::path(App::Get()->GetTexturesDir());
+    _rootDir = (_mode == Mode::SHAPES) ? fs::path(App::Get()->GetShapesDir()) : fs::path(App::Get()->GetTexturesDir());
     if (_foundFiles.empty())
     {
-        if (!fs::is_directory(rootDir)) 
+        if (!fs::is_directory(_rootDir)) 
         {
             std::cerr << "Asset directory in settings is not a directory!" << std::endl;
             return;
         }
         
-        for (auto const& entry : fs::recursive_directory_iterator{rootDir})
+        for (auto const& entry : fs::recursive_directory_iterator{_rootDir})
         {
             if (entry.is_directory() || !entry.is_regular_file()) continue;
             
@@ -170,7 +178,7 @@ void PickMode::OnEnter()
         }
     }
 
-    _GetFrames(rootDir);
+    _GetFrames();
 }
 
 void PickMode::OnExit()
@@ -196,15 +204,6 @@ void PickMode::OnExit()
 
 void PickMode::Update()
 {
-    if (strcmp(_searchFilterBuffer, _searchFilterPrevious) != 0)
-    {
-        if (_mode == Mode::TEXTURES)
-            _GetFrames(fs::path(App::Get()->GetTexturesDir()));
-        else if (_mode == Mode::SHAPES)
-            _GetFrames(fs::path(App::Get()->GetShapesDir()));
-    }
-    strcpy(_searchFilterPrevious, _searchFilterBuffer);
-
     if (_mode == Mode::SHAPES)
     {
         for (Frame& frame : _frames) 
@@ -222,151 +221,72 @@ void PickMode::Update()
     }
 }
 
-void PickMode::_DrawGridView(Rectangle framesView) 
-{
-    const int FRAMES_PER_ROW = (int)framesView.width / FRAME_SPACING;
-    Rectangle framesContent = Rectangle{
-        .x = 0, 
-        .y = 0, 
-        .width = framesView.width - 16, 
-        .height = ceilf((float)_frames.size() / FRAMES_PER_ROW) * FRAME_SPACING + 64
-    };
-
-    Rectangle scissorRect = GuiScrollPanel(framesView, NULL, framesContent, &_scroll);
-
-    // Drawing the scrolling view
-    BeginScissorMode(scissorRect.x, scissorRect.y, scissorRect.width, scissorRect.height);
-    {
-        for (int i = 0; i < _frames.size(); ++i)
-        {
-            Rectangle rect = Rectangle{
-                .x = framesView.x + FRAME_MARGIN + (i % FRAMES_PER_ROW) * FRAME_SPACING + _scroll.x,
-                .y = framesView.y + FRAME_MARGIN + (i / FRAMES_PER_ROW) * FRAME_SPACING + _scroll.y,
-                .width = FRAME_SIZE,
-                .height = FRAME_SIZE};
-
-            if (CheckCollisionRecs(rect, scissorRect))
-            {
-                _DrawFrame(_frames[i], rect);
-            }
-        }
-    }
-    EndScissorMode();
-}
-
-void PickMode::_DrawListView(Rectangle framesView)
-{
-    const int SPACING_WITH_LABEL = FRAME_SPACING + (_longestLabelLength * 10) + 8;
-    int framesPerRow = (int)floorf(framesView.width / SPACING_WITH_LABEL);
-    if (framesPerRow < 1) framesPerRow = 1;
-    Rectangle framesContent = Rectangle{ 
-        .x = 0, 
-        .y = 0, 
-        .width = framesView.width - 16, 
-        .height = ceilf((float)_frames.size() / framesPerRow) * FRAME_SPACING + 64 };
-    Rectangle scissorRect = GuiScrollPanel(framesView, NULL, framesContent, &_scroll);
-
-    // Drawing the scrolling view
-    BeginScissorMode(scissorRect.x, scissorRect.y, scissorRect.width, scissorRect.height);
-    {
-        for (int i = 0; i < _frames.size(); ++i)
-        {
-            Rectangle rect = Rectangle{
-                .x = framesView.x + FRAME_MARGIN + (i % framesPerRow) * SPACING_WITH_LABEL + _scroll.x,
-                .y = framesView.y + FRAME_MARGIN + (i / framesPerRow) * FRAME_SPACING + _scroll.y,
-                .width = FRAME_SIZE,
-                .height = FRAME_SIZE};
-            
-            if (CheckCollisionRecs(rect, scissorRect))
-            {
-
-                _DrawFrame(_frames[i], rect);
-
-                Rectangle labelRect = Rectangle{
-                    .x = rect.x + rect.width + FRAME_MARGIN,
-                    .y = rect.y,
-                    .width = float(SPACING_WITH_LABEL - FRAME_SPACING),
-                    .height = rect.height
-                };
-
-                // Allow the label to be clickable as well to select the frame
-                if (GuiLabelButton(labelRect, _frames[i].label.c_str())) 
-                {
-                    _selectedFrame = _frames[i];
-                }
-            }
-        }
-    }
-    EndScissorMode();
-}
-
-void PickMode::_DrawFrame(Frame& frame, Rectangle rect) 
-{
-    // Handle clicking
-    if (CheckCollisionPointRec(GetMousePosition(), rect) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-    {
-        _selectedFrame = frame;
-    }
-
-    // Black background & outline
-    Rectangle outline = Rectangle{rect.x - 2, rect.y - 2, rect.width + 4, rect.height + 4};
-    DrawRectangle(outline.x, outline.y, outline.width, outline.height, BLACK);
-    
-    //Draw the rendered texture
-    Texture2D tex;
-    if (_mode == Mode::SHAPES)
-        tex = _GetIcon(frame.filePath).texture;
-    else if (_mode == Mode::TEXTURES)
-        tex = _GetTexture(frame.filePath);
-	Rectangle source = Rectangle { 0.0f, 0.0f, (float)tex.width, (float)tex.height };
-    DrawTexturePro(tex, source, rect, Vector2Zero(), 0.0f, WHITE);
-    
-    //White selection outline
-    if (_selectedFrame.filePath == frame.filePath) 
-        DrawRectangleLinesEx(outline, 2.0f, WHITE); 
-}
-
 void PickMode::Draw()
 {
-    //Draw search box
-    GuiLabel(Rectangle{32, UPPER_MARGIN, 128, 32}, "SEARCH:");
-    Rectangle searchBoxRect = Rectangle{128, UPPER_MARGIN, (float)GetScreenWidth() / 3.0f, 32};
-    if (GuiTextBox(searchBoxRect, _searchFilterBuffer, SEARCH_BUFFER_SIZE, _searchFilterFocused))
+    const float WINDOW_UPPER_MARGIN = 24.0f;
+    bool open = true;
+    ImGui::SetNextWindowSize(ImVec2((float)GetScreenWidth(), (float)GetScreenHeight() - WINDOW_UPPER_MARGIN));
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(ImVec2(center.x, center.y + WINDOW_UPPER_MARGIN), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::Begin("##Pick Mode View", &open, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove))
     {
-        _searchFilterFocused = !_searchFilterFocused;
-    }
-    
-    //Clear button
-    Rectangle clearButtonRect = Rectangle{searchBoxRect.x + searchBoxRect.width + 4, searchBoxRect.y, 96, 32};
-    if (GuiButton(clearButtonRect, "Clear"))
-    {
-        memset(_searchFilterBuffer, 0, SEARCH_BUFFER_SIZE * sizeof(char));
-    }
+        ImVec2 windowSize = ImGui::GetItemRectSize();
+        
+        if (ImGui::InputText("Search", _searchFilterBuffer, SEARCH_BUFFER_SIZE))
+        {
+            _GetFrames();
+        }
 
-    //Viewing types selection
-    Rectangle viewToggleRect = Rectangle{
-        .x = (float)GetScreenWidth() - 32 - 128, 
-        .y = clearButtonRect.y,
-        .width = 64,
-        .height = clearButtonRect.height 
-        };
-    _view = (View)GuiToggleGroup(viewToggleRect, "GRID;LIST", (int)_view);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0, 8.0));
+        ImGui::Separator();
+        ImGui::PopStyleVar(1);
+        
+        const int NUM_COLS = Max((int)((windowSize.x) / (FRAME_SIZE * 1.5f)), 1);
+        const int NUM_ROWS = Max((int)ceilf(_frames.size() / (float)NUM_COLS), 1);
+        
+        if (ImGui::BeginTable("##Frames", NUM_COLS, ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY))
+        {
+            for (int r = 0; r < NUM_ROWS; ++r)
+            {
+                ImGui::TableNextRow();
+                for (int c = 0; c < NUM_COLS; ++c)
+                {
+                    ImGui::TableNextColumn();
 
-    // Draw views
-    Rectangle framesView = Rectangle{32, 96, (float)GetScreenWidth() - 64, (float)GetScreenHeight() - 128};
-    if (_view == View::GRID) _DrawGridView(framesView);
-    else if (_view == View::LIST) _DrawListView(framesView);
+                    int frameIndex = c + r * NUM_COLS;
+                    if (frameIndex >= _frames.size()) break;
 
-    // Draw the text showing the selected frame's label.
-    if (!_selectedFrame.filePath.empty())
-    {
-        std::string selectString = std::string("Selected: ") + _selectedFrame.label;
+                    fs::path filePath = _frames[frameIndex].filePath;
+                    
+                    ImColor color = ImColor(1.0f, 1.0f, 1.0f);
+                    if (_selectedFrame.filePath == _frames[frameIndex].filePath)
+                    {
+                        // Set color when selected to yellow
+                        color = ImColor(1.0f, 1.0f, 0.0f);
+                    }
 
-        GuiLabel(Rectangle{
-                    .x = 64, 
-                    .y = (float)GetScreenHeight() - 24, 
-                    .width = (float)GetScreenWidth() / 2.0f, 
-                    .height = 16},
-                selectString.c_str());
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(color));
+                    if (rlImGuiImageButton(filePath.string().c_str(), &_frames[frameIndex].texture))
+                    {
+                        _selectedFrame = _frames[frameIndex];
+                    }
+                    ImGui::PopStyleColor(1);
+
+                    if (ImGui::IsItemVisible() && !IsTextureReady(_frames[frameIndex].texture))
+                    {
+                        switch (_mode)
+                        {
+                        case Mode::TEXTURES: _frames[frameIndex].texture = _GetTexture(filePath); break;
+                        case Mode::SHAPES: _frames[frameIndex].texture = _GetIcon(filePath).texture; break;
+                        }
+                    }
+
+                    ImGui::TextColored(color, _frames[frameIndex].label.c_str());
+                }
+            }
+            ImGui::EndTable();
+        }
+
+        ImGui::End();
     }
 }

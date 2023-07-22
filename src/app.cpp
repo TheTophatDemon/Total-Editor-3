@@ -141,44 +141,40 @@ void App::Update()
 {
     _menuBar->Update();
 
-    // Prevent editor from being controlled while using the GUI
-    if (auto io = ImGui::GetIO(); !io.WantCaptureMouse && !io.WantCaptureKeyboard) 
+    //Mode switching hotkeys
+    if (IsKeyPressed(KEY_TAB))
     {
-        //Mode switching hotkeys
-        if (IsKeyPressed(KEY_TAB))
+        if (IsKeyDown(KEY_LEFT_SHIFT))
         {
-            if (IsKeyDown(KEY_LEFT_SHIFT))
-            {
-                if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::PICK_SHAPE);
-                else ChangeEditorMode(Mode::PLACE_TILE);
-            }
-            else if (IsKeyDown(KEY_LEFT_CONTROL))
-            {
-                if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::EDIT_ENT);
-                else if (_editorMode == _entMode.get()) ChangeEditorMode(Mode::PLACE_TILE);
-            }
-            else
-            {
-                if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::PICK_TEXTURE);
-                else ChangeEditorMode(Mode::PLACE_TILE);
-            }
+            if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::PICK_SHAPE);
+            else ChangeEditorMode(Mode::PLACE_TILE);
         }
-
-        //Save hotkey
-        if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S))
+        else if (IsKeyDown(KEY_LEFT_CONTROL))
         {
-            if (!GetLastSavedPath().empty())
-            {
-                TrySaveMap(GetLastSavedPath());
-            }
-            else
-            {
-                _menuBar->OpenSaveMapDialog();
-            }
+            if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::EDIT_ENT);
+            else if (_editorMode == _entMode.get()) ChangeEditorMode(Mode::PLACE_TILE);
         }
-        
-        _editorMode->Update();
+        else
+        {
+            if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::PICK_TEXTURE);
+            else ChangeEditorMode(Mode::PLACE_TILE);
+        }
     }
+
+    //Save hotkey
+    if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S))
+    {
+        if (!GetLastSavedPath().empty())
+        {
+            TrySaveMap(GetLastSavedPath());
+        }
+        else
+        {
+            _menuBar->OpenSaveMapDialog();
+        }
+    }
+
+    _editorMode->Update();
 
     //Draw
     BeginDrawing();
@@ -190,7 +186,7 @@ void App::Update()
     _menuBar->Draw();
     rlImGuiEnd();
 
-    if (!_previewDraw) DrawFPS(4, GetScreenHeight() - 24);
+    if (!_previewDraw) DrawFPS(GetScreenWidth() - 24, 4);
 
 	EndDrawing();
 }
