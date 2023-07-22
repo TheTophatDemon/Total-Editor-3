@@ -49,10 +49,7 @@ PickMode::Frame::Frame(const fs::path filePath, const fs::path rootDir)
 }
 
 PickMode::PickMode(Mode mode)
-    : _mode(mode),
-      _scroll(Vector2Zero()),
-      _searchFilterFocused(false),
-      _longestLabelLength(0)
+    : _mode(mode)
 {
     memset(_searchFilterBuffer, 0, sizeof(char) * SEARCH_BUFFER_SIZE);
     
@@ -141,9 +138,6 @@ void PickMode::_GetFrames()
         {
             continue;
         }
-
-        //Update longest label length
-        _longestLabelLength = Max(_longestLabelLength, frame.label.length());
 
         _frames.push_back(frame);
     }

@@ -122,7 +122,7 @@ void App::ChangeEditorMode(const App::Mode newMode)
         {
             if (_editorMode == _entMode.get())
             {
-                if (_entMode->IsChangeConfirmed()) _tilePlaceMode->SetCursorEnt(_entMode->GetEnt());
+                _tilePlaceMode->SetCursorEnt(_entMode->GetEnt());
             }
             _editorMode = _tilePlaceMode.get(); 
         }

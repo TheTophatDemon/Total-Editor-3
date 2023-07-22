@@ -80,16 +80,13 @@ protected:
     std::vector<Frame> _frames;
     
     Frame _selectedFrame;
-    size_t _longestLabelLength;
     Camera _iconCamera; //Camera for rendering 3D shape preview icons
     
     char _searchFilterBuffer[SEARCH_BUFFER_SIZE];
     char _searchFilterPrevious[SEARCH_BUFFER_SIZE];
-    bool _searchFilterFocused;
 
     Mode _mode;
     fs::path _rootDir;
-    Vector2 _scroll;
 };
 
 #endif

@@ -38,18 +38,17 @@ public:
 
     inline const Ent &GetEnt() const { return _ent; }
     inline void SetEnt(const Ent &ent) { _ent = ent; }
-
-    inline bool IsChangeConfirmed() const { return _changeConfirmed; }
 protected:
     Ent _ent;
-    Vector2 _propsScroll;
-    //Indicates which properties are having their values edited.
-    std::map<std::string, bool> _propEditing;
-    std::map<std::string, char*> _propBuffers; //In order to work with RayGUI text boxes, each value needs a modifiable char buffer.
-    char _keyName[TEXT_FIELD_MAX];
-    bool _keyNameEdit;
+    
+    char _texturePathBuffer[TEXT_FIELD_MAX];
+    char _modelPathBuffer[TEXT_FIELD_MAX];
 
-    bool _changeConfirmed;
+    char _newKeyBuffer[TEXT_FIELD_MAX];
+    char _newValBuffer[TEXT_FIELD_MAX];
+
+    // Character buffers for each property's value (indexed by the key)
+    std::map<std::string, char*> _valBuffers;
 };
 
 #endif
