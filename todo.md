@@ -1,8 +1,12 @@
 # TODO
 
-- Transition entity picker UI to IMGui
+- Fix black sprites
 
-- Allow entities to be assigned models & textures in order to act as dynamic tiles
+- Investigate audio segfault
+
+- Add sprites to be used as billboards
+
+- Make sure entities work when exported
 
 - Use instancing when rendering entity spheres?
 

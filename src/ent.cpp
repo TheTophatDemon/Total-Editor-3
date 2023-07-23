@@ -70,6 +70,8 @@ inline Ent::operator bool() const
 
 void Ent::Draw(const Camera camera, const bool drawAxes) const
 {
+    Matrix matrix = GetMatrix();
+
     switch (display)
     {
     case DisplayMode::SPHERE:
@@ -89,7 +91,8 @@ void Ent::Draw(const Camera camera, const bool drawAxes) const
             mat.maps[MATERIAL_MAP_ALBEDO].color = color;
             
             Model mod = model->GetModel();
-            mod.transform = MatrixMultiply(mod.transform, MatrixScale(radius, radius, radius));
+            mod.transform = MatrixMultiply(mod.transform, 
+                MatrixMultiply(MatrixScale(radius, radius, radius), matrix));
             for (int m = 0; m < mod.meshCount; ++m)
             {
                 DrawMesh(mod.meshes[m], mat, mod.transform);
@@ -111,7 +114,7 @@ void Ent::Draw(const Camera camera, const bool drawAxes) const
     {
         //Draw axes to show orientation
         rlPushMatrix();
-        rlMultMatrixf(MatrixToFloat(GetMatrix()));
+        rlMultMatrixf(MatrixToFloat(matrix));
         DrawAxes3D(Vector3Zero(), radius);
         rlPopMatrix();
     }

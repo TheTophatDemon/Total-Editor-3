@@ -228,6 +228,8 @@ int main(int argc, char **argv)
     config.FontDataOwnedByAtlas = false;
     io.FontDefault = io.Fonts->AddFontFromMemoryTTF((void *) Softball_Gold_ttf, Softball_Gold_ttf_len, 24, &config, io.Fonts->GetGlyphRangesCyrillic());
 
+    io.ConfigFlags = ImGuiConfigFlags_NavNoCaptureKeyboard;
+
     rlImGuiReloadFonts();
 
     SetTraceLogLevel(LOG_WARNING);

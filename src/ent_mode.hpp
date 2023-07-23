@@ -23,6 +23,9 @@
 
 #include "app.hpp"
 #include "ent.hpp"
+#include "dialogs.hpp"
+
+#include <memory>
 
 #define TEXT_FIELD_MAX 512
 
@@ -39,6 +42,8 @@ public:
     inline const Ent &GetEnt() const { return _ent; }
     inline void SetEnt(const Ent &ent) { _ent = ent; }
 protected:
+    std::unique_ptr<FileDialog> _fileDialog;
+
     Ent _ent;
     
     char _texturePathBuffer[TEXT_FIELD_MAX];
