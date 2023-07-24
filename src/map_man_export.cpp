@@ -258,13 +258,21 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
             
             json entNode = {
                 {"translation", { ent.position.x, ent.position.y, ent.position.z }},
-                {"scale", { 1.0f, 1.0f, 1.0f }},
+                {"scale", { ent.radius, ent.radius, ent.radius }},
                 {"rotation", { rot.x, rot.y, rot.z, rot.w }},
                 {"extras", ent.properties}
             };
 
             if (ent.properties.find("name") != ent.properties.end())
                 entNode["name"] = ent.properties.at("name");
+
+            if (ent.model != nullptr)
+                entNode["extras"]["modelPath"] = ent.model->GetPath().generic_string();
+            
+            if (ent.texture != nullptr)
+                entNode["extras"]["texturePath"] = ent.texture->GetPath().generic_string();
+
+            entNode["extras"]["color"] = json::array({ ent.color.r, ent.color.g, ent.color.b });
             
             rootNodes.push_back(nodes.size());
             nodes.push_back(entNode);

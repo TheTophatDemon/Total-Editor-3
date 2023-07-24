@@ -297,3 +297,9 @@ const std::vector<fs::path> MapMan::GetTexturePathList() const
     }
     return paths;
 }
+
+void MapMan::DrawMap(Camera &camera, int fromY, int toY) 
+{
+    _tileGrid.Draw(Vector3Zero(), fromY, toY);
+    _entGrid.Draw(camera, fromY, toY);
+}

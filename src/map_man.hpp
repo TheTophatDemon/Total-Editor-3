@@ -83,11 +83,7 @@ public:
     inline const TileGrid& Tiles() const { return _tileGrid; }
     inline const EntGrid& Ents() const { return _entGrid; }
 
-    inline void DrawMap(Camera &camera, int fromY, int toY) 
-    {
-        _tileGrid.Draw(Vector3Zero(), fromY, toY);
-        _entGrid.Draw(camera, fromY, toY);
-    }
+    void DrawMap(Camera &camera, int fromY, int toY);
 
     inline void Draw2DElements(Camera &camera, int fromY, int toY)
     {

@@ -116,7 +116,12 @@ void EntMode::Draw()
         float entColorf[3] = { _ent.color.r / 255.0f, _ent.color.g / 255.0f, _ent.color.b / 255.0f };
         ImGui::SetNextItemWidth(256.0f);
         ImGui::ColorPicker3("Color", entColorf, ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_InputRGB);
-        _ent.color = Color { (unsigned char)(entColorf[0] * 255.0f), (unsigned char)(entColorf[1] * 255.0f), (unsigned char)(entColorf[2] * 255.0f) };
+        _ent.color = Color { 
+            (unsigned char)(entColorf[0] * 255.0f), 
+            (unsigned char)(entColorf[1] * 255.0f), 
+            (unsigned char)(entColorf[2] * 255.0f), 
+            255 
+        };
 
         ImGui::SameLine();
         ImGui::BeginGroup();
@@ -191,7 +196,7 @@ void EntMode::Draw()
                 ImGui::Text(key.c_str());
 
                 ImGui::TableNextColumn();
-                std::string valID = std::string("##Val") + val;
+                std::string valID = std::string("##Val") + key;
                 ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
                 ImGui::InputText(valID.c_str(), _valBuffers[key], TEXT_FIELD_MAX);
 

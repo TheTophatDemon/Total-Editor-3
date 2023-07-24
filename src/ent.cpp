@@ -105,7 +105,7 @@ void Ent::Draw(const Camera camera, const bool drawAxes) const
     case DisplayMode::SPRITE:
         {
             if (texture == nullptr) break;
-            DrawBillboard(camera, texture->GetTexture(), position, radius, color);
+            DrawBillboard(camera, texture->GetTexture(), position, 2.0f * radius, color);
             break;
         }
     }

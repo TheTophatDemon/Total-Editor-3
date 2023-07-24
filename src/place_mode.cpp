@@ -485,12 +485,9 @@ void PlaceMode::Draw()
 {
     BeginMode3D(_camera);
     {
-        //Draw map
-        _mapMan.DrawMap(_camera, _layerViewMin, _layerViewMax);
-
         if (!App::Get()->IsPreviewing())
         {
-            //Grid
+            // Grid
             rlDrawRenderBatchActive();
             rlSetLineWidth(1.0f);
             DrawGridEx(
@@ -498,7 +495,14 @@ void PlaceMode::Draw()
                 _mapMan.Tiles().GetWidth()+1, _mapMan.Tiles().GetLength()+1, 
                 _mapMan.Tiles().GetSpacing());
             rlDrawRenderBatchActive();
+            // We need to draw the grid BEFORE the map, or there will be visual errors with entity billboards
+        }
 
+        //Draw map
+        _mapMan.DrawMap(_camera, _layerViewMin, _layerViewMax);
+
+        if (!App::Get()->IsPreviewing())
+        {
             //Draw cursor
             if (_cursor == &_tileCursor)
             {
