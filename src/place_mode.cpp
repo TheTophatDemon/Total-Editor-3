@@ -484,6 +484,8 @@ void PlaceMode::Draw()
 {
     BeginMode3D(_camera);
     {
+
+        //Draw map
         if (!App::Get()->IsPreviewing())
         {
             // Grid
@@ -493,11 +495,10 @@ void PlaceMode::Draw()
                 Vector3Add(_planeWorldPos, Vector3{ 0.0f, 0.05f, 0.0f }), //Adding the offset to prevent Z-fighting 
                 _mapMan.Tiles().GetWidth()+1, _mapMan.Tiles().GetLength()+1, 
                 _mapMan.Tiles().GetSpacing());
-            rlDrawRenderBatchActive();
             // We need to draw the grid BEFORE the map, or there will be visual errors with entity billboards
+            rlDrawRenderBatchActive();
         }
-
-        //Draw map
+        
         _mapMan.DrawMap(_camera, _layerViewMin, _layerViewMax);
 
         if (!App::Get()->IsPreviewing())
