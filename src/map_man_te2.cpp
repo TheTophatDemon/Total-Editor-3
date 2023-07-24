@@ -23,7 +23,6 @@ bool MapMan::LoadTE2Map(fs::path filePath)
 
         _modelList.clear();
         ModelID cubeID = GetOrAddModelID(fs::path(App::Get()->GetShapesDir()) / "cube.obj");
-        ModelID markerID = GetOrAddModelID(fs::path(App::Get()->GetShapesDir()) / "cube_marker.obj");
         ModelID panelID = GetOrAddModelID(fs::path(App::Get()->GetShapesDir()) / "panel.obj");
         ModelID barsID = GetOrAddModelID(fs::path(App::Get()->GetShapesDir()) / "bars.obj");
 
@@ -66,7 +65,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             Tile tile(NO_MODEL, 0, NO_TEX, 0);
 
             std::string textureName = tokens[3] + ".png";
-            tile.texture = GetOrAddTexID(fs::path(App::Get()->GetTexturesDir()) / textureName);
+            fs::path texturePath = fs::path(App::Get()->GetTexturesDir()) / textureName;
             
             int flag = atoi(tokens[4].c_str());
             int link = atoi(tokens[5].c_str());
@@ -89,13 +88,16 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             }
             if (textureName.find("bars") != std::string::npos)
                 tile.shape = barsID;
-            else if (textureName.find("invisible") != std::string::npos)
-                tile.shape = markerID;
 
             // Create entities for dynamic tiles
             if (flag > 0 && flag != 6 && flag != 7)
             {
-                Ent ent = Ent(0.5f);
+                Ent ent = Ent(1.0f);
+                ent.model = _modelList[tile.shape];
+                ent.texture = Assets::GetTexture(texturePath);
+                ent.yaw = tile.angle;
+                ent.pitch = tile.pitch;
+                ent.display = Ent::DisplayMode::MODEL;
                 switch (flag)
                 {
                 case 1: case 2: case 5: case 8: case 9: case 10: // Moving door like objects
@@ -133,13 +135,12 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                         case 3: ent.properties["key"] = "gray"; break;
                         }
                     }
-                    ent.color = BROWN;
-
+                    
                     break;
                 case 3:
                     ent.properties["type"] = "switch";
                     ent.properties["destination"] = std::to_string(link);
-                    ent.color = SKYBLUE;
+                    
                     break;
                 case 4: case 11: case 12: case 13:
                     ent.properties["type"] = "trigger";
@@ -163,14 +164,18 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                         ent.properties["direction"] = std::to_string(link * 90);
                         break;
                     }
-                    ent.color = MAGENTA;
+                    
                     break;
                 }
                 ent.properties["name"] = ent.properties["type"];
                 tileEntities.push_back({i, 1, k, ent});
             }
-            
-            tilesToAdd.push_back({i, 1, k, tile});
+            else
+            {
+                // Have to load the texture only when the tile isn't an entity, or the IDs will get messed up in the map model.
+                tile.texture = GetOrAddTexID(texturePath);
+                tilesToAdd.push_back({i, 1, k, tile});
+            }
         }
 
         //SECTORS (floors and ceilings)

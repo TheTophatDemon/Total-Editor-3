@@ -1,6 +1,8 @@
 # TODO
 
-- Update TI2 importer
+- Add setting for background color
+
+- Add edge panel shape to replace cube_marker
 
 - Add new sprite assets to be used as billboards
 
