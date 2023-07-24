@@ -22,7 +22,6 @@
 
 #include "raymath.h"
 #include "rlgl.h"
-#include "extras/raygui.h"
 #include "imgui/imgui.h"
 
 #include "draw_extras.h"

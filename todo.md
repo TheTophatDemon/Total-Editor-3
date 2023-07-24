@@ -1,9 +1,5 @@
 # TODO
 
-- Investigate audio segfault
-
-- Remove RayGUI dependencies
-
 - Update TI2 importer
 
 - Add new sprite assets to be used as billboards

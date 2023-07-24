@@ -23,9 +23,6 @@
 #include "raylib.h"
 #include "raymath.h"
 
-#define RAYGUI_IMPLEMENTATION
-#include "extras/raygui.h"
-
 #include "imgui/rlImGui.h"
 #include "imgui/imgui.h"
 
@@ -197,32 +194,16 @@ int main(int argc, char **argv)
 	InitWindow(1280, 720, "Total Editor 3");
     SetWindowMinSize(640, 480);
     SetWindowState(FLAG_WINDOW_RESIZABLE);
-	InitAudioDevice();
+	
     SetExitKey(KEY_NULL);
 
     // Set random seed based on system time;
     using std::chrono::high_resolution_clock;
     SetRandomSeed((int)high_resolution_clock::now().time_since_epoch().count());
 
-    //RayGUI Styling
-    GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt(DARKGRAY));
-    GuiSetFont(Assets::GetFont());
-    GuiSetStyle(LABEL, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
-    GuiSetStyle(LABEL, TEXT_COLOR_FOCUSED, ColorToInt(YELLOW));
-    GuiSetStyle(LABEL, TEXT_COLOR_PRESSED, ColorToInt(LIGHTGRAY));
-    GuiSetStyle(SCROLLBAR, SCROLL_SPEED, 64);
-    GuiSetStyle(LISTVIEW, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
-    GuiSetStyle(LISTVIEW, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
-    GuiSetStyle(VALUEBOX, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
-    GuiSetStyle(DROPDOWNBOX, TEXT_COLOR_NORMAL, ColorToInt(BLACK));
-    GuiSetStyle(TEXTBOX, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
-    GuiSetStyle(TEXTBOX, BACKGROUND_COLOR, ColorToInt(DARKGRAY));
-    GuiSetStyle(SLIDER, TEXT_COLOR_NORMAL, ColorToInt(RAYWHITE));
-
     rlImGuiSetup(true);
 
     // ImGUI styling
-    
     ImGuiIO& io = ImGui::GetIO();
     ImFontConfig config;
     config.FontDataOwnedByAtlas = false;

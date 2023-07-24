@@ -20,7 +20,6 @@
 
 #include "pick_mode.hpp"
 
-#include "extras/raygui.h"
 #include "raymath.h"
 #include "imgui/rlImGui.h"
 

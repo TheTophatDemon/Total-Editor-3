@@ -21,7 +21,6 @@
 #include "dialogs.hpp"
 
 #include "raylib.h"
-#include "extras/raygui.h"
 #include "imgui/imgui.h"
 
 #include <vector>
