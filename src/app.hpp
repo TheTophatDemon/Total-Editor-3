@@ -52,7 +52,7 @@ public:
         std::string exportFilePath; //For GLTF export
         std::string defaultTexturePath;
         std::string defaultShapePath;
-        size_t framesPerPage;
+        uint8_t backgroundColor[3];
     };
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
         Settings, 
@@ -64,8 +64,8 @@ public:
         cullFaces,
         exportFilePath, 
         defaultTexturePath, 
-        defaultShapePath, 
-        framesPerPage);
+        defaultShapePath,
+        backgroundColor);
 
     //Mode implementation
     class ModeImpl 
@@ -91,8 +91,8 @@ public:
     inline std::string GetShapesDir() { return _settings.shapesDir; } 
     inline std::string GetDefaultTexturePath() { return _settings.defaultTexturePath; }
     inline std::string GetDefaultShapePath() { return _settings.defaultShapePath; }
-    inline size_t      GetFramesPerPage() { return _settings.framesPerPage; }
     inline bool        IsCullingEnabled() { return _settings.cullFaces; }
+    inline Color       GetBackgroundColor() { return Color { _settings.backgroundColor[0], _settings.backgroundColor[1], _settings.backgroundColor[2], 255 }; }
 
     //Indicates if rendering should be done in "preview mode", i.e. without editor widgets being drawn.
     inline bool IsPreviewing() const { return _previewDraw; }

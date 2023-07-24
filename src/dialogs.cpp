@@ -416,9 +416,8 @@ bool AssetPathDialog::Draw()
 }
 
 SettingsDialog::SettingsDialog(App::Settings &settings)
-    : _settings(settings),
-      _undoMax(settings.undoMax),
-      _sensitivity(settings.mouseSensitivity)
+    : _settingsOriginal(settings),
+      _settingsCopy(settings)
 {
 }
 
@@ -430,15 +429,27 @@ bool SettingsDialog::Draw()
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if (ImGui::BeginPopupModal("SETTINGS", &open, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        ImGui::InputInt("Maximum undo count", &_undoMax, 1, 10);
-        if (_undoMax < 0) _undoMax = 0;
+        int undoMax = (int)_settingsCopy.undoMax;
+        ImGui::InputInt("Maximum undo count", &undoMax, 1, 10);
+        if (undoMax < 0) undoMax = 0;
+        _settingsCopy.undoMax = undoMax;
         
-        ImGui::SliderFloat("Mouse sensitivity", &_sensitivity, 0.05f, 10.0f, "%.1f", ImGuiSliderFlags_NoRoundToFormat);
+        ImGui::SliderFloat("Mouse sensitivity", &_settingsCopy.mouseSensitivity, 0.05f, 10.0f, "%.1f", ImGuiSliderFlags_NoRoundToFormat);
+
+        float bgColorf[3] = { 
+            (float)_settingsCopy.backgroundColor[0] / 255.0f, 
+            (float)_settingsCopy.backgroundColor[1] / 255.0f, 
+            (float)_settingsCopy.backgroundColor[2] / 255.0f 
+        };
+        ImGui::SetNextItemWidth(256.0f);
+        ImGui::ColorPicker3("Background color", bgColorf, ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_InputRGB);
+        _settingsCopy.backgroundColor[0] = (int)(bgColorf[0] * 255.0f);
+        _settingsCopy.backgroundColor[1] = (int)(bgColorf[1] * 255.0f);
+        _settingsCopy.backgroundColor[2] = (int)(bgColorf[2] * 255.0f);
 
         if (ImGui::Button("Confirm"))
         {
-            _settings.undoMax = _undoMax;
-            _settings.mouseSensitivity = _sensitivity;
+            _settingsOriginal = _settingsCopy;
             App::Get()->SaveSettings();
             ImGui::EndPopup();
             return false;

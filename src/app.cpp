@@ -66,7 +66,6 @@ App::App()
         .cullFaces = true,
         .defaultTexturePath = "assets/textures/tiles/brickwall.png",
         .defaultShapePath = "assets/models/shapes/cube.obj",
-        .framesPerPage = 72,
     },
     _mapMan        (std::make_unique<MapMan>()),
     _tilePlaceMode (std::make_unique<PlaceMode>(*_mapMan.get())),
@@ -176,7 +175,7 @@ void App::Update()
     //Draw
     BeginDrawing();
     
-    ClearBackground(BLACK);
+    ClearBackground(GetBackgroundColor());
 
     rlImGuiBegin();
     _editorMode->Draw();

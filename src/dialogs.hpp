@@ -115,9 +115,8 @@ public:
     SettingsDialog(App::Settings &settings);
     virtual bool Draw() override;
 protected:
-    App::Settings &_settings;
-    int _undoMax;
-    float _sensitivity;
+    App::Settings &_settingsOriginal;
+    App::Settings _settingsCopy;
 };
 
 class AboutDialog : public Dialog
