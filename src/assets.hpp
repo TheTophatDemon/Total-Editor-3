@@ -69,6 +69,7 @@ public:
     static const Font&   GetFont(); //Returns the default application font (dejavu.fnt)
     static const Shader& GetMapShader(bool instanced); //Returns the shader used to render tiles
     static const Model&  GetEntSphere(); //Returns the sphere that represents entities visually
+    static Texture GetMissingTexture();
 protected:
     //Asset caches that hold weak references to all the loaded textures and models
     std::map<fs::path, std::weak_ptr<TexHandle>>   _textures;

@@ -44,6 +44,8 @@ struct Ent
         SPRITE,
     };
 
+    bool active;
+
     DisplayMode display;
     Color color;
     float radius;
@@ -60,9 +62,6 @@ struct Ent
     Ent(float radius);
 
     Matrix GetMatrix() const;
-
-    //Entity is considered empty if the radius is zero;
-    operator bool() const;
 
     void Draw(const Camera camera, const bool drawAxes) const;
 };
@@ -95,7 +94,7 @@ public:
     
     inline bool HasEnt(int i, int j, int k) const
     {
-        return GetCel(i, j, k);
+        return GetCel(i, j, k).active;
     }
 
     inline Ent GetEnt(int i, int j, int k) const
@@ -128,7 +127,7 @@ public:
         std::vector<Ent> out;
         for (const Ent &ent : _grid)
         {
-            if (ent) out.push_back(ent);
+            if (ent.active) out.push_back(ent);
         }
         return out;
     }

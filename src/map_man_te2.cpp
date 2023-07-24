@@ -116,6 +116,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                         break;
                     case 10: // "Disappearing" walls
                         ent.properties["direction"] = "down";
+                        ent.properties["key"] = std::to_string(link);
                         break;
                     }
 
@@ -246,124 +247,156 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             if (i < 0 || k < 0 || i >= width || k >= length)
                 continue;
 
-            Ent ent = Ent();
+            Ent ent = Ent(1.0f);
             ent.position = Vector3 { 
                 (float)i * _tileGrid.GetSpacing(), 
                 1.0f * _tileGrid.GetSpacing(), 
                 (float)k * _tileGrid.GetSpacing() 
             };
             ent.yaw = atoi(tokens[4].c_str()) * 45 + 90;
-            ent.pitch = 0;
-            ent.radius = 1.0f;
-            ent.color = WHITE;
-            ent.properties = std::map<std::string, std::string>();
             
             int type = atoi(tokens[2].c_str());
             switch(type)
             {
             case 0: // Player
-                ent.color = BROWN;
+                // ent.color = BROWN;
                 ent.properties["type"] = "player";
                 ent.properties["name"] = "player";
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/segan_icon.png");
                 break;
             case 1: // Prop
                 ent.properties["type"] = "prop";
                 ent.properties["prop"] = tokens[3];
                 ent.properties["name"] = tokens[3];
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/" + tokens[3] + ".png");
                 break;
             case 2: // Item
                 ent.properties["type"] = "item";
                 ent.properties["item"] = tokens[3];
                 ent.properties["name"] = tokens[3];
-                ent.color = YELLOW;
-                ent.radius = 0.5f;
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/" + tokens[3] + ".png");
                 break;
             case 3: // Weapon
                 ent.properties["type"] = "weapon";
                 ent.properties["weapon"] = tokens[3];
                 ent.properties["name"] = tokens[3];
-                ent.color = ORANGE;
-                ent.radius = 0.5f;
+                // ent.color = ORANGE;
+                // ent.radius = 0.5f;
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/" + tokens[3] + ".png");
                 break;
             case 4: // Wraith
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "wraith";
                 ent.properties["name"] = ent.properties["enemy"];
-                ent.color = BLUE;
+                // ent.color = BLUE;
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/wraith_icon.png");
                 break;
             case 5: // Fire Wraith
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "fire wraith";
                 ent.properties["name"] = ent.properties["enemy"];
-                ent.color = RED;
+                // ent.color = RED;
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/firewraith_icon.png");
                 break;
             case 6: // Dummkopf
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "dummkopf";
                 ent.properties["name"] = ent.properties["enemy"];
-                ent.color = PURPLE;
+                // ent.color = PURPLE;
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/dummkopf_icon.png");
                 break;
             case 7: // Caco wraith
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "caco wraith";
                 ent.properties["name"] = ent.properties["enemy"];
-                ent.color = Color { 41, 120, 255, 255 }; // Teal-ish
+                // ent.color = Color { 41, 120, 255, 255 }; // Teal-ish
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/cacowraith_icon.png");
                 break;
             case 8: // Prisrak
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "prisrak";
                 ent.properties["name"] = ent.properties["enemy"];
-                ent.color = ORANGE;
+                // ent.color = ORANGE;
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/prisrak_icon.png");
                 break;
             case 9: // Providence (first boss)
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "providence";
                 ent.properties["name"] = ent.properties["enemy"];
                 ent.properties["boss"] = "true";
-                ent.color = YELLOW;
-                ent.radius = 2.0f;
+                // ent.color = YELLOW;
+                // ent.radius = 2.0f;
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/providence_icon.png");
                 break;
             case 10: // Fundie (secret level)
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "fundie";
                 ent.properties["name"] = ent.properties["enemy"];
-                ent.color = BROWN;
+                // ent.color = BROWN;
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/fundie_icon.png");
                 break;
             case 11: // Banshee
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "banshee";
                 ent.properties["name"] = ent.properties["enemy"];
-                ent.color = DARKGRAY;
+                // ent.color = DARKGRAY;
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/banshee_icon.png");
                 break;
             case 12: // Mutant wraith
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "mutant wraith";
                 ent.properties["name"] = ent.properties["enemy"];
-                ent.color = GRAY;
+                // ent.color = GRAY;
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/mutant_icon.png");
                 break;
             case 13: // Mecha (second boss)
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "mecha";
                 ent.properties["name"] = ent.properties["enemy"];
                 ent.properties["boss"] = "true";
-                ent.color = RED;
-                ent.radius = 2.0f;
+                // ent.color = RED;
+                // ent.radius = 2.0f;
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/mecha_icon.png");
                 break;
             case 14: // Dummkopf (disguised)
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "dummkopf";
                 ent.properties["name"] = ent.properties["enemy"];
                 ent.properties["disguised"] = "true";
-                ent.color = PURPLE;
+                // ent.color = PURPLE;
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/dummkopf_pawn_icon.png");
                 break;
             case 15: // Tophat demon (final boss)
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "tophat demon";
                 ent.properties["name"] = ent.properties["enemy"];
                 ent.properties["boss"] = "true";
-                ent.color = DARKPURPLE;
-                ent.radius = 4.0f;
+                // ent.color = DARKPURPLE;
+                // ent.radius = 4.0f;
+                ent.display = Ent::DisplayMode::SPRITE;
+                ent.texture = Assets::GetTexture("assets/textures/icons/demon_icon.png");
                 break;
+            }
+
+            if (ent.display == Ent::DisplayMode::SPRITE && ent.texture->GetTexture().id == Assets::GetMissingTexture().id)
+            {
+                // Default to sphere if the sprite didn't load
+                ent.display = Ent::DisplayMode::SPHERE;
             }
 
             _entGrid.AddEnt(i, 1, k, ent);

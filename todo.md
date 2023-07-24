@@ -1,15 +1,13 @@
 # TODO
 
-- Add edge panel shape to replace cube_marker
-
-- Add new sprite assets to be used as billboards
-
 - Update documentation (integrate into the editor?)
 
 ## Future updates
 
-- Use instancing when rendering entity spheres?
+- Add image preview in the file picker
 
-- Shape icons zoom out for bigger shapes
+- Use instancing when rendering entity spheres
+
+- Make shape icons zoom out to see larger shapes
 
 - Allow secondary textures on tiles

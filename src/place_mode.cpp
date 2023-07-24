@@ -291,7 +291,7 @@ void PlaceMode::UpdateCursor()
         {
             _tileCursor.angle = OffsetDegrees(_tileCursor.angle, -90);
         }
-        else if (IsKeyPressed(KEY_E))
+        else if (!IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E))
         {
             _tileCursor.angle = OffsetDegrees(_tileCursor.angle, 90);
         }
@@ -373,7 +373,7 @@ void PlaceMode::UpdateCursor()
         {
             _entCursor.ent.yaw = OffsetDegrees(_entCursor.ent.yaw, -ANGLE_INC);
         }
-        else if (IsKeyPressed(KEY_E))
+        else if (!IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E))
         {
             _entCursor.ent.yaw = OffsetDegrees(_entCursor.ent.yaw, ANGLE_INC);
         }

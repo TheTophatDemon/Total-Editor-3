@@ -212,7 +212,11 @@ int main(int argc, char **argv)
 
     rlImGuiReloadFonts();
 
+#ifdef DEBUG
     SetTraceLogLevel(LOG_WARNING);
+#else
+    SetTraceLogLevel(LOG_ERROR);
+#endif
 
     App::Get()->ChangeEditorMode(App::Mode::PLACE_TILE);
     App::Get()->NewMap(100, 5, 100);

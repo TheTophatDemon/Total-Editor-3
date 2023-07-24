@@ -183,11 +183,20 @@ bool FileDialog::Draw()
                 if (entry.is_directory() || 
                     (entry.is_regular_file() && _extensions.find(entry.path().extension().string()) != _extensions.end()))
                 {
-                    std::string entry_str = 
-                        entry.is_directory() ? entry.path().stem().string()
-                                             : entry.path().filename().string();
+                    std::string entry_str;
                     
                     bool selected = (strcmp(entry_str.c_str(), _fileNameBuffer) == 0);
+
+                    if (entry.is_directory())
+                    {
+                        entry_str = std::string("[") + entry.path().stem().string() + "]";
+                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
+                    }
+                    else
+                    {
+                        entry_str = entry.path().filename().string();
+                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+                    }
                     if (ImGui::Selectable(entry_str.c_str(), selected))
                     {
                         if (entry.is_directory())
@@ -200,6 +209,7 @@ bool FileDialog::Draw()
                             strcpy(_fileNameBuffer, entry_str.c_str());
                         }
                     }
+                    ImGui::PopStyleColor();
                 }
             }
             ImGui::EndListBox();

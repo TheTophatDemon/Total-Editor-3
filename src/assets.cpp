@@ -274,6 +274,11 @@ const Model &Assets::GetEntSphere()
     return _Get()->_entSphere;
 }
 
+Texture Assets::GetMissingTexture()
+{
+    return _Get()->_missingTexture;
+}
+
 std::shared_ptr<Assets::TexHandle> Assets::GetTexture(fs::path texturePath)
 {
     Assets *a = _Get();

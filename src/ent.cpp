@@ -35,6 +35,7 @@
 
 Ent::Ent()
 {
+    active = false;
     display = DisplayMode::SPHERE;
     color = WHITE;
     radius = 0.0f;
@@ -45,6 +46,7 @@ Ent::Ent()
 
 Ent::Ent(float radius)
 {
+    active = true;
     display = DisplayMode::SPHERE;
     color = WHITE;
     this->radius = radius;
@@ -61,11 +63,6 @@ inline Matrix Ent::GetMatrix() const
             MatrixRotateY(ToRadians((float) yaw))
         ),
         MatrixTranslate(position.x, position.y, position.z));
-}
-
-inline Ent::operator bool() const
-{
-    return radius != 0.0f;
 }
 
 void Ent::Draw(const Camera camera, const bool drawAxes) const
@@ -134,6 +131,7 @@ void to_json(nlohmann::json& j, const Ent &ent)
 
 void from_json(const nlohmann::json& j, Ent &ent)
 {
+    ent.active = true;
     ent.radius = j.at("radius");
     ent.color = Color { j.at("color").at(0), j.at("color").at(1), j.at("color").at(2), 255 };
     ent.position = Vector3 { j.at("position").at(0), j.at("position").at(1), j.at("position").at(2) };
@@ -175,7 +173,7 @@ void EntGrid::Draw(Camera &camera, int fromY, int toY)
 
     for (size_t i = fromY * _width * _length; i < (toY + 1) * _width * _length; ++i)
     {
-        if (!_grid[i]) continue;
+        if (!_grid[i].active) continue;
 
         //Do frustrum culling check
         Vector3 ndc = GetWorldToNDC(_grid[i].position, camera);
