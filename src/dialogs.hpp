@@ -72,7 +72,7 @@ class FileDialog : public Dialog
 {
 public:
     // If extensions is left blank, then only directories are selectable.
-    FileDialog(std::string title, std::initializer_list<std::string> extensions, std::function<void(std::filesystem::path)> callback);
+    FileDialog(std::string title, std::initializer_list<std::string> extensions, std::function<void(std::filesystem::path)> callback, bool writeMode);
 
     virtual bool Draw() override;
 protected:
@@ -80,9 +80,10 @@ protected:
     std::function<void(fs::path)> _callback;
     std::string _title;
     std::set<std::string> _extensions;
-    fs::path _currentDir;
+    fs::path _currentDir, _overwriteDir;
 
     char _fileNameBuffer[TEXT_FIELD_MAX];
+    bool _overwritePromptOpen, _writeMode;
 };
 
 class CloseDialog : public Dialog

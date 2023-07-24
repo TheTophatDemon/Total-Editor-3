@@ -1,14 +1,12 @@
 # TODO
 
-- Confirm when overwriting file
-
 - Investigate audio segfault
 
-- Add new sprite assets to be used as billboards
+- Remove RayGUI dependencies
 
 - Update TI2 importer
 
-- Remove RayGUI dependencies
+- Add new sprite assets to be used as billboards
 
 - Update documentation (integrate into the editor?)
 

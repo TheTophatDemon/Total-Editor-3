@@ -144,8 +144,8 @@ void EntMode::Draw()
                         {
                             fs::path relativePath = fs::relative(path);
                             strcpy(_modelPathBuffer, relativePath.string().c_str());
-                        }
-                    ));
+                        }, 
+                    false));
                 }
                 ImGui::SameLine();
                 ImGui::InputText("Model path", _modelPathBuffer, TEXT_FIELD_MAX);
@@ -161,8 +161,8 @@ void EntMode::Draw()
                         {
                             fs::path relativePath = fs::relative(path);
                             strcpy(_texturePathBuffer, relativePath.string().c_str());
-                        }
-                    ));
+                        },
+                    false));
                 }
                 ImGui::SameLine();
                 ImGui::InputText("Texture path", _texturePathBuffer, TEXT_FIELD_MAX);

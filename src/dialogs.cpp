@@ -136,11 +136,13 @@ bool ShrinkMapDialog::Draw()
     return open;
 }
 
-FileDialog::FileDialog(std::string title, std::initializer_list<std::string> extensions, std::function<void(std::filesystem::path)> callback) 
+FileDialog::FileDialog(std::string title, std::initializer_list<std::string> extensions, std::function<void(std::filesystem::path)> callback, bool writeMode) 
     : _title(title),
         _extensions(extensions),
         _callback(callback),
-        _currentDir(fs::current_path())
+        _currentDir(fs::current_path()),
+        _overwritePromptOpen(false),
+        _writeMode(writeMode)
 {
     memset(&_fileNameBuffer, 0, sizeof(char) * TEXT_FIELD_MAX);
 }
@@ -148,18 +150,17 @@ FileDialog::FileDialog(std::string title, std::initializer_list<std::string> ext
 bool FileDialog::Draw()
 {
     bool open = true;
-    ImGui::OpenPopup(_title.c_str());
+    if (!_overwritePromptOpen) ImGui::OpenPopup(_title.c_str());
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if (ImGui::BeginPopupModal(_title.c_str(), &open, ImGuiWindowFlags_AlwaysAutoResize))
     {
         // Parent directory button & other controls
-        // if (!_currentDir.has_parent_path()) ImGui::BeginDisabled();
+        
         if (ImGui::Button("Parent directory") && _currentDir.has_parent_path())
         {
             _currentDir = _currentDir.parent_path();
         }
-        // if (!_currentDir.has_parent_path()) ImGui::EndDisabled();
 
         if (ImGui::BeginListBox("Files", ImVec2(504.0f, 350.0f)))
         {
@@ -209,14 +210,48 @@ bool FileDialog::Draw()
         
         if (ImGui::Button("SELECT") && (strlen(_fileNameBuffer) > 0 || _extensions.empty()))
         {
-            _callback(_currentDir.append(_fileNameBuffer));
-            ImGui::EndPopup();
-            return false;
+            fs::path newPath = _currentDir / _fileNameBuffer;
+            if (_writeMode && fs::exists(newPath))
+            {
+                _overwritePromptOpen = true;
+                _overwriteDir = newPath;
+            }
+            else
+            {
+                _callback(newPath);
+
+                ImGui::EndPopup();
+                return false;
+            }
         }
 
         ImGui::EndPopup();
-        return true;
     }
+
+    if (_overwritePromptOpen) ImGui::OpenPopup("CONFIRM OVERWRITE?");
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("CONFIRM OVERWRITE?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextUnformatted(_overwriteDir.string().c_str());
+        ImGui::TextUnformatted("Do you DARE overwrite this file?");
+        
+        if (ImGui::Button("YES"))
+        {
+            _callback(_overwriteDir);
+
+            ImGui::EndPopup();
+            return false;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("NO"))
+        {
+            ImGui::CloseCurrentPopup();
+            _overwritePromptOpen = false;
+        }
+
+        ImGui::EndPopup();
+    }
+
     return open;
 }
 
@@ -302,36 +337,28 @@ bool AssetPathDialog::Draw()
     {
         if (ImGui::Button("Browse##texdir"))
         {
-            _fileDialog.reset(new FileDialog("Select textures directory", {}, 
-                ASSET_PATH_FILE_DIALOG_CALLBACK(_texDirBuffer)
-            ));
+            _fileDialog.reset(new FileDialog("Select textures directory", {}, ASSET_PATH_FILE_DIALOG_CALLBACK(_texDirBuffer), false));
         }
         ImGui::SameLine();
         ImGui::InputText("Textures Directory", _texDirBuffer, TEXT_FIELD_MAX);
 
         if (ImGui::Button("Browse##deftex"))
         {
-            _fileDialog.reset(new FileDialog("Select default texture", {".png"}, 
-                ASSET_PATH_FILE_DIALOG_CALLBACK(_defaultTexBuffer)
-            ));
+            _fileDialog.reset(new FileDialog("Select default texture", {".png"}, ASSET_PATH_FILE_DIALOG_CALLBACK(_defaultTexBuffer), false));
         }
         ImGui::SameLine();
         ImGui::InputText("Default Texture", _defaultTexBuffer, TEXT_FIELD_MAX);
 
         if (ImGui::Button("Browse##shapedir"))
         {
-            _fileDialog.reset(new FileDialog("Select shapes directory", {}, 
-                ASSET_PATH_FILE_DIALOG_CALLBACK(_shapeDirBuffer)
-            ));
+            _fileDialog.reset(new FileDialog("Select shapes directory", {}, ASSET_PATH_FILE_DIALOG_CALLBACK(_shapeDirBuffer), false));
         }
         ImGui::SameLine();
         ImGui::InputText("Shapes Directory", _shapeDirBuffer, TEXT_FIELD_MAX);
 
         if (ImGui::Button("Browse##defshape"))
         {
-            _fileDialog.reset(new FileDialog("Select default shape", {".obj"}, 
-                ASSET_PATH_FILE_DIALOG_CALLBACK(_defaultShapeBuffer)
-            ));
+            _fileDialog.reset(new FileDialog("Select default shape", {".obj"}, ASSET_PATH_FILE_DIALOG_CALLBACK(_defaultShapeBuffer), false));
         }
         ImGui::SameLine();
         ImGui::InputText("Default Shape", _defaultShapeBuffer, TEXT_FIELD_MAX);
@@ -439,7 +466,7 @@ bool AboutDialog::Draw()
     if (ImGui::BeginPopupModal("ABOUT", &open, ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::TextColored(ImColor(1.0f, 1.0f, 0.0f), "Total Editor 3.1.0");
-        ImGui::TextUnformatted("Written by The Tophat Demon\nWith help from Raylib, Nlohmann JSON, CPPCodec.\nHumble Fonts Gold II font made by Eevie Somepx");
+        ImGui::TextUnformatted("Written by The Tophat Demon\nWith help from Raylib, Nlohmann JSON, CPPCodec, ImGUI.\nHumble Fonts Gold II font made by Eevie Somepx");
         ImGui::TextColored(ImColor(0.0f, 0.5f, 0.5f), "Source code: \nhttps://github.com/TheTophatDemon/Total-Editor-3");
 
         ImGui::EndPopup();
@@ -579,7 +606,7 @@ bool ExportDialog::Draw()
             _dialog.reset(new FileDialog(std::string("Save .GLTF or .GLB file"), {std::string(".gltf"), std::string(".glb")}, [&](fs::path path){
                 _settings.exportFilePath = fs::relative(path).string();
                 strcpy(_filePathBuffer, _settings.exportFilePath.c_str());
-            }));
+            }, true));
         }
         _settings.exportFilePath = _filePathBuffer;
 

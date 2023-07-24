@@ -51,7 +51,7 @@ void MenuBar::OpenOpenMapDialog()
     { 
         App::Get()->TryOpenMap(path); 
     };
-    _activeDialog.reset(new FileDialog("Open Map (*.te3, *.ti)", { ".te3", ".ti" }, callback));
+    _activeDialog.reset(new FileDialog("Open Map (*.te3, *.ti)", { ".te3", ".ti" }, callback, false));
 }
 
 void MenuBar::OpenSaveMapDialog()
@@ -60,7 +60,7 @@ void MenuBar::OpenSaveMapDialog()
     { 
         App::Get()->TrySaveMap(path); 
     };
-    _activeDialog.reset(new FileDialog("Save Map (*.te3)", { ".te3" }, callback)); 
+    _activeDialog.reset(new FileDialog("Save Map (*.te3)", { ".te3" }, callback, true)); 
 }
 
 void MenuBar::SaveMap()
