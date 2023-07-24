@@ -12067,191 +12067,192 @@ static void NavUpdateWindowingHighlightWindow(int focus_change_dir)
 // Gamepad:  Hold Menu/Square (change focus/move/resize), Tap Menu/Square (toggle menu layer)
 static void ImGui::NavUpdateWindowing()
 {
-    // ImGuiContext& g = *GImGui;
-    // ImGuiIO& io = g.IO;
+    ImGuiContext& g = *GImGui;
+    ImGuiIO& io = g.IO;
 
-    // ImGuiWindow* apply_focus_window = NULL;
-    // bool apply_toggle_layer = false;
+    ImGuiWindow* apply_focus_window = NULL;
+    bool apply_toggle_layer = false;
 
-    // ImGuiWindow* modal_window = GetTopMostPopupModal();
+    ImGuiWindow* modal_window = GetTopMostPopupModal();
     // bool allow_windowing = (modal_window == NULL); // FIXME: This prevent CTRL+TAB from being usable with windows that are inside the Begin-stack of that modal.
-    // if (!allow_windowing)
-    //     g.NavWindowingTarget = NULL;
+    bool allow_windowing = false; // I don't want this feature...
+    if (!allow_windowing)
+        g.NavWindowingTarget = NULL;
 
-    // // Fade out
-    // if (g.NavWindowingTargetAnim && g.NavWindowingTarget == NULL)
-    // {
-    //     g.NavWindowingHighlightAlpha = ImMax(g.NavWindowingHighlightAlpha - io.DeltaTime * 10.0f, 0.0f);
-    //     if (g.DimBgRatio <= 0.0f && g.NavWindowingHighlightAlpha <= 0.0f)
-    //         g.NavWindowingTargetAnim = NULL;
-    // }
+    // Fade out
+    if (g.NavWindowingTargetAnim && g.NavWindowingTarget == NULL)
+    {
+        g.NavWindowingHighlightAlpha = ImMax(g.NavWindowingHighlightAlpha - io.DeltaTime * 10.0f, 0.0f);
+        if (g.DimBgRatio <= 0.0f && g.NavWindowingHighlightAlpha <= 0.0f)
+            g.NavWindowingTargetAnim = NULL;
+    }
 
-    // // Start CTRL+Tab or Square+L/R window selection
-    // const ImGuiID owner_id = ImHashStr("###NavUpdateWindowing");
-    // const bool nav_gamepad_active = (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0 && (io.BackendFlags & ImGuiBackendFlags_HasGamepad) != 0;
-    // const bool nav_keyboard_active = (io.ConfigFlags & ImGuiConfigFlags_NavEnableKeyboard) != 0;
-    // const bool keyboard_next_window = allow_windowing && g.ConfigNavWindowingKeyNext && Shortcut(g.ConfigNavWindowingKeyNext, owner_id, ImGuiInputFlags_Repeat | ImGuiInputFlags_RouteAlways);
-    // const bool keyboard_prev_window = allow_windowing && g.ConfigNavWindowingKeyPrev && Shortcut(g.ConfigNavWindowingKeyPrev, owner_id, ImGuiInputFlags_Repeat | ImGuiInputFlags_RouteAlways);
-    // const bool start_windowing_with_gamepad = allow_windowing && nav_gamepad_active && !g.NavWindowingTarget && IsKeyPressed(ImGuiKey_NavGamepadMenu, 0, ImGuiInputFlags_None);
-    // const bool start_windowing_with_keyboard = allow_windowing && !g.NavWindowingTarget && (keyboard_next_window || keyboard_prev_window); // Note: enabled even without NavEnableKeyboard!
-    // if (start_windowing_with_gamepad || start_windowing_with_keyboard)
-    //     if (ImGuiWindow* window = g.NavWindow ? g.NavWindow : FindWindowNavFocusable(g.WindowsFocusOrder.Size - 1, -INT_MAX, -1))
-    //     {
-    //         g.NavWindowingTarget = g.NavWindowingTargetAnim = window->RootWindow;
-    //         g.NavWindowingTimer = g.NavWindowingHighlightAlpha = 0.0f;
-    //         g.NavWindowingAccumDeltaPos = g.NavWindowingAccumDeltaSize = ImVec2(0.0f, 0.0f);
-    //         g.NavWindowingToggleLayer = start_windowing_with_gamepad ? true : false; // Gamepad starts toggling layer
-    //         g.NavInputSource = start_windowing_with_keyboard ? ImGuiInputSource_Keyboard : ImGuiInputSource_Gamepad;
+    // Start CTRL+Tab or Square+L/R window selection
+    const ImGuiID owner_id = ImHashStr("###NavUpdateWindowing");
+    const bool nav_gamepad_active = (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0 && (io.BackendFlags & ImGuiBackendFlags_HasGamepad) != 0;
+    const bool nav_keyboard_active = (io.ConfigFlags & ImGuiConfigFlags_NavEnableKeyboard) != 0;
+    const bool keyboard_next_window = allow_windowing && g.ConfigNavWindowingKeyNext && Shortcut(g.ConfigNavWindowingKeyNext, owner_id, ImGuiInputFlags_Repeat | ImGuiInputFlags_RouteAlways);
+    const bool keyboard_prev_window = allow_windowing && g.ConfigNavWindowingKeyPrev && Shortcut(g.ConfigNavWindowingKeyPrev, owner_id, ImGuiInputFlags_Repeat | ImGuiInputFlags_RouteAlways);
+    const bool start_windowing_with_gamepad = allow_windowing && nav_gamepad_active && !g.NavWindowingTarget && IsKeyPressed(ImGuiKey_NavGamepadMenu, 0, ImGuiInputFlags_None);
+    const bool start_windowing_with_keyboard = allow_windowing && !g.NavWindowingTarget && (keyboard_next_window || keyboard_prev_window); // Note: enabled even without NavEnableKeyboard!
+    if (start_windowing_with_gamepad || start_windowing_with_keyboard)
+        if (ImGuiWindow* window = g.NavWindow ? g.NavWindow : FindWindowNavFocusable(g.WindowsFocusOrder.Size - 1, -INT_MAX, -1))
+        {
+            g.NavWindowingTarget = g.NavWindowingTargetAnim = window->RootWindow;
+            g.NavWindowingTimer = g.NavWindowingHighlightAlpha = 0.0f;
+            g.NavWindowingAccumDeltaPos = g.NavWindowingAccumDeltaSize = ImVec2(0.0f, 0.0f);
+            g.NavWindowingToggleLayer = start_windowing_with_gamepad ? true : false; // Gamepad starts toggling layer
+            g.NavInputSource = start_windowing_with_keyboard ? ImGuiInputSource_Keyboard : ImGuiInputSource_Gamepad;
 
-    //         // Register ownership of our mods. Using ImGuiInputFlags_RouteGlobalHigh in the Shortcut() calls instead would probably be correct but may have more side-effects.
-    //         if (keyboard_next_window || keyboard_prev_window)
-    //             SetKeyOwnersForKeyChord((g.ConfigNavWindowingKeyNext | g.ConfigNavWindowingKeyPrev) & ImGuiMod_Mask_, owner_id);
-    //     }
+            // Register ownership of our mods. Using ImGuiInputFlags_RouteGlobalHigh in the Shortcut() calls instead would probably be correct but may have more side-effects.
+            if (keyboard_next_window || keyboard_prev_window)
+                SetKeyOwnersForKeyChord((g.ConfigNavWindowingKeyNext | g.ConfigNavWindowingKeyPrev) & ImGuiMod_Mask_, owner_id);
+        }
 
-    // // Gamepad update
-    // g.NavWindowingTimer += io.DeltaTime;
-    // if (g.NavWindowingTarget && g.NavInputSource == ImGuiInputSource_Gamepad)
-    // {
-    //     // Highlight only appears after a brief time holding the button, so that a fast tap on PadMenu (to toggle NavLayer) doesn't add visual noise
-    //     g.NavWindowingHighlightAlpha = ImMax(g.NavWindowingHighlightAlpha, ImSaturate((g.NavWindowingTimer - NAV_WINDOWING_HIGHLIGHT_DELAY) / 0.05f));
+    // Gamepad update
+    g.NavWindowingTimer += io.DeltaTime;
+    if (g.NavWindowingTarget && g.NavInputSource == ImGuiInputSource_Gamepad)
+    {
+        // Highlight only appears after a brief time holding the button, so that a fast tap on PadMenu (to toggle NavLayer) doesn't add visual noise
+        g.NavWindowingHighlightAlpha = ImMax(g.NavWindowingHighlightAlpha, ImSaturate((g.NavWindowingTimer - NAV_WINDOWING_HIGHLIGHT_DELAY) / 0.05f));
 
-    //     // Select window to focus
-    //     const int focus_change_dir = (int)IsKeyPressed(ImGuiKey_GamepadL1) - (int)IsKeyPressed(ImGuiKey_GamepadR1);
-    //     if (focus_change_dir != 0)
-    //     {
-    //         NavUpdateWindowingHighlightWindow(focus_change_dir);
-    //         g.NavWindowingHighlightAlpha = 1.0f;
-    //     }
+        // Select window to focus
+        const int focus_change_dir = (int)IsKeyPressed(ImGuiKey_GamepadL1) - (int)IsKeyPressed(ImGuiKey_GamepadR1);
+        if (focus_change_dir != 0)
+        {
+            NavUpdateWindowingHighlightWindow(focus_change_dir);
+            g.NavWindowingHighlightAlpha = 1.0f;
+        }
 
-    //     // Single press toggles NavLayer, long press with L/R apply actual focus on release (until then the window was merely rendered top-most)
-    //     if (!IsKeyDown(ImGuiKey_NavGamepadMenu))
-    //     {
-    //         g.NavWindowingToggleLayer &= (g.NavWindowingHighlightAlpha < 1.0f); // Once button was held long enough we don't consider it a tap-to-toggle-layer press anymore.
-    //         if (g.NavWindowingToggleLayer && g.NavWindow)
-    //             apply_toggle_layer = true;
-    //         else if (!g.NavWindowingToggleLayer)
-    //             apply_focus_window = g.NavWindowingTarget;
-    //         g.NavWindowingTarget = NULL;
-    //     }
-    // }
+        // Single press toggles NavLayer, long press with L/R apply actual focus on release (until then the window was merely rendered top-most)
+        if (!IsKeyDown(ImGuiKey_NavGamepadMenu))
+        {
+            g.NavWindowingToggleLayer &= (g.NavWindowingHighlightAlpha < 1.0f); // Once button was held long enough we don't consider it a tap-to-toggle-layer press anymore.
+            if (g.NavWindowingToggleLayer && g.NavWindow)
+                apply_toggle_layer = true;
+            else if (!g.NavWindowingToggleLayer)
+                apply_focus_window = g.NavWindowingTarget;
+            g.NavWindowingTarget = NULL;
+        }
+    }
 
-    // // Keyboard: Focus
-    // if (g.NavWindowingTarget && g.NavInputSource == ImGuiInputSource_Keyboard)
-    // {
-    //     // Visuals only appears after a brief time after pressing TAB the first time, so that a fast CTRL+TAB doesn't add visual noise
-    //     ImGuiKeyChord shared_mods = ((g.ConfigNavWindowingKeyNext ? g.ConfigNavWindowingKeyNext : ImGuiMod_Mask_) & (g.ConfigNavWindowingKeyPrev ? g.ConfigNavWindowingKeyPrev : ImGuiMod_Mask_)) & ImGuiMod_Mask_;
-    //     IM_ASSERT(shared_mods != 0); // Next/Prev shortcut currently needs a shared modifier to "hold", otherwise Prev actions would keep cycling between two windows.
-    //     g.NavWindowingHighlightAlpha = ImMax(g.NavWindowingHighlightAlpha, ImSaturate((g.NavWindowingTimer - NAV_WINDOWING_HIGHLIGHT_DELAY) / 0.05f)); // 1.0f
-    //     if (keyboard_next_window || keyboard_prev_window)
-    //         NavUpdateWindowingHighlightWindow(keyboard_next_window ? -1 : +1);
-    //     else if ((io.KeyMods & shared_mods) != shared_mods)
-    //         apply_focus_window = g.NavWindowingTarget;
-    // }
+    // Keyboard: Focus
+    if (g.NavWindowingTarget && g.NavInputSource == ImGuiInputSource_Keyboard)
+    {
+        // Visuals only appears after a brief time after pressing TAB the first time, so that a fast CTRL+TAB doesn't add visual noise
+        ImGuiKeyChord shared_mods = ((g.ConfigNavWindowingKeyNext ? g.ConfigNavWindowingKeyNext : ImGuiMod_Mask_) & (g.ConfigNavWindowingKeyPrev ? g.ConfigNavWindowingKeyPrev : ImGuiMod_Mask_)) & ImGuiMod_Mask_;
+        IM_ASSERT(shared_mods != 0); // Next/Prev shortcut currently needs a shared modifier to "hold", otherwise Prev actions would keep cycling between two windows.
+        g.NavWindowingHighlightAlpha = ImMax(g.NavWindowingHighlightAlpha, ImSaturate((g.NavWindowingTimer - NAV_WINDOWING_HIGHLIGHT_DELAY) / 0.05f)); // 1.0f
+        if (keyboard_next_window || keyboard_prev_window)
+            NavUpdateWindowingHighlightWindow(keyboard_next_window ? -1 : +1);
+        else if ((io.KeyMods & shared_mods) != shared_mods)
+            apply_focus_window = g.NavWindowingTarget;
+    }
 
-    // // Keyboard: Press and Release ALT to toggle menu layer
-    // // - Testing that only Alt is tested prevents Alt+Shift or AltGR from toggling menu layer.
-    // // - AltGR is normally Alt+Ctrl but we can't reliably detect it (not all backends/systems/layout emit it as Alt+Ctrl). But even on keyboards without AltGR we don't want Alt+Ctrl to open menu anyway.
-    // if (nav_keyboard_active && IsKeyPressed(ImGuiMod_Alt, ImGuiKeyOwner_None))
-    // {
-    //     g.NavWindowingToggleLayer = true;
-    //     g.NavInputSource = ImGuiInputSource_Keyboard;
-    // }
-    // if (g.NavWindowingToggleLayer && g.NavInputSource == ImGuiInputSource_Keyboard)
-    // {
-    //     // We cancel toggling nav layer when any text has been typed (generally while holding Alt). (See #370)
-    //     // We cancel toggling nav layer when other modifiers are pressed. (See #4439)
-    //     // We cancel toggling nav layer if an owner has claimed the key.
-    //     if (io.InputQueueCharacters.Size > 0 || io.KeyCtrl || io.KeyShift || io.KeySuper || TestKeyOwner(ImGuiMod_Alt, ImGuiKeyOwner_None) == false)
-    //         g.NavWindowingToggleLayer = false;
+    // Keyboard: Press and Release ALT to toggle menu layer
+    // - Testing that only Alt is tested prevents Alt+Shift or AltGR from toggling menu layer.
+    // - AltGR is normally Alt+Ctrl but we can't reliably detect it (not all backends/systems/layout emit it as Alt+Ctrl). But even on keyboards without AltGR we don't want Alt+Ctrl to open menu anyway.
+    if (nav_keyboard_active && IsKeyPressed(ImGuiMod_Alt, ImGuiKeyOwner_None))
+    {
+        g.NavWindowingToggleLayer = true;
+        g.NavInputSource = ImGuiInputSource_Keyboard;
+    }
+    if (g.NavWindowingToggleLayer && g.NavInputSource == ImGuiInputSource_Keyboard)
+    {
+        // We cancel toggling nav layer when any text has been typed (generally while holding Alt). (See #370)
+        // We cancel toggling nav layer when other modifiers are pressed. (See #4439)
+        // We cancel toggling nav layer if an owner has claimed the key.
+        if (io.InputQueueCharacters.Size > 0 || io.KeyCtrl || io.KeyShift || io.KeySuper || TestKeyOwner(ImGuiMod_Alt, ImGuiKeyOwner_None) == false)
+            g.NavWindowingToggleLayer = false;
 
-    //     // Apply layer toggle on release
-    //     // Important: as before version <18314 we lacked an explicit IO event for focus gain/loss, we also compare mouse validity to detect old backends clearing mouse pos on focus loss.
-    //     if (IsKeyReleased(ImGuiMod_Alt) && g.NavWindowingToggleLayer)
-    //         if (g.ActiveId == 0 || g.ActiveIdAllowOverlap)
-    //             if (IsMousePosValid(&io.MousePos) == IsMousePosValid(&io.MousePosPrev))
-    //                 apply_toggle_layer = true;
-    //     if (!IsKeyDown(ImGuiMod_Alt))
-    //         g.NavWindowingToggleLayer = false;
-    // }
+        // Apply layer toggle on release
+        // Important: as before version <18314 we lacked an explicit IO event for focus gain/loss, we also compare mouse validity to detect old backends clearing mouse pos on focus loss.
+        if (IsKeyReleased(ImGuiMod_Alt) && g.NavWindowingToggleLayer)
+            if (g.ActiveId == 0 || g.ActiveIdAllowOverlap)
+                if (IsMousePosValid(&io.MousePos) == IsMousePosValid(&io.MousePosPrev))
+                    apply_toggle_layer = true;
+        if (!IsKeyDown(ImGuiMod_Alt))
+            g.NavWindowingToggleLayer = false;
+    }
 
-    // // Move window
-    // if (g.NavWindowingTarget && !(g.NavWindowingTarget->Flags & ImGuiWindowFlags_NoMove))
-    // {
-    //     ImVec2 nav_move_dir;
-    //     if (g.NavInputSource == ImGuiInputSource_Keyboard && !io.KeyShift)
-    //         nav_move_dir = GetKeyMagnitude2d(ImGuiKey_LeftArrow, ImGuiKey_RightArrow, ImGuiKey_UpArrow, ImGuiKey_DownArrow);
-    //     if (g.NavInputSource == ImGuiInputSource_Gamepad)
-    //         nav_move_dir = GetKeyMagnitude2d(ImGuiKey_GamepadLStickLeft, ImGuiKey_GamepadLStickRight, ImGuiKey_GamepadLStickUp, ImGuiKey_GamepadLStickDown);
-    //     if (nav_move_dir.x != 0.0f || nav_move_dir.y != 0.0f)
-    //     {
-    //         const float NAV_MOVE_SPEED = 800.0f;
-    //         const float move_step = NAV_MOVE_SPEED * io.DeltaTime * ImMin(io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
-    //         g.NavWindowingAccumDeltaPos += nav_move_dir * move_step;
-    //         g.NavDisableMouseHover = true;
-    //         ImVec2 accum_floored = ImFloor(g.NavWindowingAccumDeltaPos);
-    //         if (accum_floored.x != 0.0f || accum_floored.y != 0.0f)
-    //         {
-    //             ImGuiWindow* moving_window = g.NavWindowingTarget->RootWindow;
-    //             SetWindowPos(moving_window, moving_window->Pos + accum_floored, ImGuiCond_Always);
-    //             g.NavWindowingAccumDeltaPos -= accum_floored;
-    //         }
-    //     }
-    // }
+    // Move window
+    if (g.NavWindowingTarget && !(g.NavWindowingTarget->Flags & ImGuiWindowFlags_NoMove))
+    {
+        ImVec2 nav_move_dir;
+        if (g.NavInputSource == ImGuiInputSource_Keyboard && !io.KeyShift)
+            nav_move_dir = GetKeyMagnitude2d(ImGuiKey_LeftArrow, ImGuiKey_RightArrow, ImGuiKey_UpArrow, ImGuiKey_DownArrow);
+        if (g.NavInputSource == ImGuiInputSource_Gamepad)
+            nav_move_dir = GetKeyMagnitude2d(ImGuiKey_GamepadLStickLeft, ImGuiKey_GamepadLStickRight, ImGuiKey_GamepadLStickUp, ImGuiKey_GamepadLStickDown);
+        if (nav_move_dir.x != 0.0f || nav_move_dir.y != 0.0f)
+        {
+            const float NAV_MOVE_SPEED = 800.0f;
+            const float move_step = NAV_MOVE_SPEED * io.DeltaTime * ImMin(io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
+            g.NavWindowingAccumDeltaPos += nav_move_dir * move_step;
+            g.NavDisableMouseHover = true;
+            ImVec2 accum_floored = ImFloor(g.NavWindowingAccumDeltaPos);
+            if (accum_floored.x != 0.0f || accum_floored.y != 0.0f)
+            {
+                ImGuiWindow* moving_window = g.NavWindowingTarget->RootWindow;
+                SetWindowPos(moving_window, moving_window->Pos + accum_floored, ImGuiCond_Always);
+                g.NavWindowingAccumDeltaPos -= accum_floored;
+            }
+        }
+    }
 
-    // // Apply final focus
-    // if (apply_focus_window && (g.NavWindow == NULL || apply_focus_window != g.NavWindow->RootWindow))
-    // {
-    //     ClearActiveID();
-    //     NavRestoreHighlightAfterMove();
-    //     ClosePopupsOverWindow(apply_focus_window, false);
-    //     FocusWindow(apply_focus_window, ImGuiFocusRequestFlags_RestoreFocusedChild);
-    //     apply_focus_window = g.NavWindow;
-    //     if (apply_focus_window->NavLastIds[0] == 0)
-    //         NavInitWindow(apply_focus_window, false);
+    // Apply final focus
+    if (apply_focus_window && (g.NavWindow == NULL || apply_focus_window != g.NavWindow->RootWindow))
+    {
+        ClearActiveID();
+        NavRestoreHighlightAfterMove();
+        ClosePopupsOverWindow(apply_focus_window, false);
+        FocusWindow(apply_focus_window, ImGuiFocusRequestFlags_RestoreFocusedChild);
+        apply_focus_window = g.NavWindow;
+        if (apply_focus_window->NavLastIds[0] == 0)
+            NavInitWindow(apply_focus_window, false);
 
-    //     // If the window has ONLY a menu layer (no main layer), select it directly
-    //     // Use NavLayersActiveMaskNext since windows didn't have a chance to be Begin()-ed on this frame,
-    //     // so CTRL+Tab where the keys are only held for 1 frame will be able to use correct layers mask since
-    //     // the target window as already been previewed once.
-    //     // FIXME-NAV: This should be done in NavInit.. or in FocusWindow... However in both of those cases,
-    //     // we won't have a guarantee that windows has been visible before and therefore NavLayersActiveMask*
-    //     // won't be valid.
-    //     if (apply_focus_window->DC.NavLayersActiveMaskNext == (1 << ImGuiNavLayer_Menu))
-    //         g.NavLayer = ImGuiNavLayer_Menu;
-    // }
-    // if (apply_focus_window)
-    //     g.NavWindowingTarget = NULL;
+        // If the window has ONLY a menu layer (no main layer), select it directly
+        // Use NavLayersActiveMaskNext since windows didn't have a chance to be Begin()-ed on this frame,
+        // so CTRL+Tab where the keys are only held for 1 frame will be able to use correct layers mask since
+        // the target window as already been previewed once.
+        // FIXME-NAV: This should be done in NavInit.. or in FocusWindow... However in both of those cases,
+        // we won't have a guarantee that windows has been visible before and therefore NavLayersActiveMask*
+        // won't be valid.
+        if (apply_focus_window->DC.NavLayersActiveMaskNext == (1 << ImGuiNavLayer_Menu))
+            g.NavLayer = ImGuiNavLayer_Menu;
+    }
+    if (apply_focus_window)
+        g.NavWindowingTarget = NULL;
 
-    // // Apply menu/layer toggle
-    // if (apply_toggle_layer && g.NavWindow)
-    // {
-    //     ClearActiveID();
+    // Apply menu/layer toggle
+    if (apply_toggle_layer && g.NavWindow)
+    {
+        ClearActiveID();
 
-    //     // Move to parent menu if necessary
-    //     ImGuiWindow* new_nav_window = g.NavWindow;
-    //     while (new_nav_window->ParentWindow
-    //         && (new_nav_window->DC.NavLayersActiveMask & (1 << ImGuiNavLayer_Menu)) == 0
-    //         && (new_nav_window->Flags & ImGuiWindowFlags_ChildWindow) != 0
-    //         && (new_nav_window->Flags & (ImGuiWindowFlags_Popup | ImGuiWindowFlags_ChildMenu)) == 0)
-    //         new_nav_window = new_nav_window->ParentWindow;
-    //     if (new_nav_window != g.NavWindow)
-    //     {
-    //         ImGuiWindow* old_nav_window = g.NavWindow;
-    //         FocusWindow(new_nav_window);
-    //         new_nav_window->NavLastChildNavWindow = old_nav_window;
-    //     }
+        // Move to parent menu if necessary
+        ImGuiWindow* new_nav_window = g.NavWindow;
+        while (new_nav_window->ParentWindow
+            && (new_nav_window->DC.NavLayersActiveMask & (1 << ImGuiNavLayer_Menu)) == 0
+            && (new_nav_window->Flags & ImGuiWindowFlags_ChildWindow) != 0
+            && (new_nav_window->Flags & (ImGuiWindowFlags_Popup | ImGuiWindowFlags_ChildMenu)) == 0)
+            new_nav_window = new_nav_window->ParentWindow;
+        if (new_nav_window != g.NavWindow)
+        {
+            ImGuiWindow* old_nav_window = g.NavWindow;
+            FocusWindow(new_nav_window);
+            new_nav_window->NavLastChildNavWindow = old_nav_window;
+        }
 
-    //     // Toggle layer
-    //     const ImGuiNavLayer new_nav_layer = (g.NavWindow->DC.NavLayersActiveMask & (1 << ImGuiNavLayer_Menu)) ? (ImGuiNavLayer)((int)g.NavLayer ^ 1) : ImGuiNavLayer_Main;
-    //     if (new_nav_layer != g.NavLayer)
-    //     {
-    //         // Reinitialize navigation when entering menu bar with the Alt key (FIXME: could be a properly of the layer?)
-    //         if (new_nav_layer == ImGuiNavLayer_Menu)
-    //             g.NavWindow->NavLastIds[new_nav_layer] = 0;
-    //         NavRestoreLayer(new_nav_layer);
-    //         NavRestoreHighlightAfterMove();
-    //     }
-    // }
+        // Toggle layer
+        const ImGuiNavLayer new_nav_layer = (g.NavWindow->DC.NavLayersActiveMask & (1 << ImGuiNavLayer_Menu)) ? (ImGuiNavLayer)((int)g.NavLayer ^ 1) : ImGuiNavLayer_Main;
+        if (new_nav_layer != g.NavLayer)
+        {
+            // Reinitialize navigation when entering menu bar with the Alt key (FIXME: could be a properly of the layer?)
+            if (new_nav_layer == ImGuiNavLayer_Menu)
+                g.NavWindow->NavLastIds[new_nav_layer] = 0;
+            NavRestoreLayer(new_nav_layer);
+            NavRestoreHighlightAfterMove();
+        }
+    }
 }
 
 // Window has already passed the IsWindowNavFocusable()
