@@ -515,16 +515,21 @@ Model* TileGrid::_GenerateModel(bool culling)
         }
     }
 
-    //Create Raylib mesh
+    // Create Raylib mesh
     Model *model = SAFE_MALLOC(Model, 1);
 
-    //Count the number of meshes (that aren't empty.)
+    // Count the number of meshes (that aren't empty.)
     int numMeshes = 0;
-    for (const auto& dynMesh : meshMap) 
+    // This array contains textures for only the visible meshes, so it may not be completely full
+    Texture textures[_mapMan->GetNumTextures()];
+    for (int i = 0; i < _mapMan->GetNumTextures(); ++i) 
     {
-        if (dynMesh.triCount > 0) ++numMeshes;
+        if (meshMap[i].triCount > 0) 
+        {
+            textures[numMeshes++] = _mapMan->TexFromID(i);
+        }
     }
-    //We don't want to include any empty meshes, because that will cause an error in certain .gltf parsers.
+    // We don't want to include any empty meshes, because that will cause an error in certain .gltf parsers.
 
     model->materialCount = numMeshes;
     model->meshCount = numMeshes;
@@ -537,14 +542,14 @@ Model* TileGrid::_GenerateModel(bool culling)
     model->bones = NULL;
     
     int d = 0;
-    for (int i = 0; i < model->materialCount; ++i)
+    for (int i = 0; i < numMeshes; ++i)
     {
         model->materials[i] = LoadMaterialDefault();
         model->materials[i].shader = Assets::GetMapShader(false);
-        model->materials[i].maps[MATERIAL_MAP_ALBEDO].texture = _mapMan->TexFromID(i);
+        model->materials[i].maps[MATERIAL_MAP_ALBEDO].texture = textures[i];
         model->meshMaterial[i] = i;
 
-        //Copy mesh data into Raylib mesh
+        // Copy mesh data into Raylib mesh
         DynMesh* dMesh;
         do 
         {
