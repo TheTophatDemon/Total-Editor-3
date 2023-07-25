@@ -24,8 +24,10 @@
 #include "rlgl.h"
 
 #include "assets/shaders/map_shader.hpp"
+#include "assets/shaders/sprite_shader.hpp"
 #include "assets/fonts/font_dejavu.h"
 #include "text_util.hpp"
+#include "c_helpers.hpp"
 
 #include <iostream>
 #include <unordered_map>
@@ -211,7 +213,7 @@ Assets::ModelHandle::~ModelHandle()
 
 Assets::Assets() 
 {
-    //Generate missing texture image (a black-and-magenta checkerboard)
+    // Generate missing texture image (a black-and-magenta checkerboard)
     Image texImg = { 0 };
     texImg.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
     texImg.width = 64;
@@ -241,7 +243,7 @@ Assets::Assets()
     _missingTexture = LoadTextureFromImage(texImg);
     free(texImg.data);
 
-    //Initialize instanced shader for map geometry
+    // Initialize instanced shader for map geometry
     _mapShaderInstanced = LoadShaderFromMemory(MAP_SHADER_INSTANCED_V_SRC, MAP_SHADER_F_SRC);
     _mapShaderInstanced.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(_mapShaderInstanced, "mvp");
     _mapShaderInstanced.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(_mapShaderInstanced, "viewPos");
@@ -251,7 +253,41 @@ Assets::Assets()
     _mapShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(_mapShader, "mvp");
     _mapShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(_mapShader, "viewPos");
 
-    //Generate entity sphere
+    // Sprite shader
+    _spriteShader = LoadShaderFromMemory(SPRITE_SHADER_V_SRC, SPRITE_SHADER_F_SRC);
+    _mapShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(_mapShader, "mvp");
+    _mapShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(_mapShader, "viewPos");
+    _spriteShader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(_spriteShader, "matModel");
+    _spriteShader.locs[SHADER_LOC_MATRIX_VIEW] = GetShaderLocation(_spriteShader, "matView");
+    _spriteShader.locs[SHADER_LOC_MATRIX_PROJECTION] = GetShaderLocation(_spriteShader, "matProj");
+
+    // Initialize the sprite's quad model
+    {
+        Mesh m = Mesh { 
+            .vertexCount = 4,
+            .triangleCount = 2,
+            .vertices = SAFE_MALLOC(float, 4 * 3),
+            .texcoords = SAFE_MALLOC(float, 4 * 2),
+            .indices = SAFE_MALLOC(unsigned short, 2 * 3)
+        };
+        // Vertex positions (x, y, z)
+        m.vertices[0] = -1.0f; m.vertices[ 1] = +1.0f; m.vertices[ 2] = 0.0f;
+        m.vertices[3] = +1.0f; m.vertices[ 4] = +1.0f; m.vertices[ 5] = 0.0f;
+        m.vertices[6] = +1.0f; m.vertices[ 7] = -1.0f; m.vertices[ 8] = 0.0f;
+        m.vertices[9] = -1.0f; m.vertices[10] = -1.0f; m.vertices[11] = 0.0f;
+        // UV
+        m.texcoords[0] = 1.0f; m.texcoords[1] = 0.0f;
+        m.texcoords[2] = 0.0f; m.texcoords[3] = 0.0f;
+        m.texcoords[4] = 0.0f; m.texcoords[5] = 1.0f;
+        m.texcoords[6] = 1.0f; m.texcoords[7] = 1.0f;
+        // Indices
+        m.indices[0] = 2; m.indices[1] = 1; m.indices[2] = 0;
+        m.indices[3] = 3; m.indices[4] = 2; m.indices[5] = 0;
+        UploadMesh(&m, false);
+        _spriteQuad = m;
+    }
+
+    // Generate entity sphere
     _entSphere = LoadModelFromMesh(GenMeshSphere(1.0f, 8, 8));
     for (int m = 0; m < _entSphere.materialCount; ++m)
         _entSphere.materials[m].shader = _mapShader;
@@ -269,9 +305,19 @@ const Shader &Assets::GetMapShader(bool instanced)
     return instanced ? _Get()->_mapShaderInstanced : _Get()->_mapShader;
 }
 
+const Shader &Assets::GetSpriteShader()
+{
+    return _Get()->_spriteShader;
+}
+
 const Model &Assets::GetEntSphere()
 {
     return _Get()->_entSphere;
+}
+
+const Mesh& Assets::GetSpriteQuad()
+{
+    return _Get()->_spriteQuad;
 }
 
 Texture Assets::GetMissingTexture()

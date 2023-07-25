@@ -67,6 +67,9 @@ inline Matrix Ent::GetMatrix() const
 
 void Ent::Draw(const Camera camera, const bool drawAxes) const
 {
+    // All sprites share the same material, and the texture is changed for each one
+    static Material spriteMaterial = LoadMaterialDefault();
+
     Matrix matrix = GetMatrix();
 
     switch (display)
@@ -102,7 +105,12 @@ void Ent::Draw(const Camera camera, const bool drawAxes) const
     case DisplayMode::SPRITE:
         {
             if (texture == nullptr) break;
-            DrawBillboard(camera, texture->GetTexture(), position, 2.0f * radius, color);
+            // DrawBillboard(camera, texture->GetTexture(), position, 2.0f * radius, color);
+            rlDrawRenderBatchActive();
+            spriteMaterial.shader = Assets::GetSpriteShader();
+            SetMaterialTexture(&spriteMaterial, MATERIAL_MAP_ALBEDO, texture->GetTexture());
+            spriteMaterial.maps[MATERIAL_MAP_ALBEDO].color = color;
+            DrawMesh(Assets::GetSpriteQuad(), spriteMaterial, MatrixMultiply(MatrixScale(radius, radius, radius), matrix));
             break;
         }
     }

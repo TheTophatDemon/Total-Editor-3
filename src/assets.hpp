@@ -68,7 +68,9 @@ public:
 
     static const Font&   GetFont(); //Returns the default application font (dejavu.fnt)
     static const Shader& GetMapShader(bool instanced); //Returns the shader used to render tiles
+    static const Shader& GetSpriteShader(); // Returns the shader used to render billboards
     static const Model&  GetEntSphere(); //Returns the sphere that represents entities visually
+    static const Mesh& GetSpriteQuad();
     static Texture GetMissingTexture();
 protected:
     //Asset caches that hold weak references to all the loaded textures and models
@@ -81,6 +83,8 @@ protected:
     Model _entSphere; //The sphere that represents entities visually
     Shader _mapShader; //The non-instanced version that is used to render tiles outside of the map itself
     Shader _mapShaderInstanced; //The instanced version is used to render the tiles
+    Shader _spriteShader;
+    Mesh _spriteQuad;
 private:
     Assets();
     ~Assets();
