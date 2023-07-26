@@ -1,7 +1,5 @@
 # TODO
 
-- Update documentation (integrate into the editor?)
-
 ## Future updates
 
 - Add image preview in the file picker

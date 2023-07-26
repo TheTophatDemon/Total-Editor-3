@@ -2,11 +2,15 @@
 	<head>
 		<title>Total Editor 3 Instructions</title>
 		<style>
+			h1 {
+				text-align: center;
+			}
 			body {
 				text-align: left;
 				display: block;
 				max-width: 1200px;
-				margin: auto;
+				margin-left: 8px;
+				margin-right: 8px;
 			}
 			p {
 				text-align: left;
@@ -14,10 +18,18 @@
 			pre {
 				text-align: left;
 			}
+			span {
+				color: blue;
+				font-weight: bold;
+			}
 			img {
 				display:block;
-				margin: auto;
+				margin-left: 8px;
+				margin-right: 8px;
 				height: 320px;
+			}
+			.bigimg {
+				height: 480px;
 			}
 			.image-strip {
 				display: flex;
@@ -32,8 +44,23 @@
 		<h2>Table of Contents</h2>
 		<ol>
 			<li><a href="#basic_usage">Basic Usage</a></li>
+			<li><a href="#map_space">Map space and the grid</a></li>
+			<li><a href="#cursor">The cursor</a></li>
+			<li><a href="#sel_tex_shapes">Selecting textures and shapes</a></li>
+			<li><a href="#tile_picking">Tile picking</a></li>
+			<li><a href="#rectangular_mode">Rectangular mode</a></li>
+			<li><a href="#brush_mode">Brush mode</a></li>
+			<li><a href="#layer_isolation">Layer isolation</a></li>
+			<li><a href="#entity_mode">Entity mode</a></li>
+			<li><a href="#entity_config">Entity configuration</a></li>
+			<li><a href="#entity_change">How to change a specific entity's properties</a></li>
+			<li><a href="#entity_display">Entity display modes</a></li>
+			<li><a href="#undo_redo">Undo/Redo</a></li>
+			<li><a href="#editor_config">Editor configuration</a></li>
+			<li><a href="#map_export">Map exporting</a></li>
 			<li><a href="#file_format">Using .te3 Files</a></li>
 			<li><a href="#custom_tiles">Advice on Custom Tile Shapes</a></li>
+			<li><a href="#special_tiles">Special tiles</a></li>
 		</ol>
 		<h2 id="basic_usage">Basic Usage</h2>
 		<img src="instr_map.png" />
@@ -41,8 +68,9 @@
 			&emsp;Total Editor 3 is designed to build 3D game levels out of small 3 dimensional tiles.
 			Each tile has a "shape," which is a 3D model that you select from the editor, and
 			a "texture," which is a 2D image that gets placed on the faces of the model. Tiles also have a rotation defined by "pitch" and "yaw," rotations on two axes.
+			Use the WASD keys to move the camera around, and hold the middle mouse button to turn the camera. Alternatively, you may hold left alt and then drag holding the left mouse button to turn the camera.
 		</p>
-		<h3>Map space and the cursor</h3>
+		<h2 id="map_space">Map space and the grid</h2>
 		<img src="instr_grid.png"/>
 		<p>
 			&emsp;The application starts in the map editor screen. In this screen you have a grid and a cursor.
@@ -55,19 +83,19 @@
 			Using the mouse's scroll wheel will bring the grid up and down, along the Y axis. This movement is
 			limited by the map's dimensions, which are set when the "new map" menu option is clicked.
 		</p>
-		<h3>The Cursor</h3>
+		<h2 id="cursor">The Cursor</h2>
 		<p>
 			&emsp;The cursor begins in "tile mode," which means that it contains a tile that can be placed onto the
 			grid by left clicking, and tiles in the grid can be erased by right clicking. 
 			The yaw rotation of the tile can be turned in 90 degree increments using the Q and E keys.
 			The tile can be pitch rotated using the F and V keys. The angles can be reset by pressing R.
 		</p>
-		<h3>Selecting textures and shapes.</h3>
+		<h2 id="sel_tex_shapes">Selecting textures and shapes.</h2>
 		<img src="instr_textures.png" />
 		<p>
 			&emsp;The texture of the tile can be chosen by pressing TAB. This will bring the
-			editor into the "texture picker," where an array of images placed in the "assets/textures" folder
-			relative to the application appear. Clicking on one will set the texture to be used by the cursor in the
+			editor into the "texture picker," where an array of images placed in the "assets/textures/tiles" folder
+			relative to the application appear. (You can customize which directory it looks in under the "config" menu.) Clicking on a texture will set the texture to be used by the cursor in the
 			map editor. The text field near the top will allow the displayed textures to be filtered by their names.
 			This filter also takes into account the file path of each texture, so typing in the name of a subdirectory
 			will reveal textures within the subdirectory. Pressing TAB again will bring the user back to the map editor.
@@ -79,13 +107,13 @@
 			models found in the "assets/models/shapes" directory. These are a set of .obj files used as templates for
 			the shape of each tile. Pressing TAB or LEFT SHIFT and TAB will bring the user back to the map editor.
 		</p>
-		<h3>Tile picking</h3>
+		<h2 id="tile_picking">Tile picking</h2>
 		<p>
 			&emsp;When the cursor is over an existing tile on the grid, pressing T will copy the underlying tile's texture into the cursor's tile.
 			Likewise, pressing G will copy the underlying tile's shape and orientation. This can help avoid losing time looking through the menus for frequently
 			used shapes and textures.
 		</p>
-		<h3>Rectangular mode</h3>
+		<h2 id="rectangular_mode">Rectangular mode</h2>
 		<span class="image-strip">
 			<img src="instr_rect1.png" /> <img src="instr_rect2.png" />
 		</span>
@@ -95,7 +123,7 @@
 			will then place or remove tiles in the entire area. This makes it efficient for placing identical tiles in rows, columns, and rectangular chunks.
 			The grid may be moved vertically using the scroll wheel while holding shift to create 3 dimensional rectangles.
 		</p>
-		<h3>Brush mode</h3>
+		<h2 id="brush_mode">Brush mode</h2>
 		<span class="image-strip">
 			<img src="instr_brush1.png" /> <img src="instr_brush2.png" />
 		</span>
@@ -107,7 +135,7 @@
 			The cursor cannot erase anything using right click in this mode.
 			Pressing ESCAPE or BACKSPACE will bring the cursor into its regular "tile mode." 
 		</p>
-		<h3>Layer isolation</h3>
+		<h2 id="layer_isolation">Layer isolation</h2>
 		<span class="image-strip">
 			<img src="instr_hide1.png"/> <img src="instr_hide2.png"/>
 		</span>
@@ -116,24 +144,27 @@
 			the interiors of rooms and the like. The grid cannot move into or edit the hidden layers. Pressing H again will reveal the hidden
 			layers. When first activating the layer isolation, holding H and moving the grid will select multiple layers to isolate.
 		</p>
-		<h3>Entity mode</h3>
+		<h2 id="entity_mode">Entity mode</h2>
 		<img src="instr_ent3.png" />
 		<p>
 			&emsp;Holding LEFT CONTROL and pressing E will bring the cursor into "entity mode." Entities represent dynamic objects in a game, such as
-			player spawn points, enemies, items, and whatnot. Currently, they are displayed as colored spheres with nametags, and the game code
-			can replace these with whatever they're actually supposed to be. When the cursor is in entity mode, it can add and remove entities
-			with the mouse buttons like in tile mode. Also like tile mode, pressing G will copy the entity in the map under the cursor. Pressing
+			player spawn points, enemies, items, and whatnot. They can be displayed as colored spheres, models, or billboard sprites, and can be assigned name tags. The game code
+			can replace these with whatever they're actually supposed to be when loading the map. 
+		</p>
+		<p>
+			&emsp;When the cursor is in entity mode, it can add and remove entities
+			with the mouse buttons like in tile mode. Also like tile mode, pressing T or G will copy the entity in the map under the cursor. Pressing
 			Q and E will change the entity's yaw orientation like with tiles, but the angle changes are 45 degree increments. Holding shift during
 			rotation will rotate in 15 degree increments. The orientation can be reset using the R key. Entities can also be given a pitch rotation,
 			turning up and down by using the F and V keys. The cursor can be brought out of entity mode using the ESCAPE or BACKSPACE key.
 		</p>
-		<h3>Entity configuration</h3>
+		<h2 id="entity_config">Entity configuration</h2>
 		<span class="image-strip">
 			<img src="instr_ent1.png" /> <img src="instr_ent2.png"/>
 		</span>
 		<p>
 			&emsp;Holding LEFT CONTROL and pressing TAB will enter the entity editor. This will configure the properties of the entity being placed
-			by the cursor in the map editor. The color picker and the slider near the top will control the appearance of the sphere and how
+			by the cursor in the map editor. The color picker and the slider near the top will control the appearance of the entity and how
 			large it is. The list underneath are the entity's properties. These are arbitrary pieces of data to be used by the game to determine
 			the entity's characteristics. They are pairs of keys and values, where keys are the names of properties and values are pieces of text
 			to represent the data. For instance, an enemy may have a property with the key "ambush" and the value "true" to indicate that an enemy
@@ -141,44 +172,59 @@
 		</p>
 		<p>
 			&emsp;The text field below the property list is used to add properties. The text in the field will be used as the key, 
-			and pressing the plus button will add that property to the list. 
-			The value of the property can be editing directly in the property list by clicking on its text field.
-			Pressing the minus button will remove the property with the key name entered in the nearby text field. For instance, to remove the "name"
-			property one can click on the key name in the property list, which copies it into the key name field, and then pressing the minus button.
+			and pressing the add button will add that property to the list. 
+			The value of the property can be edited directly in the property list by clicking on its text field.
+			Pressing the remove button will remove the property it's next to.
 			Removing the "name" property will remove the name tag from the entity in the map editor, and it is otherwise nonessential.
-			<i>Most importantly</i>, the "place" button at the bottom will use the entity editor's configuration in the cursor on the map editor. Simply
-			exiting the entity editor with CTRL+TAB will cancel the editing of the cursor's entity. 
+			In previous versions of the editor, there was a need to confirm the changes by pressing a button. In version 3.1, this is no 
+			longer necessary. Any changes made in this menu are immediately applied to the entity cursor.
 		</p>
-		<h3>How to change a specific entity's properties.</h3>
+		<h2 id="entity_change">How to change a specific entity's properties.</h2>
 		<p>
 			&emsp;Bring the cursor into entity mode with CTRL+E, move the cursor onto the desired entity to edit and press G. Then, open the entity editor
 			with CTRL+TAB and make the desired changes. Then, press the "place" button and left click on the grid space the old entity occupies. This
 			will replace that entity with a similar entity that has the desired property changes.
 		</p>
-		<h3>Undo/Redo</h3>
+		<h2 id="entity_display">Entity display modes.</h2>
+		<span class="image-strip">
+			<img src="instr_ent6.png" />
+		</span>
+		<p>
+			&emsp;Since version 3.1, entities can be displayed as either spheres, billboard sprites, or textured models.
+			This can be changed by using the drop-down menu at the top of the entity menu. For models, the texture is optional.
+			Like the spheres, the sprites and models can be sized and colored individually.
+		</p>
+		<p>
+			&emsp;The model display mode is particularly useful for representing <i>dynamic tiles:</i> tiles that can be interacted with and move separately from the rest of the map's geometry, like doors, switches, or elevators.
+		</p>
+		<h2 id="undo_redo">Undo/Redo</h2>
 		<p>
 			&emsp;Operations done on tiles and entites can be undone by holding LEFT CONTROL and pressing Z. By default, you can erase up to the last 30 actions performed. 
 			This number can be customized in the CONFIG menu.
 			Undone actions can be carried out again when pressing CTRL+Y. Like other applications, undone actions cannot be redone if new actions are performed after the undoing.
 		</p>
-		<h3>Editor configuration</h3>
+		<h2 id="editor_config">Editor configuration</h2>
 		<p>
 			&emsp;The CONF menu will allow the changing of various editor settings.
 			The "asset paths" item will allow the user to change where the application searches for textures and shape models.
 			This will change what is displayed in the texture and shape pickers, but will not change the appearance of tiles already placed.
 			This is because tile data saves the path of each shape and texture relative to the editor's executable file.
+			One can also change the texture and shape used by default when opening the editor or making a new map.
 		</p>
 		<p>
 			&emsp;The "settings" item in the CONF menu allows the user to choose how many operations to remember for undoing, and
-			how quickly the camera rotates with the movement of the mouse.
+			how quickly the camera rotates with the movement of the mouse. The background color for the editor may also be changed here.
 			Settings are saved as a "settings.json" file next to the executable. To revert to default settings, simply delete the file.
 		</p>
-		<h3>Map exporting</h3>
+		<h2 id="map_export">Map exporting</h2>
+		<span class="image-strip">
+			<img src="instr_export.png" />
+		</span>
 		<p>
 			&emsp;Complete maps can either be parsed by the game's code from the .te3 file the editor saves or exported as a 3D model file.
 			Going into the FILE menu and selecting "export" will evoke a dialog that asks for the file path of the model to export to.
-			Currently, this editor only exports maps as a .gltf file, but this file format includes all of the entity information as
-			empty nodes.
+			Currently, this editor only exports maps as .gltf files or .glb (binary gltf) files. These files will also contain nodes for each
+			entity on the map with all of its properties in the "extras" field.
 		</p>
 		<p>
 			Currently, the .gltf model references textures using file paths relative to the <i>model file itself</i>, and they are not
@@ -189,8 +235,12 @@
 			This is useful for marking pieces of geometry that function in a special way. For instance, the included "invisible" texture,
 			though it is visible in the editor, can be used to indicate that some tiles may act as invisible walls in the game.
 			For each of these separate nodes, the path to the texture (relative to the editor executable) is used as the name of the node;
-			 however, the slashes in the file path are replaced with underscores, and the file extension is removed, because certain game
-			 engines will not allow game object names to contain special characters.
+			 however, the slashes in the file path are replaced with underscores, and so is the dot in the file extension, because certain game
+			 engines (Godot) will not allow game object names to contain special characters.
+		</p>
+		<p>
+			&emsp;The other option, "cull redundant faces between tiles", controls whether or not the exported model removes faces between tiles
+			that are not visible from the outside.
 		</p>
 		
 		<h2 id="file_format">Using .te3 Files</h2>
@@ -199,50 +249,16 @@
 			the <a href="https://www.json.org/json-en.html">JSON</a> data exchange format.
 			They are structured like in this example:
 		</p>
-		<pre>
-{
-	"ents": [                                              //List of map entities
-		{
-			"position": [0.0, 12.0, 3.0],                  //Position in world coordinates
-			"color": [255, 0, 0],                          //Red, green, blue color
-			"angles": [0.0, 90.0, 0.0],                    //Euler angles (the Z angle is always 0)
-			"radius": 0.75,                                //Radius of sphere
-			"properties": [                                //Map of other properties
-				"name": "geoffrey",
-				"age": "12",
-				"favorite direction": "(1, 0, 0)"
-			]
-		},
-		{
-			"position": [2.0, 0.0, 0.0],
-			...
-		}
-	],
-	"tiles": [                                                     //The arrangement of tiles
-		"width": 12,                                           //Dimension along the X axis
-		"height": 9,                                           //Dimension along the Y axis (up)
-		"length": 12,                                          //Dimension along the Z axis
-		"textures": [
-			"assets/textures/geoffrey_skin.png",           //Paths to each texture relative to the editor's executable
-			"assets/textures/brick_wall.png"
-		],
-		"shapes": [                                            //Paths to each tile shape relative to the editor's executable
-			"assets/models/shapes/cube.obj",
-			"assets/models/shapes/tetrahedron.obj"
-		],
-		"data": "/////wAAAAD/////AAA///AAAAAP..."              //Tile data encoded as a base64 string (details below)
-	]
-}
-		</pre>
+		<img src="te3_specs.png" class="bigimg"/>
 		<p>
 			As noted, the data for the tile grid is encoded as a <a href="https://www.base64decode.org/">Base64</a> string.
 			It converts binary data into something that can be compactly printed as characters in a text file.
 			In binary, the data is laid out in the following structure:
 			<pre>
 struct Tile {
-	int32_t modelID,       //The index into the "shapes" JSON array. -1 if the tile is empty.
+	int32_t modelID,       //The index into the "shapes" JSON array. If less than 0, represents a run of blank tiles of length -modelID.
 	int32_t angle,         //The yaw angle, given in a whole number of degrees.
-	int32_t texID,         //The index into the "textures" JSON array. -1 if the tile is empty.
+	int32_t texID,         //The index into the "textures" JSON array. Will be less than 0 if the tile is empty.
 	int32_t pitch,         //The pitch angle, given in a whole number of degrees
 };
 			</pre>
@@ -259,18 +275,22 @@ struct Tile {
 			<br/>
 			&emsp;Where t is the overall index of the tile, starting at 0 for the first one and ending at (length * width * height) - 1.
 			Note that each coordinate is multiplied by 2. That is because the grid position is given by the index, but each tile is
-			actually spaced by 2 units in world space, because each tile model is 2 units wide.
-			This may be something customizable in later versions of the editor, if anyone cares.
+			actually spaced by 2 units in world space, because each tile model is 2 units wide.<br/>
+			&emsp;<b>Since version 3.1, blank tiles are represented by "run length encoding"</b>. This means that when parsing a .te3 file,
+			encountering a tile with a modelID less than 0 represents multiple successive blank tiles, the number of which is equal to
+			the absolute value of the modelID. For the code above to work, t would have to be increased by -modelID when modelID < 0.
 		</p>
 		<h3>Rendering the tiles in-game</h3>
 		<p>
 			&emsp;Once the tile data is read from the file, how does one go about rendering them?
 			The recommended way of doing this is to use instancing. Most game engines have some mechanism for doing this.
 			Instancing takes the same mesh and draws it in several different places at once, which saves on computation.
-			Rendering each individual tile as a seperate game object would cause considerable slowdown, otherwise.
+			Rendering each individual tile as a separate game object would cause considerable slowdown, otherwise.
 			Groups of matrices or positions + rotations will be fed into the game engine to tell how each instance is drawn.
 			Since the tiles have various shapes and textures, arrays may have to be created for each combination
-			of texture and shape.
+			of texture and shape.<br/>
+			&emsp;Alternatively, the data from each tile's shape model can be integrated into an aggregated mesh. This is produces a similar
+			result to exporting the map as a .gltf.
 		</p>
 		<p>
 			Note that, when calculating the transform of a tile, the matrix for the pitch rotation is applied first, and then the yaw rotation.
@@ -282,18 +302,52 @@ struct Tile {
 		<h2 id="custom_tiles">Advice on Custom Tile Shapes</h2>
 		<p>
 			Since the tile shapes just come from .obj files, you may of course add your own shapes and the application can use them as long as they're in the
-			configured shapes directory.
+			configured shapes directory. Be sure to triangulate models before exporting, because the model importer used will not support other polygons.
+			Also, material information will be ignored.
 		</p>
 		<p>
-			In order to ensure the tiles work properly, please ensure that the tiles:
+			In order to ensure the tiles fit in the grid properly, ensure that the tiles:
 		</p>
 		<ul>
 			<li>Are centered at the origin (0, 0, 0)</li>
 			<li>Span a distance of 2.0 units (1.0 on either side of the origin).</li>
-			<li>Do not have material information.</li>
 		</ul>
 		<p>
 			Even if you break all of these rules, you should still be able to use the tiles, but they may not fit into the grid correctly.
 		</p>
+		<p>
+			If you want to optimize the culling of faces when exporting a .gltf file, try to make the vertices in your tile shape match up when the shape is put in rows.
+			A face is culled in the map's model if:
+		</p>
+		<ul>
+			<li>The face's plane's normal faces one of the orthogonal directions (x,y,z)</li>
+			<li>The neighboring tile has a face facing the opposite direction on the same plane.</li>
+			<li>The triangles for the face and its neighbor's face have all vertices in the same positions</li>
+		</ul>
+		<h2 id="special_tiles">Special tiles</h2>
+		<p>There are some shapes included with the application that may seem strange, so here I will explain how they are used.</p>
+		<ul>
+			<li>
+				bars.obj is meant to be used with the bars.png texture, and its uv map may not look good with other textures not made for it.
+			</li><br/>
+			<li>
+				cube_2tex.obj is meant to be used with textures whose file names end in _2tex for similar reasons. 
+				It is meant to circumvent the limitation of "one texture per tile" by using the top half of the texture for the top and bottom of the cube and the bottom half of the texture for the rest.
+				</li><br/>
+			<li>
+				cube_marker.obj is like cube.obj but slightly smaller. This prevents it from being culled or culling other tiles when exporting the map as a .gltf model.
+			</li><br/>
+			<li>
+				corner_height_2.obj is the same as corner.obj but it's twice as tall. 
+				This is used as a trick to make floor or ceiling tiles that transition between two different textures diagonally.
+				First, place a regular corner tile in the floor or ceiling. Then, select a different texture and place the corner_height_2 tile directly
+				above or below the first tile. Use the F and V keys to turn it upside down if needed. When fit together, the two tiles like as though they
+				are one from the inside of the building.
+			</li><br/>
+		</ul>
+		<span class="image-strip">
+			<img src="instr_corner1.png" />
+			<img src="instr_corner2.png" />
+		</span>
 	</body>
 </html>
