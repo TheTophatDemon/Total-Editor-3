@@ -154,8 +154,8 @@ bool MapMan::SaveTE3Map(fs::path filePath)
         jData["tiles"]["height"] = _tileGrid.GetHeight();
         jData["tiles"]["length"] = _tileGrid.GetLength();
 
-        //Make new texture & model lists containing only used assets
-        //This prevents extraneous assets from accumulating in the file every time it's saved
+        // Make new texture & model lists containing only used assets
+        // This prevents extraneous assets from accumulating in the file every time it's saved
         auto [usedTexIDs, usedModelIDs] = _tileGrid.GetUsedIDs();
         std::vector<std::string> usedTexPaths, usedModelPaths;
         usedTexPaths.resize(usedTexIDs.size());
@@ -172,7 +172,7 @@ bool MapMan::SaveTE3Map(fs::path filePath)
         jData["tiles"]["textures"] = usedTexPaths;
         jData["tiles"]["shapes"] = usedModelPaths;
 
-        //Make a copy of the map that reassigns all IDs to match the new lists
+        // Make a copy of the map that reassigns all IDs to match the new lists
         const int tileArea = _tileGrid.GetWidth() * _tileGrid.GetHeight() * _tileGrid.GetLength();
         TileGrid optimizedGrid = _tileGrid.Subsection(0, 0, 0, _tileGrid.GetWidth(), _tileGrid.GetHeight(), _tileGrid.GetLength());
         for (size_t i = 0; i < tileArea; ++i)
@@ -197,10 +197,15 @@ bool MapMan::SaveTE3Map(fs::path filePath)
             optimizedGrid.SetTile(i, tile);
         }
 
-        //Save the modified tile data
+        // Save the modified tile data
         jData["tiles"]["data"] = optimizedGrid.GetOptimizedTileDataBase64();
 
         jData["ents"] = _entGrid.GetEntList();
+
+        // Save camera orientation
+        jData["editorCamera"] = json::object();
+        jData["editorCamera"]["position"] = json::array({_defaultCameraPosition.x, _defaultCameraPosition.y, _defaultCameraPosition.z});
+        jData["editorCamera"]["eulerAngles"] = json::array({_defaultCameraAngles.x * RAD2DEG, _defaultCameraAngles.y * RAD2DEG, _defaultCameraAngles.z * RAD2DEG});
 
         std::ofstream file(filePath);
         file << to_string(jData);
@@ -261,6 +266,18 @@ bool MapMan::LoadTE3Map(fs::path filePath)
         {
             Vector3 gridPos = _entGrid.WorldToGridPos(e.position);
             _entGrid.AddEnt((int) gridPos.x, (int) gridPos.y, (int) gridPos.z, e);
+        }
+
+        if (jData.contains("editorCamera"))
+        {
+            json::array_t posArr = jData["editorCamera"]["position"];
+            _defaultCameraPosition = Vector3 {
+                (float)posArr[0], (float)posArr[1], (float)posArr[2]
+            };
+            json::array_t rotArr = jData["editorCamera"]["eulerAngles"];
+            _defaultCameraAngles = Vector3 {
+                (float)rotArr[0] * DEG2RAD, (float)rotArr[1] * DEG2RAD, (float)rotArr[2] * DEG2RAD
+            };
         }
     }
     catch (const std::exception &e)

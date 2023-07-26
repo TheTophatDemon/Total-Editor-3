@@ -140,6 +140,23 @@ void PlaceMode::ResetCamera()
     _cursor->position = _tileCursor.endPosition = Vector3Zero();
 }
 
+Vector3 PlaceMode::GetCameraPosition() const
+{
+    return _camera.position;
+}
+
+Vector3 PlaceMode::GetCameraAngles() const
+{
+    return Vector3 { _cameraPitch, _cameraYaw, 0.0f };
+}
+
+void PlaceMode::SetCameraOrientation(Vector3 position, Vector3 angles)
+{
+    _camera.position = position;
+    _cameraPitch = angles.x;
+    _cameraYaw = angles.y;
+}
+
 void PlaceMode::ResetGrid()
 {
     //Editor grid and plane
@@ -206,6 +223,10 @@ void PlaceMode::MoveCamera()
     
     _camera.position = Vector3Add(_camera.position, rotatedMovement);
     _camera.target = Vector3Add(_camera.position, Vector3Transform(VEC3_FORWARD, cameraRotation));
+
+    // Set the default camera orientation when the map is saved
+    _mapMan.SetDefaultCameraPosition(_camera.position);
+    _mapMan.SetDefaultCameraAngles(Vector3 { _cameraPitch, _cameraYaw, 0.0f });
 }
 
 //TODO: Separate cursor updates into virtual functions

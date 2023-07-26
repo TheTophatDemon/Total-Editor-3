@@ -287,6 +287,8 @@ void App::TryOpenMap(fs::path path)
                 DisplayStatusMessage("ERROR: Failed to load .te3 map. Check the console.", 5.0f, 100);
             }
             _tilePlaceMode->ResetCamera();
+            // Set editor camera to saved position
+            _tilePlaceMode->SetCameraOrientation(_mapMan->GetDefaultCameraPosition(), _mapMan->GetDefaultCameraAngles());
             _tilePlaceMode->ResetGrid();
         }
         else if (path.extension() == ".ti")

@@ -50,6 +50,9 @@ public:
     const Ent &GetCursorEnt() const;
 
     void ResetCamera();
+    Vector3 GetCameraPosition() const;
+    Vector3 GetCameraAngles() const;
+    void SetCameraOrientation(Vector3 position, Vector3 angles);
     void ResetGrid();
 protected:
     struct Cursor 

@@ -243,6 +243,10 @@ public:
     const std::vector<fs::path> GetTexturePathList() const;
     inline int GetNumTextures() const { return _textureList.size(); }
 
+    inline Vector3 GetDefaultCameraPosition() const { return _defaultCameraPosition; }
+    inline void SetDefaultCameraPosition(Vector3 pos) { _defaultCameraPosition = pos; }
+    inline Vector3 GetDefaultCameraAngles() const { return _defaultCameraAngles; }
+    inline void SetDefaultCameraAngles(Vector3 angles) { _defaultCameraAngles = angles; }
 
     inline void Undo()
     {
@@ -268,6 +272,8 @@ private:
 
     TileGrid _tileGrid;
     EntGrid _entGrid;
+
+    Vector3 _defaultCameraPosition, _defaultCameraAngles;
 
     std::vector<std::shared_ptr<Assets::TexHandle>> _textureList;
     std::vector<std::shared_ptr<Assets::ModelHandle>> _modelList;
