@@ -158,10 +158,12 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
                 memcpy(nodeNameBuffer, nodeName.data(), nodeName.length() + 1);
                 // Replace slashes from the path with underscores. This makes sure the names are imported into Godot without modification.
                 char* newNodeName = TextReplace(nodeNameBuffer, "/", "_");
+                char* finalNodeName = TextReplace(newNodeName, ".", "_");
 
-                json materialNode = {{"name", std::string(newNodeName)}};
+                json materialNode = {{"name", std::string(finalNodeName)}};
 
                 free(newNodeName);
+                free(finalNodeName);
 
                 json mesh = {
                     {"primitives", {mapPrims[m]}}
