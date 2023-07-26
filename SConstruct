@@ -9,7 +9,7 @@ cpp_tools = []
 if sys.platform.startswith("linux"):
     cpp_platform = "LINUX_64"
     cpp_libs = 'raylib GL m pthread dl rt X11'
-    cpp_tools = ["g++"]
+    cpp_tools = ["default", "g++"]
 elif sys.platform.startswith("win"):
     cpp_platform = "WINDOWS_64"
     cpp_libs = 'raylib opengl32 gdi32 winmm'
