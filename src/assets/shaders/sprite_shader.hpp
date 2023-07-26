@@ -27,7 +27,7 @@ void main()
     fragColor = vertexColor;
 
     vec4 pos = matView * matModel * vec4(0.0, 0.0, 0.0, 1.0);
-    pos += vec4(vertexPosition.xy, 0.0, 0.0);
+    pos += vec4(vertexPosition.x * matModel[0][0], vertexPosition.y * matModel[0][0], 0.0, 0.0);
     pos = matProj * pos;
 
     // Calculate final vertex position

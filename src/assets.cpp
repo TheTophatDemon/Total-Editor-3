@@ -276,10 +276,10 @@ Assets::Assets()
         m.vertices[6] = +1.0f; m.vertices[ 7] = -1.0f; m.vertices[ 8] = 0.0f;
         m.vertices[9] = -1.0f; m.vertices[10] = -1.0f; m.vertices[11] = 0.0f;
         // UV
-        m.texcoords[0] = 1.0f; m.texcoords[1] = 0.0f;
-        m.texcoords[2] = 0.0f; m.texcoords[3] = 0.0f;
-        m.texcoords[4] = 0.0f; m.texcoords[5] = 1.0f;
-        m.texcoords[6] = 1.0f; m.texcoords[7] = 1.0f;
+        m.texcoords[0] = 0.0f; m.texcoords[1] = 0.0f;
+        m.texcoords[2] = 1.0f; m.texcoords[3] = 0.0f;
+        m.texcoords[4] = 1.0f; m.texcoords[5] = 1.0f;
+        m.texcoords[6] = 0.0f; m.texcoords[7] = 1.0f;
         // Indices
         m.indices[0] = 2; m.indices[1] = 1; m.indices[2] = 0;
         m.indices[3] = 3; m.indices[4] = 2; m.indices[5] = 0;
