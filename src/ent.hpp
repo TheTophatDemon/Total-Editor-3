@@ -63,7 +63,7 @@ struct Ent
 
     Matrix GetMatrix() const;
 
-    void Draw(const Camera camera, const bool drawAxes) const;
+    void Draw(const bool drawAxes) const;
 };
 
 void to_json(nlohmann::json& j, const Ent &ent);

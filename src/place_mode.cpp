@@ -531,7 +531,7 @@ void PlaceMode::Draw()
             }
             else if (_cursor == &_entCursor)
             {
-                _entCursor.ent.Draw(_camera, true);
+                _entCursor.ent.Draw(true);
             }
 
             // Draw pink border around the cursor

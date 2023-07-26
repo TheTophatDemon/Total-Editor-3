@@ -33,6 +33,7 @@
 
 #define DISPLAY_NAME_THRESHOLD 0.9995f
 
+// Default, inactive entity
 Ent::Ent()
 {
     active = false;
@@ -42,6 +43,8 @@ Ent::Ent()
     position = Vector3Zero();
     yaw = pitch = 0;
     properties = std::map<std::string, std::string>();
+    model = nullptr;
+    texture = nullptr;
 }
 
 Ent::Ent(float radius)
@@ -53,6 +56,8 @@ Ent::Ent(float radius)
     position = Vector3Zero();
     yaw = pitch = 0;
     properties = std::map<std::string, std::string>();
+    model = nullptr;
+    texture = nullptr;
 }
 
 inline Matrix Ent::GetMatrix() const
@@ -65,7 +70,7 @@ inline Matrix Ent::GetMatrix() const
         MatrixTranslate(position.x, position.y, position.z));
 }
 
-void Ent::Draw(const Camera camera, const bool drawAxes) const
+void Ent::Draw(const bool drawAxes) const
 {
     // All sprites share the same material, and the texture is changed for each one
     static Material spriteMaterial = LoadMaterialDefault();
@@ -105,7 +110,7 @@ void Ent::Draw(const Camera camera, const bool drawAxes) const
     case DisplayMode::SPRITE:
         {
             if (texture == nullptr) break;
-            // DrawBillboard(camera, texture->GetTexture(), position, 2.0f * radius, color);
+            
             rlDrawRenderBatchActive();
             spriteMaterial.shader = Assets::GetSpriteShader();
             SetMaterialTexture(&spriteMaterial, MATERIAL_MAP_ALBEDO, texture->GetTexture());
@@ -192,7 +197,7 @@ void EntGrid::Draw(Camera &camera, int fromY, int toY)
             if (drawExtras && _grid[i].properties.find("name") != _grid[i].properties.end())
                 _labelsToDraw.push_back(std::make_pair(ndc, _grid[i].properties["name"]));
             
-            _grid[i].Draw(camera, drawExtras && !App::Get()->IsPreviewing());
+            _grid[i].Draw(drawExtras && !App::Get()->IsPreviewing());
         }
     }
 }
