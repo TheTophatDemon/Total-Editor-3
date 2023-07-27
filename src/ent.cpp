@@ -160,10 +160,10 @@ void from_json(const nlohmann::json& j, Ent &ent)
     switch (ent.display)
     {
     case Ent::DisplayMode::MODEL:
-        ent.model = Assets::GetModel(j.at("model"));
+        if (j.contains("model")) ent.model = Assets::GetModel(j.at("model"));
         //fallthrough
     case Ent::DisplayMode::SPRITE:
-        ent.texture = Assets::GetTexture(j.at("texture"));
+        if (j.contains("texture")) ent.texture = Assets::GetTexture(j.at("texture"));
         break;
     }
 }
