@@ -35,7 +35,6 @@
 #include "map_man.hpp"
 #include "text_util.hpp"
 #include "draw_extras.h"
-#include "gui.hpp"
 
 Rectangle DialogRec(float w, float h)
 {
