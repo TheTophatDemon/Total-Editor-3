@@ -1,7 +1,5 @@
 # TODO
 
-- Alphabetically sort file browser files
-
 ## Future updates
 
 - Add image preview in the file picker

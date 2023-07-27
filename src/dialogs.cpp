@@ -27,6 +27,7 @@
 #include <initializer_list>
 #include <map>
 #include <iostream>
+#include <set>
 
 #include "assets.hpp"
 #include "math_stuff.hpp"
@@ -175,43 +176,56 @@ bool FileDialog::Draw()
                 // Navigating into such a folder causes a crash, which I am preventing with this try/catch block.
                 // So, going into these folders will just show nothing instead of crashing.
             }
+
+            // Store found files and directories in these sets so that they get automatically sorted (and we can put directories in front of files)
+            std::set<fs::path> foundDirectories;
+            std::set<fs::path> foundFiles;
+
+            // Get files/directories from the file system
             std::error_code osError;
             for (auto i = fs::begin(fileIter); i != fs::end(fileIter); i = i.increment(osError))
             {
                 if (osError) break;
                 auto entry = *i;
-                if (entry.is_directory() || 
-                    (entry.is_regular_file() && _extensions.find(entry.path().extension().string()) != _extensions.end()))
+                if (entry.is_directory())
                 {
-                    std::string entry_str;
-                    
-                    bool selected = (strcmp(entry_str.c_str(), _fileNameBuffer) == 0);
-
-                    if (entry.is_directory())
-                    {
-                        entry_str = std::string("[") + entry.path().stem().string() + "]";
-                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
-                    }
-                    else
-                    {
-                        entry_str = entry.path().filename().string();
-                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-                    }
-                    if (ImGui::Selectable(entry_str.c_str(), selected))
-                    {
-                        if (entry.is_directory())
-                        {
-                            _currentDir = entry.path();
-                            memset(_fileNameBuffer, 0, sizeof(char) * TEXT_FIELD_MAX);
-                        }
-                        else
-                        {
-                            strcpy(_fileNameBuffer, entry_str.c_str());
-                        }
-                    }
-                    ImGui::PopStyleColor();
+                    foundDirectories.insert(entry.path());
+                }
+                if (entry.is_regular_file() && _extensions.find(entry.path().extension().string()) != _extensions.end())
+                {
+                    foundFiles.insert(entry.path());
                 }
             }
+
+            // Display the directories
+            for (fs::path entry : foundDirectories)
+            {
+                std::string entry_str = std::string("[") + entry.stem().string() + "]";
+                // Directories are yellow
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
+                
+                if (ImGui::Selectable(entry_str.c_str()))
+                {
+                    _currentDir = entry;
+                    memset(_fileNameBuffer, 0, sizeof(char) * TEXT_FIELD_MAX);
+                }
+                ImGui::PopStyleColor();
+            }
+
+            // Display the files
+            for (fs::path entry : foundFiles)
+            {
+                std::string entry_str = entry.filename().string();
+                // Files are white
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+                if (ImGui::Selectable(entry_str.c_str()))
+                {
+                    strcpy(_fileNameBuffer, entry_str.c_str());
+                }
+                ImGui::PopStyleColor();
+            }
+
             ImGui::EndListBox();
         }
 

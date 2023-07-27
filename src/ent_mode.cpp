@@ -131,12 +131,14 @@ void EntMode::Draw()
         case Ent::DisplayMode::SPHERE:
             {
                 // Radius box
+                ImGui::TextUnformatted("Radius");
                 ImGui::SetNextItemWidth(256.0f);
-                ImGui::InputFloat("Radius", &_ent.radius, 0.1f, 0.1f, "%.1f");
+                ImGui::InputFloat("##Radius", &_ent.radius, 0.1f, 0.1f, "%.1f");
                 break;
             }
         case Ent::DisplayMode::MODEL:
             {
+                ImGui::TextUnformatted("Model path");
                 if (ImGui::Button("Browse##Model"))
                 {
                     _fileDialog.reset(new FileDialog("Select model", { std::string(".obj") }, 
@@ -148,12 +150,13 @@ void EntMode::Draw()
                     false));
                 }
                 ImGui::SameLine();
-                ImGui::InputText("Model path", _modelPathBuffer, TEXT_FIELD_MAX);
+                ImGui::InputText("##Model path", _modelPathBuffer, TEXT_FIELD_MAX);
                 
                 // Intentional fallthrough
             }
         case Ent::DisplayMode::SPRITE:
             {
+                ImGui::TextUnformatted("Texture path");
                 if (ImGui::Button("Browse##Sprite"))
                 {
                     _fileDialog.reset(new FileDialog("Select texture", { std::string(".png") }, 
@@ -165,10 +168,11 @@ void EntMode::Draw()
                     false));
                 }
                 ImGui::SameLine();
-                ImGui::InputText("Texture path", _texturePathBuffer, TEXT_FIELD_MAX);
+                ImGui::InputText("##Texture path", _texturePathBuffer, TEXT_FIELD_MAX);
 
+                ImGui::TextUnformatted("Scale");
                 ImGui::SetNextItemWidth(256.0f);
-                ImGui::InputFloat("Scale", &_ent.radius, 0.1f, 0.1f, "%.1f");
+                ImGui::InputFloat("##Scale", &_ent.radius, 0.1f, 0.1f, "%.1f");
 
                 break;
             }

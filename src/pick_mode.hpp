@@ -30,6 +30,7 @@
 #include <mutex>
 #include <future>
 #include <map>
+#include <set>
 
 #include "app.hpp"
 
@@ -76,7 +77,7 @@ protected:
     std::map<fs::path, Texture2D> _loadedTextures;
     std::map<fs::path, Model> _loadedModels;
     std::map<fs::path, RenderTexture2D> _loadedIcons;
-    std::vector<fs::path> _foundFiles;
+    std::set<fs::path> _foundFiles;
     std::vector<Frame> _frames;
     
     Frame _selectedFrame;

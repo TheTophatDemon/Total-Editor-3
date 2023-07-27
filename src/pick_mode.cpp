@@ -167,7 +167,7 @@ void PickMode::OnEnter()
                 continue;
             }
 
-            _foundFiles.push_back(entry.path());
+            _foundFiles.insert(entry.path());
         }
     }
 
