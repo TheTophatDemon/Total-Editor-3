@@ -116,10 +116,10 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
         std::vector<int> mapNodeChildren;
 
         // Encode materials and textures
-        for (int m = 0; m < mapModel.materialCount; ++m)
+        for (int m = 0; m < mapModel.meshCount; ++m)
         {
             // Image paths in the GLTF are relative to the file.
-            fs::path imagePath = PathFromTexID(m);
+            fs::path imagePath = PathFromTexID(mapModel.meshMaterial[m]);
             fs::path imagePathFromGLTF = fs::relative(
                 fs::current_path() / imagePath, 
                 fs::current_path() / filePath.parent_path()); 
