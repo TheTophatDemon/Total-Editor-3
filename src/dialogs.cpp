@@ -575,8 +575,8 @@ bool ShortcutsDialog::Draw()
     ImGui::OpenPopup("SHORTCUTS");
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(608.0f, 468.0f));
-    if (ImGui::BeginPopupModal("SHORTCUTS", &open, ImGuiWindowFlags_AlwaysVerticalScrollbar))
+    ImGui::SetNextWindowSizeConstraints(ImVec2(640.0f, 468.0f), ImVec2(1280.0f, 720.0f));
+    if (ImGui::BeginPopupModal("SHORTCUTS", &open, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysVerticalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar))
     {
         for (int i = 0; i < SHORTCUT_COUNT; ++i)
         {
