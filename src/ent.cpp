@@ -40,7 +40,7 @@ Ent::Ent()
     display = DisplayMode::SPHERE;
     color = WHITE;
     radius = 0.0f;
-    position = Vector3Zero();
+    lastRenderedPosition = Vector3Zero();
     yaw = pitch = 0;
     properties = std::map<std::string, std::string>();
     model = nullptr;
@@ -53,29 +53,25 @@ Ent::Ent(float radius)
     display = DisplayMode::SPHERE;
     color = WHITE;
     this->radius = radius;
-    position = Vector3Zero();
+    lastRenderedPosition = Vector3Zero();
     yaw = pitch = 0;
     properties = std::map<std::string, std::string>();
     model = nullptr;
     texture = nullptr;
 }
 
-inline Matrix Ent::GetMatrix() const
+void Ent::Draw(const bool drawAxes, const Vector3 position)
 {
-    return MatrixMultiply(
+    lastRenderedPosition = position;
+    // All sprites share the same material, and the texture is changed for each one
+    static Material spriteMaterial = LoadMaterialDefault();
+
+    Matrix matrix = MatrixMultiply(
         MatrixMultiply(
             MatrixRotateX(ToRadians((float) pitch)), 
             MatrixRotateY(ToRadians((float) yaw))
         ),
         MatrixTranslate(position.x, position.y, position.z));
-}
-
-void Ent::Draw(const bool drawAxes) const
-{
-    // All sprites share the same material, and the texture is changed for each one
-    static Material spriteMaterial = LoadMaterialDefault();
-
-    Matrix matrix = GetMatrix();
 
     switch (display)
     {
@@ -89,7 +85,7 @@ void Ent::Draw(const bool drawAxes) const
         {
             if (model == nullptr) break;
             
-            //Set up material
+            // Set up material
             Material mat = LoadMaterialDefault();
             if (texture != nullptr) SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, texture->GetTexture());
             mat.shader = Assets::GetMapShader(false);
@@ -122,7 +118,7 @@ void Ent::Draw(const bool drawAxes) const
     
     if (drawAxes)
     {
-        //Draw axes to show orientation
+        // Draw axes to show orientation
         rlPushMatrix();
         rlMultMatrixf(MatrixToFloat(matrix));
         DrawAxes3D(Vector3Zero(), radius);
@@ -134,7 +130,7 @@ void to_json(nlohmann::json& j, const Ent &ent)
 {
     j["radius"] = ent.radius;
     j["color"] = nlohmann::json::array({ent.color.r, ent.color.g, ent.color.b});
-    j["position"] = nlohmann::json::array({ent.position.x, ent.position.y, ent.position.z});
+    j["position"] = nlohmann::json::array({ent.lastRenderedPosition.x, ent.lastRenderedPosition.y, ent.lastRenderedPosition.z});
     j["angles"] = nlohmann::json::array({ent.pitch, ent.yaw, 0.0f});
     j["display"] = ent.display;
     if (ent.model != nullptr) j["model"] = ent.model->GetPath();
@@ -147,15 +143,19 @@ void from_json(const nlohmann::json& j, Ent &ent)
     ent.active = true;
     ent.radius = j.at("radius");
     ent.color = Color { j.at("color").at(0), j.at("color").at(1), j.at("color").at(2), 255 };
-    ent.position = Vector3 { j.at("position").at(0), j.at("position").at(1), j.at("position").at(2) };
+    ent.lastRenderedPosition = Vector3 { j.at("position").at(0), j.at("position").at(1), j.at("position").at(2) };
     ent.pitch = j.at("angles").at(0);
     ent.yaw = j.at("angles").at(1);
     ent.properties = j.at("properties");
 
     if (j.contains("display"))
+    {
         ent.display = j.at("display");
+    }
     else 
+    {
         ent.display = Ent::DisplayMode::SPHERE;
+    }
     
     switch (ent.display)
     {
@@ -173,7 +173,7 @@ EntGrid::EntGrid()
 {
 }
 
-//Creates ent grid of given dimensions, default spacing.
+// Creates ent grid of given dimensions, default spacing.
 EntGrid::EntGrid(size_t width, size_t height, size_t length)
     : Grid<Ent>(width, height, length, ENT_SPACING_DEFAULT, Ent())
 {
@@ -188,16 +188,18 @@ void EntGrid::Draw(Camera &camera, int fromY, int toY)
     {
         if (!_grid[i].active) continue;
 
-        //Do frustrum culling check
-        Vector3 ndc = GetWorldToNDC(_grid[i].position, camera);
+        // Do frustum culling check
+        Vector3 ndc = GetWorldToNDC(_grid[i].lastRenderedPosition, camera);
         if (ndc.z < 1.0f && ndc.x > -1.0f && ndc.x < 1.0f && ndc.y > -1.0f && ndc.y < 1.0f)
         {
             bool drawExtras = (ndc.z < DISPLAY_NAME_THRESHOLD);
 
-            if (drawExtras && _grid[i].properties.find("name") != _grid[i].properties.end())
+            if (drawExtras && _grid[i].properties.find("name") != _grid[i].properties.end()) 
+            {
                 _labelsToDraw.push_back(std::make_pair(ndc, _grid[i].properties["name"]));
+            }
             
-            _grid[i].Draw(drawExtras && !App::Get()->IsPreviewing());
+            _grid[i].Draw(drawExtras && !App::Get()->IsPreviewing(), GridToWorldPos(UnflattenIndex(i), true));
         }
     }
 }

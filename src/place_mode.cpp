@@ -386,7 +386,6 @@ void PlaceMode::UpdateCursor()
     else if (_cursor == &_entCursor)
     {
         _entCursor.endPosition = _entCursor.position;
-        _entCursor.ent.position = _entCursor.position;
 
         //Turn entity
         const int ANGLE_INC = IsKeyDown(KEY_LEFT_SHIFT) ? 15 : 45;
@@ -552,7 +551,7 @@ void PlaceMode::Draw()
             }
             else if (_cursor == &_entCursor)
             {
-                _entCursor.ent.Draw(true);
+                _entCursor.ent.Draw(true, _entCursor.endPosition);
             }
 
             // Draw pink border around the cursor

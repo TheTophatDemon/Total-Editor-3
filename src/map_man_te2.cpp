@@ -268,7 +268,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                 continue;
 
             Ent ent = Ent(1.0f);
-            ent.position = Vector3 { 
+            ent.lastRenderedPosition = Vector3 { 
                 (float)i * _tileGrid.GetSpacing(), 
                 1.0f * _tileGrid.GetSpacing(), 
                 (float)k * _tileGrid.GetSpacing() 

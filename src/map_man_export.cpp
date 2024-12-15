@@ -279,7 +279,7 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
             Quaternion rot = QuaternionFromEuler(ToRadians((float)ent.pitch), ToRadians((float)ent.yaw), 0.0f);
             
             json entNode = {
-                {"translation", { ent.position.x, ent.position.y, ent.position.z }},
+                {"translation", { ent.lastRenderedPosition.x, ent.lastRenderedPosition.y, ent.lastRenderedPosition.z }},
                 {"scale", { ent.radius, ent.radius, ent.radius }},
                 {"rotation", { rot.x, rot.y, rot.z, rot.w }},
                 {"extras", ent.properties}

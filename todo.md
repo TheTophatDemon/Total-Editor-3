@@ -2,8 +2,6 @@
 
 - Display map name somewhere
 
-- Bug with entities being misplaced when expanding map size
-
 - Add way of seeing cursor coordinates / pointing to a certain cel
 
 - Rename the settings file to avoid conflicts with the game's settings

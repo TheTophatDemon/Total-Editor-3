@@ -264,7 +264,7 @@ bool MapMan::LoadTE3Map(fs::path filePath)
         _entGrid = EntGrid(_tileGrid.GetWidth(), _tileGrid.GetHeight(), _tileGrid.GetLength());
         for (const Ent& e : jData.at("ents").get<std::vector<Ent>>())
         {
-            Vector3 gridPos = _entGrid.WorldToGridPos(e.position);
+            Vector3 gridPos = _entGrid.WorldToGridPos(e.lastRenderedPosition);
             _entGrid.AddEnt((int) gridPos.x, (int) gridPos.y, (int) gridPos.z, e);
         }
 

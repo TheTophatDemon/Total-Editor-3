@@ -35,7 +35,7 @@
 
 #define ENT_SPACING_DEFAULT 2.0f
 
-//This is short for "entity", because "entity" is difficult to type.
+// This is short for "entity", because "entity" is difficult to type.
 struct Ent
 {
     enum class DisplayMode {
@@ -49,21 +49,19 @@ struct Ent
     DisplayMode display;
     Color color;
     float radius;
-    Vector3 position; //World space coordinates
-    int yaw, pitch; //Degrees angle orientation
+    Vector3 lastRenderedPosition;
+    int yaw, pitch; // Degrees angle orientation
 
     std::shared_ptr<Assets::ModelHandle> model;
     std::shared_ptr<Assets::TexHandle> texture;
 
-    //Entity properties are key/value pairs. No data types are enforced, values are parsed as strings.
+    // Entity properties are key/value pairs. No data types are enforced, values are parsed as strings.
     std::map<std::string, std::string> properties; 
 
     Ent();
     Ent(float radius);
 
-    Matrix GetMatrix() const;
-
-    void Draw(const bool drawAxes) const;
+    void Draw(const bool drawAxes, const Vector3 position);
 };
 
 void to_json(nlohmann::json& j, const Ent &ent);
@@ -83,7 +81,6 @@ public:
     //Will set the given ent to occupy the grid space, replacing any existing entity in that space.
     inline void AddEnt(int i, int j, int k, Ent ent)
     {
-        ent.position = GridToWorldPos(Vector3{(float)i, (float)j, (float)k}, true);
         SetCel(i, j, k, ent);
     }
 
