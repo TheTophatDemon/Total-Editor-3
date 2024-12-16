@@ -43,7 +43,8 @@
 #include "ent_mode.hpp"
 #include "map_man.hpp"
 
-#define SETTINGS_FILE_PATH "settings.json"
+#define SETTINGS_FILE_PATH "te3_settings.json"
+#define BASE_WINDOW_TITLE "Total Editor 3"
 
 static App *_appInstance = nullptr;
 
@@ -190,7 +191,7 @@ void App::Update()
 int main(int argc, char **argv)
 {
     // Window stuff
-	InitWindow(1280, 720, "Total Editor 3");
+	InitWindow(1280, 720, BASE_WINDOW_TITLE);
     SetWindowMinSize(640, 480);
     SetWindowState(FLAG_WINDOW_RESIZABLE);
 	
@@ -255,6 +256,7 @@ void App::NewMap(int width, int height, int length)
     _tilePlaceMode->ResetCamera();
     _tilePlaceMode->ResetGrid();
     _lastSavedPath = "";
+    SetWindowTitle(BASE_WINDOW_TITLE);
 }
 
 void App::ExpandMap(Direction axis, int amount)
@@ -285,6 +287,7 @@ void App::TryOpenMap(fs::path path)
             else
             {
                 DisplayStatusMessage("ERROR: Failed to load .te3 map. Check the console.", 5.0f, 100);
+                return;
             }
             _tilePlaceMode->ResetCamera();
             // Set editor camera to saved position
@@ -301,6 +304,7 @@ void App::TryOpenMap(fs::path path)
             else
             {
                 DisplayStatusMessage("ERROR: Failed to load .ti map. Check the console.", 5.0f, 100);
+                return;
             }
             _tilePlaceMode->ResetCamera();
             _tilePlaceMode->ResetGrid();
@@ -308,12 +312,18 @@ void App::TryOpenMap(fs::path path)
         else
         {
             DisplayStatusMessage("ERROR: Invalid file extension.", 5.0f, 100);
+            return;
         }
     }
     else
     {
         DisplayStatusMessage("ERROR: Invalid file path.", 5.0f, 100);
+        return;
     }
+
+    std::string newWindowTitle(BASE_WINDOW_TITLE " - Editing ");
+    newWindowTitle += path.filename().string();
+    SetWindowTitle(newWindowTitle.c_str());
 }
 
 void App::TrySaveMap(fs::path path)
@@ -339,12 +349,18 @@ void App::TrySaveMap(fs::path path)
         else
         {
             DisplayStatusMessage("ERROR: Map could not be saved. Check the console.", 5.0f, 100);
+            return;
         }
     }
     else
     {
         DisplayStatusMessage("ERROR: Invalid file extension.", 5.0f, 100);
+        return;
     }
+
+    std::string newWindowTitle(BASE_WINDOW_TITLE " - Editing ");
+    newWindowTitle += path.filename().string();
+    SetWindowTitle(newWindowTitle.c_str());
 }
 
 void App::TryExportMap(fs::path path, bool separateGeometry)

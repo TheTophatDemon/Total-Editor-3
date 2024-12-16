@@ -4,6 +4,7 @@ obj
 .vscode
 *.blend?
 settings.json
+te3_settings.json
 libraries/lib/*
 *.gltf
 *.glb

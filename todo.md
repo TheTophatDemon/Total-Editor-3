@@ -1,10 +1,6 @@
 # TODO
 
-- Display map name somewhere
-
 - Add way of seeing cursor coordinates / pointing to a certain cel
-
-- Rename the settings file to avoid conflicts with the game's settings
 
 - Flip around entities in TI2 importer
 
