@@ -1,8 +1,6 @@
 # TODO
 
-- Add way of seeing cursor coordinates / pointing to a certain cel
-
-- Flip around entities in TI2 importer
+- Flip around entities in TI2 importer / update entity definitions
 
 - Add method to show only a section of a texture on an entity (or tile...?)
 

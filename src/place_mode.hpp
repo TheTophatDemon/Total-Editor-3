@@ -94,6 +94,7 @@ protected:
     TileCursor _tileCursor;
     BrushCursor _brushCursor;
     EntCursor _entCursor;
+    Vector3 _cursorPreviousGridPos;
 
     Material _cursorMaterial; //Material used to render the cursor
     float _outlineScale; //How much the wire box around the cursor is larger than its contents

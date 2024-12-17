@@ -277,7 +277,7 @@ bool FileDialog::Draw()
     return open;
 }
 
-static const int N_QUIT_MESSAGES = 10;
+static const int N_QUIT_MESSAGES = 11;
 static const char *QUIT_MESSAGES[N_QUIT_MESSAGES] = {
     "Only winners take stretch breaks.", 
     "Did I leave the editor on Nightmare difficulty?", 
@@ -289,6 +289,7 @@ static const char *QUIT_MESSAGES[N_QUIT_MESSAGES] = {
     "100% of people who go outside die!",
     "Да, я тоже не понимаю это приложение.",
     "They told me the fancy new UI would make you stay...",
+    "Donate now or I'll edit your face!",
 };
 
 CloseDialog::CloseDialog()

@@ -283,6 +283,14 @@ void PlaceMode::UpdateCursor()
     size_t l = (size_t)gridPosMax.z - k + 1;
     Tile underTile = _mapMan.Tiles().GetTile(i, j, k); // * hi. my name's sans undertile...you get it?
 
+    if (!Vector3Equals(_cursorPreviousGridPos, cursorStartGridPos)) 
+    {
+        std::stringstream cursorPosition;
+        cursorPosition << "x: " << cursorStartGridPos.x << " y: " << cursorStartGridPos.y << " z: " << cursorStartGridPos.z;
+        App::Get()->DisplayStatusMessage(cursorPosition.str().c_str(), 1.0f, 2);
+        _cursorPreviousGridPos = cursorStartGridPos;
+    }
+
     //Press Shift+B to enter brush mode, copying the currently selected rectangle of tiles.
     if (_cursor == &_tileCursor && IsKeyPressed(KEY_B) && IsKeyDown(KEY_LEFT_SHIFT))
     {
