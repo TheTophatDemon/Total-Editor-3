@@ -265,7 +265,7 @@ void PickMode::Draw()
                     }
                     ImGui::PopStyleColor(1);
 
-                    if (ImGui::IsItemVisible() && !IsTextureReady(_frames[frameIndex].texture))
+                    if (ImGui::IsItemVisible() && !IsTextureValid(_frames[frameIndex].texture)) 
                     {
                         switch (_mode)
                         {
