@@ -4,8 +4,6 @@
 
 - Add method to show only a section of a texture on an entity (or tile...?)
 
-- Upgrade to Raylib 5?
-
 ## Future updates
 
 - Add image preview in the file picker
