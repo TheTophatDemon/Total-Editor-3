@@ -18,7 +18,7 @@ Credit for the editor font goes to [Humble Fonts Gold II](https://somepx.itch.io
 ## Building
 
 I use SCONS as a build system.
-Make sure you have a RayLIB 4.5 library file (libraylib.a) in libraries/lib and run:
+Make sure you have a RayLIB 5.5 library file (libraylib.a) in libraries/lib and run:
 
 > scons
 > 
