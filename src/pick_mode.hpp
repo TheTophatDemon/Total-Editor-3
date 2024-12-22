@@ -33,6 +33,7 @@
 #include <set>
 
 #include "app.hpp"
+#include "dialogs.hpp"
 
 #define SEARCH_BUFFER_SIZE 256
 
@@ -52,7 +53,7 @@ public:
 
     enum class Mode { TEXTURES, SHAPES };
 
-    PickMode(Mode mode);
+    PickMode(Mode mode, App::Settings &settings);
     virtual void Update() override;
     virtual void Draw() override;
     virtual void OnEnter() override;
@@ -88,6 +89,9 @@ protected:
 
     Mode _mode;
     fs::path _rootDir;
+
+    App::Settings &_settings;
+    std::unique_ptr<Dialog> _activeDialog;
 };
 
 #endif

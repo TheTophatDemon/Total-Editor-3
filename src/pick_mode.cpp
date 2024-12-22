@@ -47,8 +47,8 @@ PickMode::Frame::Frame(const fs::path filePath, const fs::path rootDir)
     label = fs::relative(filePath, rootDir).string();
 }
 
-PickMode::PickMode(Mode mode)
-    : _mode(mode)
+PickMode::PickMode(Mode mode, App::Settings &settings)
+    : _mode(mode), _settings(settings)
 {
     memset(_searchFilterBuffer, 0, sizeof(char) * SEARCH_BUFFER_SIZE);
     
@@ -212,6 +212,10 @@ void PickMode::Update()
             EndTextureMode();
         }
     }
+    if (_activeDialog.get())
+    {
+        _activeDialog->Update();
+    }
 }
 
 void PickMode::Draw()
@@ -229,6 +233,14 @@ void PickMode::Draw()
         {
             _GetFrames();
         }
+
+        ImGui::SameLine(0.0f, 48.0f);
+        ImGui::BeginDisabled(_selectedFrame.filePath.empty());
+        if (_mode == Mode::TEXTURES && ImGui::Button("Settings")) 
+        {
+            _activeDialog.reset(new TextureSettingsDialog(_settings, _selectedFrame.filePath));
+        }
+        ImGui::EndDisabled();
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0, 8.0));
         ImGui::Separator();
@@ -278,6 +290,12 @@ void PickMode::Draw()
                 }
             }
             ImGui::EndTable();
+        }
+
+        // Draw modal dialogs
+        if (_activeDialog.get())
+        {
+            if (!_activeDialog->Draw()) _activeDialog.reset(nullptr);
         }
 
         ImGui::End();

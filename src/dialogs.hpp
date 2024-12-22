@@ -39,6 +39,7 @@ public:
     inline virtual ~Dialog() {}
     //Returns false when the dialog should be closed.
     virtual bool Draw() = 0; 
+    inline virtual void Update() {}
 };
 
 class NewMapDialog : public Dialog 
@@ -146,6 +147,22 @@ protected:
     App::Settings &_settings;
     std::unique_ptr<FileDialog> _dialog;
     char _filePathBuffer[TEXT_FIELD_MAX];
+};
+
+class TextureSettingsDialog : public Dialog
+{
+public:
+    const int ICON_SIZE = 128;
+    TextureSettingsDialog(App::Settings &settings, const fs::path texturePath);
+    virtual ~TextureSettingsDialog() override;
+    virtual bool Draw() override;
+    virtual void Update() override;
+protected:
+    App::Settings &_settings;
+    fs::path _texturePath;
+    std::shared_ptr<Assets::TexHandle> _texture;
+    RenderTexture _renderTexture;
+    int _viewFrame[4];
 };
 
 #endif

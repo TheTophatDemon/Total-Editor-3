@@ -22,12 +22,14 @@
 
 #include "raylib.h"
 #include "imgui/imgui.h"
+#include "imgui/rlImGui.h"
 
 #include <vector>
 #include <initializer_list>
 #include <map>
 #include <iostream>
 #include <set>
+#include <string>
 
 #include "assets.hpp"
 #include "math_stuff.hpp"
@@ -35,6 +37,7 @@
 #include "map_man.hpp"
 #include "text_util.hpp"
 #include "draw_extras.h"
+#include "defer.hpp"
 
 Rectangle DialogRec(float w, float h)
 {
@@ -461,15 +464,16 @@ bool SettingsDialog::Draw()
         ImGui::SliderFloat("Mouse sensitivity", &_settingsCopy.mouseSensitivity, 0.05f, 10.0f, "%.1f", ImGuiSliderFlags_NoRoundToFormat);
 
         float bgColorf[3] = { 
-            (float)_settingsCopy.backgroundColor[0] / 255.0f, 
-            (float)_settingsCopy.backgroundColor[1] / 255.0f, 
-            (float)_settingsCopy.backgroundColor[2] / 255.0f 
+            (float)std::get<0>(_settingsCopy.backgroundColor) / 255.0f, 
+            (float)std::get<1>(_settingsCopy.backgroundColor) / 255.0f, 
+            (float)std::get<2>(_settingsCopy.backgroundColor) / 255.0f 
         };
         ImGui::SetNextItemWidth(256.0f);
         ImGui::ColorPicker3("Background color", bgColorf, ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_InputRGB);
-        _settingsCopy.backgroundColor[0] = (int)(bgColorf[0] * 255.0f);
-        _settingsCopy.backgroundColor[1] = (int)(bgColorf[1] * 255.0f);
-        _settingsCopy.backgroundColor[2] = (int)(bgColorf[2] * 255.0f);
+        _settingsCopy.backgroundColor = std::make_tuple(
+            (uint8_t)(bgColorf[0] * 255.0f), 
+            (uint8_t)(bgColorf[1] * 255.0f), 
+            (uint8_t)(bgColorf[2] * 255.0f));
 
         if (ImGui::Button("Confirm"))
         {
@@ -656,6 +660,105 @@ bool ExportDialog::Draw()
         }
 
         ImGui::EndPopup();
+        return true;
+    }
+
+    return open;
+}
+
+
+TextureSettingsDialog::TextureSettingsDialog(App::Settings &settings, const fs::path texturePath)
+    : _settings(settings)
+{
+    _texturePath = texturePath;
+    _texture = Assets::GetTexture(texturePath);
+    _renderTexture = LoadRenderTexture(ICON_SIZE, ICON_SIZE);
+
+    auto textureWindowIter = settings.textureWindows.find(texturePath.string());
+    if (textureWindowIter == settings.textureWindows.end()) 
+    {
+        _viewFrame[0] = 0;
+        _viewFrame[1] = 0;
+        _viewFrame[2] = _renderTexture.texture.width;
+        _viewFrame[3] = _renderTexture.texture.height;
+    }
+    else 
+    {
+        std::tie(_viewFrame[0], _viewFrame[1], _viewFrame[2], _viewFrame[3]) = textureWindowIter->second;
+    }
+}
+
+TextureSettingsDialog::~TextureSettingsDialog() {
+    UnloadRenderTexture(_renderTexture);
+}
+
+void TextureSettingsDialog::Update() 
+{
+    Texture texture = _texture->GetTexture();
+
+    BeginTextureMode(_renderTexture);
+    ClearBackground(BLACK);
+    DrawTexturePro(texture, 
+        Rectangle{
+            .x = 0, .y = 0, .width = (float)texture.width, .height = (float)texture.height,
+        }, Rectangle{
+            .x = 0, .y = 0, .width = (float)ICON_SIZE, .height = (float)ICON_SIZE,
+        }, Vector2{0.0f, 0.0f}, 0.0f, WHITE);
+
+    float xScale = (float) ICON_SIZE / texture.width;
+    float yScale = (float) ICON_SIZE / texture.height;
+    int viewX = (int)(_viewFrame[0] * xScale);
+    int viewY = (int)(_viewFrame[1] * yScale);
+    int viewWidth = (int)(_viewFrame[2] * xScale);
+    int viewHeight = (int)(_viewFrame[3] * yScale);
+    // Draw border displaying where the view region is.
+    DrawRectangleLines(viewX + 1, viewY + 1, viewWidth - 2, viewHeight - 2, BLACK);
+    DrawRectangleLines(viewX, viewY, viewWidth - 2, viewHeight - 2, WHITE);
+    EndTextureMode();
+}
+
+bool TextureSettingsDialog::Draw()
+{
+    const char* MODAL_NAME = "Texture Settings";
+
+    bool open = true;
+    ImGui::OpenPopup(MODAL_NAME);
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    
+    if (ImGui::BeginPopupModal(MODAL_NAME, &open, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        DEFER(ImGui::EndPopup());
+        
+        ImGui::TextUnformatted(_texturePath.c_str());
+
+        float offset = (ImGui::GetContentRegionAvail().x / 2.0f) - 64;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
+
+        rlImGuiImageRect(&_renderTexture.texture, ICON_SIZE, ICON_SIZE, Rectangle{
+            .width = (float)ICON_SIZE, .height = -(float)ICON_SIZE,
+        });
+
+        ImGui::TextUnformatted("View Window (X, Y, Width, Height)");
+        ImGui::InputInt4("##View Window", _viewFrame);
+
+        // Keep window coordinates within bounds of texture.
+        _viewFrame[0] = Max(0, Min(_texture->GetTexture().width - 1, _viewFrame[0]));
+        _viewFrame[1] = Max(0, Min(_texture->GetTexture().height - 1, _viewFrame[1]));
+        _viewFrame[2] = Max(1, Min(_texture->GetTexture().width - _viewFrame[0], _viewFrame[2]));
+        _viewFrame[3] = Max(1, Min(_texture->GetTexture().height - _viewFrame[1], _viewFrame[3]));
+
+        if (ImGui::Button("Cancel")) {
+            return false;
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Save")) {
+            _settings.textureWindows[_texturePath.string()] = {_viewFrame[0], _viewFrame[1], _viewFrame[2], _viewFrame[3]};
+            App::Get()->SaveSettings();
+            return false;
+        }
+
         return true;
     }
 

@@ -58,20 +58,11 @@ App *App::Get()
 }
 
 App::App()
-    : _settings { 
-        .texturesDir = "assets/textures/tiles/",
-        .shapesDir = "assets/models/shapes/",
-        .undoMax = 30UL,
-        .mouseSensitivity = 0.5f,
-        .exportSeparateGeometry = false,
-        .cullFaces = true,
-        .defaultTexturePath = "assets/textures/tiles/brickwall.png",
-        .defaultShapePath = "assets/models/shapes/cube.obj",
-    },
+    : _settings(),
     _mapMan        (std::make_unique<MapMan>()),
     _tilePlaceMode (std::make_unique<PlaceMode>(*_mapMan.get())),
-    _texPickMode   (std::make_unique<PickMode>(PickMode::Mode::TEXTURES)),
-    _shapePickMode (std::make_unique<PickMode>(PickMode::Mode::SHAPES)),
+    _texPickMode   (std::make_unique<PickMode>(PickMode::Mode::TEXTURES, _settings)),
+    _shapePickMode (std::make_unique<PickMode>(PickMode::Mode::SHAPES, _settings)),
     _entMode       (std::make_unique<EntMode>()),
     _editorMode    (_tilePlaceMode.get()),
     _previewDraw   (false),
@@ -418,4 +409,35 @@ void App::LoadSettings()
     {
         std::cerr << "Error loading settings: " << e.what() << std::endl;
     }
+}
+
+void App::to_json(nlohmann::json& json, const App::Settings& settings)
+{
+    json["texturesDir"] = settings.texturesDir;
+    json["shapesDir"] = settings.shapesDir;
+    json["undoMax"] = settings.undoMax;
+    json["mouseSensitivity"] = settings.mouseSensitivity;
+    json["exportSeparateGeometry"] = settings.exportSeparateGeometry;
+    json["cullFaces"] = settings.cullFaces;
+    json["exportFilePath"] = settings.exportFilePath;
+    json["defaultTexturePath"] = settings.defaultTexturePath;
+    json["defaultShapePath"] = settings.defaultShapePath;
+    json["backgroundColor"] = settings.backgroundColor;
+    json["textureWindows"] = settings.textureWindows;
+}
+
+void App::from_json(const nlohmann::json& json, App::Settings& settings)
+{
+    App::Settings defaultSettings = App::Settings();
+    settings.texturesDir            = json.value("texturesDir", defaultSettings.texturesDir);
+    settings.shapesDir              = json.value("shapesDir", defaultSettings.shapesDir);
+    settings.undoMax                = json.value("undoMax", defaultSettings.undoMax);
+    settings.mouseSensitivity       = json.value("mouseSensitivity", defaultSettings.mouseSensitivity);
+    settings.exportSeparateGeometry = json.value("exportSeparateGeometry", defaultSettings.exportSeparateGeometry);
+    settings.cullFaces              = json.value("cullFaces", defaultSettings.cullFaces);
+    settings.exportFilePath         = json.value("exportFilePath", defaultSettings.exportFilePath);
+    settings.defaultTexturePath     = json.value("defaultTexturePath", defaultSettings.defaultTexturePath);
+    settings.defaultShapePath       = json.value("defaultShapePath", defaultSettings.defaultShapePath);
+    settings.backgroundColor        = json.value("backgroundColor", defaultSettings.backgroundColor);
+    settings.textureWindows         = json.value("textureWindows", defaultSettings.textureWindows);
 }

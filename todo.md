@@ -1,8 +1,12 @@
 # TODO
 
-- Flip around entities in TI2 importer / update entity definitions
+- Add method to show only a section of a texture on a tile
+    - Apply the view window when rendering map
+    - Apply the view when generating the model
+    - Add same option for entities?
 
-- Add method to show only a section of a texture on an entity (or tile...?)
+- Update the texture picker selection after copying a texture from the map editor.
+- Flip around entities in TI2 importer / update entity definitions
 
 ## Future updates
 

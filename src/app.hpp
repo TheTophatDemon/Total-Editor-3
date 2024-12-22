@@ -26,6 +26,7 @@
 
 #include <string>
 #include <memory>
+#include <map>
 #include <filesystem>
 namespace fs = std::filesystem;
 
@@ -52,20 +53,24 @@ public:
         std::string exportFilePath; //For GLTF export
         std::string defaultTexturePath;
         std::string defaultShapePath;
-        uint8_t backgroundColor[3];
+        std::tuple<uint8_t, uint8_t, uint8_t> backgroundColor;
+        std::map<std::string, std::tuple<int, int, int, int>> textureWindows;
+
+        Settings() 
+        {
+            texturesDir = "assets/textures/tiles/";
+            shapesDir = "assets/models/shapes/";
+            undoMax = 30UL;
+            mouseSensitivity = 0.5f;
+            exportSeparateGeometry = false;
+            cullFaces = true;
+            defaultTexturePath = "assets/textures/tiles/brickwall.png";
+            defaultShapePath = "assets/models/shapes/cube.obj";
+            textureWindows = {};
+        }
     };
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
-        Settings, 
-        texturesDir, 
-        shapesDir, 
-        undoMax, 
-        mouseSensitivity, 
-        exportSeparateGeometry, 
-        cullFaces,
-        exportFilePath, 
-        defaultTexturePath, 
-        defaultShapePath,
-        backgroundColor);
+    static void to_json(nlohmann::json& json, const App::Settings& settings);
+    static void from_json(const nlohmann::json& json, App::Settings& settings);
 
     //Mode implementation
     class ModeImpl 
@@ -92,7 +97,7 @@ public:
     inline std::string GetDefaultTexturePath() { return _settings.defaultTexturePath; }
     inline std::string GetDefaultShapePath() { return _settings.defaultShapePath; }
     inline bool        IsCullingEnabled() { return _settings.cullFaces; }
-    inline Color       GetBackgroundColor() { return Color { _settings.backgroundColor[0], _settings.backgroundColor[1], _settings.backgroundColor[2], 255 }; }
+    inline Color       GetBackgroundColor() { return Color { std::get<0>(_settings.backgroundColor), std::get<1>(_settings.backgroundColor), std::get<2>(_settings.backgroundColor), 255 }; }
 
     //Indicates if rendering should be done in "preview mode", i.e. without editor widgets being drawn.
     inline bool IsPreviewing() const { return _previewDraw; }
