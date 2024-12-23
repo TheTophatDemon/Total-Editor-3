@@ -730,7 +730,7 @@ bool TextureSettingsDialog::Draw()
     {
         DEFER(ImGui::EndPopup());
         
-        ImGui::TextUnformatted(_texturePath.c_str());
+        ImGui::TextUnformatted(_texturePath.string().c_str());
 
         float offset = (ImGui::GetContentRegionAvail().x / 2.0f) - 64;
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
