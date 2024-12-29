@@ -11,6 +11,8 @@
 				max-width: 1200px;
 				margin-left: 8px;
 				margin-right: 8px;
+				background-color: black;
+				color: white;
 			}
 			p {
 				text-align: left;
@@ -27,6 +29,9 @@
 				margin-left: 8px;
 				margin-right: 8px;
 				height: 320px;
+			}
+			a {
+				color: #0050FF;
 			}
 			.bigimg {
 				height: 480px;
@@ -155,9 +160,8 @@
 		<p>
 			&emsp;When the cursor is in entity mode, it can add and remove entities
 			with the mouse buttons like in tile mode. Also like tile mode, pressing T or G will copy the entity in the map under the cursor. Pressing
-			Q and E will change the entity's yaw orientation like with tiles, but the angle changes are 45 degree increments. Holding shift during
-			rotation will rotate in 15 degree increments. The orientation can be reset using the R key. Entities can also be given a pitch rotation,
-			turning up and down by using the F and V keys. The cursor can be brought out of entity mode using the ESCAPE or BACKSPACE key.
+			Q and E will change the entity's yaw orientation like with tiles, but the angle changes in 45 degree increments. Holding shift during
+			rotation will rotate in 15 degree increments. The orientation can be reset using the R key. Entities can also be turned up and down by using the F and V keys. The cursor can be brought out of entity mode using the ESCAPE or BACKSPACE key.
 		</p>
 		<h2 id="entity_config">Entity configuration</h2>
 		<span class="image-strip">
@@ -250,19 +254,58 @@
 			the <a href="https://www.json.org/json-en.html">JSON</a> data exchange format.
 			They are structured like in this example:
 		</p>
-		<img src="te3_specs.png" class="bigimg"/>
+		<pre>
+{
+    "ents": [                                                // List of map entities
+        {
+            "position": [0.0, 12.0, 3.0],                    // Position in world coordinates
+            "color": [255, 0, 0],                            // Red, green, blue color
+            "angles": [0.0, 90.0, 0.0],                      // Euler angles (the Z angle is always 0)
+            "radius": 0.75,                                  // Radius of sphere (for models & sprites, this is the same as the scale)
+            "display": 1,                                    // Entity display mode (0 = sphere, 1 = model, 2 = sprite)
+            "model": "assets/models/geoffrey.obj",           // Path to model file (only when display mode == 1)
+            "texture": "assets/textures/skins/geoffrey.png", // Path to texture file (only when display mode == 1 or 2)
+            "properties": [
+                "name": "geoffrey",
+                "age": "120",
+                "favorite direction": "(1, 0, 0)"
+            ]
+        },
+        {
+            "position": [2.0, 0.0, 0.0], 
+            ...
+        }
+    ],
+    "tiles": [                                               // The arrangement of tiles
+        "width": 12,                                         // Dimension along the X axis
+        "height": 9,                                         // Dimension along the Y axis (up)
+        "length": 12,                                        // Dimension along the Z axis
+        "textures": [
+            "assets/textures/geoffrey_skin.png",             // Paths to each texture relative to the editor's executable
+            "assets/textures/brick_wall.png"
+        ],
+        "shapes": [
+            "assets/models/shapes/cube.obj",
+            "assets/models/shapes/tetrahedron.obj"           // Paths to each tile shape relative to the editor's executable
+        ],
+        "data": "/////wAAAAD/////AAA///AAAAAP..."            // Tile data encoded as a base64 string (details below)
+    ]
+}
+		</pre>
 		<p>
 			As noted, the data for the tile grid is encoded as a <a href="https://www.base64decode.org/">Base64</a> string.
 			It converts binary data into something that can be compactly printed as characters in a text file.
 			In binary, the data is laid out in the following structure:
 			<pre>
 struct Tile {
-	int32_t modelID,       //The index into the "shapes" JSON array. If less than 0, represents a run of blank tiles of length -modelID.
-	int32_t angle,         //The yaw angle, given in a whole number of degrees.
-	int32_t texID,         //The index into the "textures" JSON array. Will be less than 0 if the tile is empty.
-	int32_t pitch,         //The pitch angle, given in a whole number of degrees
+	int32_t modelID,       // The index into the "shapes" JSON array. If less than 0, represents a run of blank tiles of length -modelID.
+	int32_t angle,         // The yaw angle, given in a whole number of degrees.
+	int32_t texID,         // The index into the "textures" JSON array. Will be less than 0 if the tile is empty.
+	int32_t pitch,         // The pitch angle, given in a whole number of degrees
 };
 			</pre>
+			The byte order / endianness will match that of the machine used to save the file. In most cases, this will be little endian.
+			<br/>
 			&emsp;There is not position information in this structure. The position of each tile can be inferred by its order in the string of data.
 			Tiles are filled out in increasing X position, and every number of tiles equal to the map width makes up the a row. The first
 			"length" number of rows make up the first layer, starting from the bottom. Then, each subsequent "length times width" number of tiles
@@ -271,7 +314,7 @@ struct Tile {
 			<br/>
 			<br/>
 			<code>x = (t % width) * 2.0</code><br/>
-			<code>y = (floor(t / (width * height))) * 2.0</code><br/>
+			<code>y = (floor(t / (width * length))) * 2.0</code><br/>
 			<code>z = (floor(t / width) % length) * 2.0</code><br/>
 			<br/>
 			&emsp;Where t is the overall index of the tile, starting at 0 for the first one and ending at (length * width * height) - 1.
@@ -285,8 +328,8 @@ struct Tile {
 		<p>
 			&emsp;Once the tile data is read from the file, how does one go about rendering them?
 			The recommended way of doing this is to use instancing. Most game engines have some mechanism for doing this.
-			Instancing takes the same mesh and draws it in several different places at once, which saves on computation.
-			Rendering each individual tile as a separate game object would cause considerable slowdown, otherwise.
+			Instancing takes the same mesh and draws it in several different places at once, which saves on performance.
+			Rendering each individual tile as a separate game object would cause considerable slowdown otherwise.
 			Groups of matrices or positions + rotations will be fed into the game engine to tell how each instance is drawn.
 			Since the tiles have various shapes and textures, arrays may have to be created for each combination
 			of texture and shape.<br/>
@@ -329,7 +372,7 @@ struct Tile {
 		<p>There are some shapes included with the application that may seem strange, so here I will explain how they are used.</p>
 		<ul>
 			<li>
-				bars.obj is meant to be used with the bars.png texture, and its uv map may not look good with other textures not made for it.
+				bars.obj is meant to be used with the bars.png texture, and its uv map may not look good with textures that are not made for it.
 			</li><br/>
 			<li>
 				cube_2tex.obj is meant to be used with textures whose file names end in _2tex for similar reasons. 
@@ -342,8 +385,8 @@ struct Tile {
 				corner_height_2.obj is the same as corner.obj but it's twice as tall. 
 				This is used as a trick to make floor or ceiling tiles that transition between two different textures diagonally.
 				First, place a regular corner tile in the floor or ceiling. Then, select a different texture and place the corner_height_2 tile directly
-				above or below the first tile. Use the F and V keys to turn it upside down if needed. When fit together, the two tiles like as though they
-				are one from the inside of the building.
+				above or below the first tile. Use the F and V keys to turn it upside down if needed. When fitted together, the two tiles look as though they
+				are the same tile from when viewed inside of an enclosure.
 			</li><br/>
 		</ul>
 		<span class="image-strip">
