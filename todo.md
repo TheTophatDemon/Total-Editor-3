@@ -7,7 +7,6 @@
 	- Add documentation
 - Update the texture picker selection after copying a texture from the map editor.
 - Flip around entities in TI2 importer / update entity definitions
-- Stop cursor from jumping when making vertical rectangular selections.
 - GLTF node names may break if textures use ../ in their path.
 
 ## Future updates

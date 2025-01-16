@@ -9,3 +9,4 @@ libraries/lib/*
 *.gltf
 *.glb
 *.ti
+imgui.ini

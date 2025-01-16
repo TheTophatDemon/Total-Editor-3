@@ -241,36 +241,39 @@ void PlaceMode::UpdateCursor()
         _cursor = &_entCursor;
     }
 
-    //Position cursor
-    Ray pickRay = GetMouseRay(GetMousePosition(), _camera);
-    Vector3 gridMin = _mapMan.Tiles().GetMinCorner();
-    Vector3 gridMax = _mapMan.Tiles().GetMaxCorner();
-    RayCollision col = GetRayCollisionQuad(pickRay, 
-        Vector3{ gridMin.x, _planeWorldPos.y, gridMin.z }, 
-        Vector3{ gridMax.x, _planeWorldPos.y, gridMin.z }, 
-        Vector3{ gridMax.x, _planeWorldPos.y, gridMax.z }, 
-        Vector3{ gridMin.x, _planeWorldPos.y, gridMax.z });
-    if (col.hit)
+    bool multiSelect = IsKeyDown(KEY_LEFT_SHIFT);
+
+    // Position cursor
+    Vector2 currentMousePosition = GetMousePosition();
+    if (Vector2LengthSqr(currentMousePosition - _previousMousePosition) > 1.0f) 
     {
-        _cursor->position = _mapMan.Tiles().SnapToCelCenter(col.point);
+        Ray pickRay = GetMouseRay(currentMousePosition, _camera);
+        Vector3 gridMin = _mapMan.Tiles().GetMinCorner();
+        Vector3 gridMax = _mapMan.Tiles().GetMaxCorner();
+        RayCollision col = GetRayCollisionQuad(pickRay, 
+            Vector3{ gridMin.x, _planeWorldPos.y, gridMin.z }, 
+            Vector3{ gridMax.x, _planeWorldPos.y, gridMin.z }, 
+            Vector3{ gridMax.x, _planeWorldPos.y, gridMax.z }, 
+            Vector3{ gridMin.x, _planeWorldPos.y, gridMax.z });
+        if (col.hit)
+        {
+            _cursor->position = _mapMan.Tiles().SnapToCelCenter(col.point);
+            _cursor->position.y = _planeWorldPos.y + _mapMan.Tiles().GetSpacing() / 2.0f;
+        }
+    }
+    else 
+    {
+        // When the mouse is not moving, the cursor should stay in the same position laterally but move up and down with the editor plane.
         _cursor->position.y = _planeWorldPos.y + _mapMan.Tiles().GetSpacing() / 2.0f;
     }
+    _previousMousePosition = currentMousePosition;
     
-    //Handle box selection/fill in tile mode.
-    bool multiSelect = false;
-    if (_cursor == &_tileCursor)
+    if (_cursor == &_tileCursor && !multiSelect)
     {
-        if (!IsKeyDown(KEY_LEFT_SHIFT))
-        {
-            _tileCursor.endPosition = _tileCursor.position;
-        }
-        else
-        {
-            multiSelect = true;
-        }
+        _tileCursor.endPosition = _tileCursor.position;
     }
 
-    //Perform Tile operations
+    // Perform Tile operations
     Vector3 cursorStartGridPos = _mapMan.Tiles().WorldToGridPos(_cursor->position);
     Vector3 cursorEndGridPos = _mapMan.Tiles().WorldToGridPos(_cursor->endPosition);
     Vector3 gridPosMin = Vector3Min(cursorStartGridPos, cursorEndGridPos);
@@ -291,7 +294,7 @@ void PlaceMode::UpdateCursor()
         _cursorPreviousGridPos = cursorStartGridPos;
     }
 
-    //Press Shift+B to enter brush mode, copying the currently selected rectangle of tiles.
+    // Press Shift+B to enter brush mode, copying the currently selected rectangle of tiles.
     if (_cursor == &_tileCursor && IsKeyPressed(KEY_B) && IsKeyDown(KEY_LEFT_SHIFT))
     {
         _cursor = &_brushCursor;
@@ -302,7 +305,7 @@ void PlaceMode::UpdateCursor()
 
     if (_cursor == &_brushCursor)
     {
-        //Put the end position at the other extent of the bounding box so that a border can be drawn later
+        // Put the end position at the other extent of the bounding box so that a border can be drawn later
         _brushCursor.endPosition = Vector3 {
             _brushCursor.position.x + ((_brushCursor.brush.GetWidth() - 1) * _brushCursor.brush.GetSpacing()),
             _brushCursor.position.y + ((_brushCursor.brush.GetHeight() - 1) * _brushCursor.brush.GetSpacing()),
@@ -315,7 +318,7 @@ void PlaceMode::UpdateCursor()
     }
     else if (_cursor == &_tileCursor)
     {
-        //Rotate cursor
+        // Rotate cursor
         if (IsKeyPressed(KEY_Q))
         {
             _tileCursor.angle = OffsetDegrees(_tileCursor.angle, -90);
@@ -332,7 +335,7 @@ void PlaceMode::UpdateCursor()
         {
             _tileCursor.pitch = OffsetDegrees(_tileCursor.pitch, -90);
         }
-        //Reset tile orientation
+        // Reset tile orientation
         if (IsKeyPressed(KEY_R))
         {
             _tileCursor.angle = _tileCursor.pitch = 0;
@@ -342,7 +345,7 @@ void PlaceMode::UpdateCursor()
 
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !IsKeyDown(KEY_LEFT_ALT) && !multiSelect) 
         {
-            //Place tiles
+            // Place tiles
             if (underTile != cursorTile)
             {
                 _mapMan.ExecuteTileAction(i, j, k, 1, 1, 1, cursorTile);
@@ -350,12 +353,12 @@ void PlaceMode::UpdateCursor()
         }
         else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && multiSelect)
         {
-            //Place tiles rectangle
+            // Place tiles rectangle
             _mapMan.ExecuteTileAction(i, j, k, w, h, l, cursorTile);
         }
         else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && !multiSelect) 
         {
-            //Remove tiles
+            // Remove tiles
             if (underTile)
             {
                 _mapMan.ExecuteTileAction(i, j, k, 1, 1, 1, Tile {NO_MODEL, 0, NO_TEX, false});
@@ -363,12 +366,12 @@ void PlaceMode::UpdateCursor()
         } 
         else if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && multiSelect)
         {
-            //Remove tiles RECTANGLE
+            // Remove tiles RECTANGLE
             _mapMan.ExecuteTileAction(i, j, k, w, h, l, Tile {NO_MODEL, 0, NO_TEX, false});
         }
         else if (IsKeyPressed(KEY_G) && !multiSelect) 
         {
-            //(G)rab the shape from the tile under the cursor
+            // (G)rab the shape from the tile under the cursor
             if (underTile) 
             {
                 std::cout << "ID: " << underTile.shape << std::endl;
@@ -381,7 +384,7 @@ void PlaceMode::UpdateCursor()
         } 
         else if (IsKeyPressed(KEY_T) && !multiSelect) 
         {
-            //Pick the (T)exture from the tile under the cursor.
+            // Pick the (T)exture from the tile under the cursor.
             if (underTile) 
             {
                 std::cout << "ID: " << underTile.texture << std::endl;
@@ -395,7 +398,7 @@ void PlaceMode::UpdateCursor()
     {
         _entCursor.endPosition = _entCursor.position;
 
-        //Turn entity
+        // Turn entity
         const int ANGLE_INC = IsKeyDown(KEY_LEFT_SHIFT) ? 15 : 45;
         if (IsKeyPressed(KEY_Q))
         {
@@ -414,7 +417,7 @@ void PlaceMode::UpdateCursor()
             _entCursor.ent.pitch = OffsetDegrees(_entCursor.ent.pitch, -ANGLE_INC);
         }
 
-        //Reset ent orientation
+        // Reset ent orientation
         if (IsKeyPressed(KEY_R))
         {
             _entCursor.ent.yaw = _entCursor.ent.pitch = 0;
@@ -422,12 +425,12 @@ void PlaceMode::UpdateCursor()
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !IsKeyDown(KEY_LEFT_ALT))
         {
-            //Placement
+            // Placement
             _mapMan.ExecuteEntPlacement(i, j, k, _entCursor.ent);
         }
         else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
         {
-            //Removal
+            // Removal
             if (_mapMan.Ents().HasEnt(i, j, k))
             {
                 _mapMan.ExecuteEntRemoval(i, j, k);
@@ -436,7 +439,7 @@ void PlaceMode::UpdateCursor()
 
         if (IsKeyPressed(KEY_T) || IsKeyPressed(KEY_G))
         {
-            //Copy the entity under the cursor
+            // Copy the entity under the cursor
             if (_mapMan.Ents().HasEnt(i, j, k))
             {
                 _entCursor.ent = _mapMan.Ents().GetEnt(i, j, k);
