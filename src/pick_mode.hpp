@@ -73,7 +73,7 @@ protected:
     //Load or retrieve cached model
     Model           _GetModel(const fs::path path);
     //Load or retrieve cached render texture
-    RenderTexture2D _GetIcon(const fs::path path);
+    RenderTexture2D _GetShapeIcon(const fs::path path);
 
     std::map<fs::path, Texture2D> _loadedTextures;
     std::map<fs::path, Model> _loadedModels;

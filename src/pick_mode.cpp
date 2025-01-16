@@ -6,7 +6,7 @@
  * arising from the use of this software.
  *
  * Permission is granted to anyone to use this software for any purpose,
- * including commercial applications, and to alter it and redistribute it
+ * including commercial applications, and  to alter it and redistribute it
  * freely, subject to the following restrictions:
  *
  * 1. The origin of this software must not be misrepresented; you must not
@@ -83,12 +83,9 @@ Texture2D PickMode::_GetTexture(const fs::path path)
 {
     if (_loadedTextures.find(path) == _loadedTextures.end())
     {
-        // Before loading the texture, resize it to fit into the frame
-        Image image = LoadImage(path.string().c_str());
-        ImageResize(&image, ICON_SIZE, ICON_SIZE);
-        Texture2D texture = LoadTextureFromImage(image);
-        UnloadImage(image);
-        _loadedTextures[path] = texture;
+        Texture2D tex = LoadTexture(path.string().c_str());
+        _loadedTextures[path] = tex;
+        return tex;
     }
     return _loadedTextures[path];
 }
@@ -104,7 +101,7 @@ Model PickMode::_GetModel(const fs::path path)
     return _loadedModels[path];
 }
 
-RenderTexture2D PickMode::_GetIcon(const fs::path path)
+RenderTexture2D PickMode::_GetShapeIcon(const fs::path path)
 {
     if (_loadedIcons.find(path) == _loadedIcons.end())
     {
@@ -201,8 +198,9 @@ void PickMode::Update()
     {
         for (Frame& frame : _frames) 
         {
-            //Update/redraw the shape preview icons so that they spin
-            BeginTextureMode(_GetIcon(frame.filePath));
+            // Update/redraw the shape preview icons so that they spin.
+            // This has to be done before the main application renders or it won't work.
+            BeginTextureMode(_GetShapeIcon(frame.filePath));
             ClearBackground(BLACK);
             BeginMode3D(_iconCamera);
 
@@ -271,7 +269,27 @@ void PickMode::Draw()
                     }
 
                     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(color));
-                    if (rlImGuiImageButton(filePath.string().c_str(), &_frames[frameIndex].texture))
+
+                    Texture* frameTexture = &_frames[frameIndex].texture;
+                    
+                    float left = 0.0f, top = 0.0f, right = 1.0f, bottom = 1.0f;
+                    auto windowSettings = _settings.textureWindows.find(filePath.string());
+                    if (windowSettings != _settings.textureWindows.end()) 
+                    {
+                        auto [winX, winY, winW, winH] = windowSettings->second;
+                        left = float(winX) / frameTexture->width;
+                        top = float(winY) / frameTexture->height;
+                        right = float(winX + winW) / frameTexture->width;
+                        bottom = float(winY + winH) / frameTexture->height;
+                    }
+
+                    bool clicked = ImGui::ImageButton(
+                        filePath.string().c_str(), (ImTextureID)frameTexture,
+                        ImVec2(ICON_SIZE, ICON_SIZE),
+                        ImVec2(left, top), ImVec2(right, bottom)
+                    );
+
+                    if (clicked)
                     {
                         _selectedFrame = _frames[frameIndex];
                     }
@@ -282,7 +300,7 @@ void PickMode::Draw()
                         switch (_mode)
                         {
                         case Mode::TEXTURES: _frames[frameIndex].texture = _GetTexture(filePath); break;
-                        case Mode::SHAPES: _frames[frameIndex].texture = _GetIcon(filePath).texture; break;
+                        case Mode::SHAPES: _frames[frameIndex].texture = _GetShapeIcon(filePath).texture; break;
                         }
                     }
 
