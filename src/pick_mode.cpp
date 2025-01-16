@@ -231,14 +231,14 @@ void PickMode::Draw()
         {
             _GetFrames();
         }
-
-        ImGui::SameLine(0.0f, 48.0f);
-        ImGui::BeginDisabled(_selectedFrame.filePath.empty());
-        if (_mode == Mode::TEXTURES && ImGui::Button("Settings")) 
-        {
-            _activeDialog.reset(new TextureSettingsDialog(_settings, _selectedFrame.filePath));
-        }
-        ImGui::EndDisabled();
+        
+        // ImGui::SameLine(0.0f, 48.0f);
+        // ImGui::BeginDisabled(_selectedFrame.filePath.empty());
+        // if (_mode == Mode::TEXTURES && ImGui::Button("Settings")) 
+        // {
+        //     _activeDialog.reset(new TextureSettingsDialog(_settings, _selectedFrame.filePath));
+        // }
+        // ImGui::EndDisabled();
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0, 8.0));
         ImGui::Separator();

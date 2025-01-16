@@ -1,10 +1,4 @@
 # TODO
-
-- Add method to show only a section of a texture on a tile
-    - Apply the view window when rendering map
-    - Apply the view when generating the model
-    - Add same option for entities?
-	- Add documentation
 - Update the texture picker selection after copying a texture from the map editor.
 - Flip around entities in TI2 importer / update entity definitions
 - GLTF node names may break if textures use ../ in their path.
