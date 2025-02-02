@@ -62,7 +62,10 @@ public:
     inline Mode GetMode() const { return _mode; }
 
     std::shared_ptr<Assets::TexHandle> GetPickedTexture() const;
+    void SetPickedTexture(std::shared_ptr<Assets::TexHandle> newTexture);
+
     std::shared_ptr<Assets::ModelHandle> GetPickedShape() const;
+    void SetPickedShape(std::shared_ptr<Assets::ModelHandle> newModel);
 
 protected:
     //Retrieves files, recursively, and generates frames for each.

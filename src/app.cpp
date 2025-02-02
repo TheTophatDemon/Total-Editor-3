@@ -81,42 +81,39 @@ App::App()
     }
 }
 
-void App::ChangeEditorMode(const App::Mode newMode) 
-{
+void App::ChangeEditorMode(const App::Mode newMode) {
     _editorMode->OnExit();
 
-    if (_editorMode == _texPickMode.get() && _texPickMode->GetPickedTexture()) 
-    {
+    if (_editorMode == _texPickMode.get() && _texPickMode->GetPickedTexture()) {
         _tilePlaceMode->SetCursorTexture(_texPickMode->GetPickedTexture());
     }
-    else if (_editorMode == _shapePickMode.get() && _shapePickMode->GetPickedShape()) 
-    {
+    else if (_editorMode == _shapePickMode.get() && _shapePickMode->GetPickedShape()) {
         _tilePlaceMode->SetCursorShape(_shapePickMode->GetPickedShape());
     }
 
-    switch (newMode)
-    {
-        case App::Mode::PICK_SHAPE: 
-        {
+    switch (newMode) {
+        case App::Mode::PICK_SHAPE: {
+            if (_editorMode == _tilePlaceMode.get()) {
+                _shapePickMode->SetPickedShape(_tilePlaceMode->GetCursorShape());
+            }
             _editorMode = _shapePickMode.get(); 
         }
         break;
-        case App::Mode::PICK_TEXTURE: 
-        {
+        case App::Mode::PICK_TEXTURE: {
+            if (_editorMode == _tilePlaceMode.get()) {
+                _texPickMode->SetPickedTexture(_tilePlaceMode->GetCursorTexture());
+            }
             _editorMode = _texPickMode.get(); 
         }
         break;
-        case App::Mode::PLACE_TILE: 
-        {
-            if (_editorMode == _entMode.get())
-            {
+        case App::Mode::PLACE_TILE: {
+            if (_editorMode == _entMode.get()) {
                 _tilePlaceMode->SetCursorEnt(_entMode->GetEnt());
             }
             _editorMode = _tilePlaceMode.get(); 
         }
         break;
-        case App::Mode::EDIT_ENT:
-        {
+        case App::Mode::EDIT_ENT: {
             if (_editorMode == _tilePlaceMode.get()) _entMode->SetEnt(_tilePlaceMode->GetCursorEnt());
             _editorMode = _entMode.get();
         }

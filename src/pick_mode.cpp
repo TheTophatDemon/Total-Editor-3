@@ -62,21 +62,41 @@ PickMode::PickMode(Mode mode, App::Settings &settings)
 }
 
 std::shared_ptr<Assets::TexHandle> PickMode::GetPickedTexture() const
-{ 
+{
     assert(_mode == Mode::TEXTURES);
     if (_selectedFrame.filePath.empty())
+    {
         return Assets::GetTexture(fs::path(App::Get()->GetDefaultTexturePath()));
+    }
     else
+    {
         return Assets::GetTexture(_selectedFrame.filePath);
+    }
+}
+
+void PickMode::SetPickedTexture(std::shared_ptr<Assets::TexHandle> newTexture)
+{
+    assert(_mode == Mode::TEXTURES);
+    _selectedFrame = Frame(newTexture->GetPath(), _rootDir);
 }
 
 std::shared_ptr<Assets::ModelHandle> PickMode::GetPickedShape() const
 {
     assert(_mode == Mode::SHAPES);
     if (_selectedFrame.filePath.empty())
+    {
         return Assets::GetModel(fs::path(App::Get()->GetDefaultShapePath()));
+    }
     else
+    {
         return Assets::GetModel(_selectedFrame.filePath);
+    }
+}
+
+void PickMode::SetPickedShape(std::shared_ptr<Assets::ModelHandle> newModel)
+{
+    assert(_mode == Mode::SHAPES);
+    _selectedFrame = Frame(newModel->GetPath(), _rootDir);
 }
 
 Texture2D PickMode::_GetTexture(const fs::path path)
@@ -127,7 +147,7 @@ void PickMode::_GetFrames()
             .format = 0,
         };
 
-        //Filter out files that don't contain the search term
+        // Filter out files that don't contain the search term
         std::string lowerCaseLabel = TextToLower(frame.label.c_str());
         if (strlen(_searchFilterBuffer) > 0 && 
             lowerCaseLabel.find(TextToLower(_searchFilterBuffer)) == std::string::npos)
@@ -232,6 +252,9 @@ void PickMode::Draw()
             _GetFrames();
         }
         
+        // I'm not sure how I'll implement this "texture window" feature without
+        // breaking everything so I'm going to hide it for now.
+
         // ImGui::SameLine(0.0f, 48.0f);
         // ImGui::BeginDisabled(_selectedFrame.filePath.empty());
         // if (_mode == Mode::TEXTURES && ImGui::Button("Settings")) 
