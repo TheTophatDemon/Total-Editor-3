@@ -17,7 +17,7 @@ elif sys.platform.startswith("win"):
 
 env = Environment(
   tools = cpp_tools,
-  CPPFLAGS = ['-std=c++17'],
+  CPPFLAGS = ['-std=c++17', '-Wall'],
   CPPPATH = ['./libraries/include'],
   LIBPATH = ['./libraries/lib'],
   OBJPREFIX="../obj/",
