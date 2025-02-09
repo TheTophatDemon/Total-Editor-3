@@ -67,7 +67,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             return false;
         }
         std::getline(file, line);
-        int tileCount = atoi(line.c_str());
+        int tileCount = std::stoi(line);
         tilesToAdd.reserve(tileCount);
         for (int t = 0; t < tileCount; ++t)
         {
@@ -75,10 +75,10 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             std::vector<std::string> tokens = SplitString(line, ",");
             
             // Original grid position (needs to be offset by minX/minZ)
-            int i = atoi(tokens[0].c_str()) / 16;
+            int i = std::stoi(tokens[0]) / 16;
             minX = Min(minX, i);
             maxX = Max(maxX, i);
-            int k = atoi(tokens[1].c_str()) / 16;
+            int k = std::stoi(tokens[1]) / 16;
             minZ = Min(minZ, k);
             maxZ = Max(maxZ, k);
 
@@ -87,14 +87,22 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             std::string textureName = tokens[3] + ".png";
             fs::path texturePath = fs::path(App::Get()->GetTexturesDir()) / textureName;
             
-            int flag = atoi(tokens[4].c_str());
-            int link = atoi(tokens[5].c_str());
+            int flag = std::stoi(tokens[4]);
+            int link = std::stoi(tokens[5]);
 
             // Set angles for doors & panels
-            if (flag == 7)
+            if (flag == 7) 
+            {
                 tile.angle = (link == 0) ? 0 : 90;
-            if (flag == 2 || flag == 9)
+            }
+            else if (flag == 2 || flag == 9) 
+            {
                 tile.angle = 90;
+            }
+            else if (flag == 5)
+            {
+                tile.angle = (90 + (link * 90)) % 360;
+            }
             
             // Set shape depending on tile type
             switch (flag)
@@ -106,8 +114,11 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                 tile.shape = cubeID;
                 break;
             }
-            if (textureName.find("bars") != std::string::npos)
+            
+            if (textureName.find("bars") != std::string::npos) 
+            {
                 tile.shape = barsID;
+            }
 
             // Create entities for dynamic tiles
             if (flag > 0 && flag != 6 && flag != 7)
@@ -123,28 +134,34 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                 case 1: case 2: case 5: case 8: case 9: case 10: // Moving door like objects
                     ent.properties["type"] = "door";
 
+                    if (link > 0) ent.properties["link"] = std::to_string(link);
+
                     switch (flag)
                     {
-                    case 1: case 8: // Horizontal doors
-                        ent.properties["direction"] = std::to_string(0);
-                        break;
-                    case 2: case 9: // Vertical doors
-                        ent.properties["direction"] = std::to_string(90);
+                    case 1: case 8: case 2: case 9: // Doors
+                        ent.properties["direction"] = "right";
                         break;
                     case 5: // Push walls
-                        ent.properties["direction"] = std::to_string(link * 90);
+                        ent.properties["direction"] = "backward"; break;
+                        ent.properties["distance"] = "4.0";
+                        ent.properties["wait"] = "inf";
+                        ent.properties["activateSound"] = "secretwall.wav";
+                        ent.properties.erase("link");
                         break;
                     case 10: // "Disappearing" walls
                         ent.properties["direction"] = "down";
-                        ent.properties["key"] = std::to_string(link);
+                        ent.properties["distance"] = "4.0";
+                        ent.properties["activateSound"] = "";
+                        ent.properties["blockUse"] = "true";
+                        ent.properties["wait"] = "inf";
                         break;
                     }
 
                     // Space doors move up instead
-                    if (textureName.find("spacedoor") != std::string::npos)
+                    if (textureName.find("spacedoor") != std::string::npos) 
+                    {
                         ent.properties["direction"] = "up";
-
-                    ent.properties["distance"] = std::to_string((flag == 5 || flag == 10) ? 4.0f : 1.8f);
+                    }
 
                     if (flag == 8 || flag == 9) // Locked doors
                     {
@@ -160,29 +177,42 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                     break;
                 case 3:
                     ent.properties["type"] = "switch";
-                    ent.properties["destination"] = std::to_string(link);
-                    
+                    ent.properties["link"] = std::to_string(link);
                     break;
                 case 4: case 11: case 12: case 13:
                     ent.properties["type"] = "trigger";
-
+                    ent.properties["link"] = std::to_string(link);
                     switch (flag)
                     {
-                    case 4:
+                    case 4: // Teleporter
                         ent.properties["action"] = "teleport";
-                        ent.properties["destination"] = std::to_string(link);
                         break;
-                    case 11:
-                        ent.properties["action"] = "activate";
-                        ent.properties["destination"] = (link == 255) ? "secret" : std::to_string(link);
+                    case 11: // Trigger
+                        if (link == 255) 
+                        {
+                            ent.properties["action"] = "secret";
+                            ent.properties.erase("link");
+                        } 
+                        else 
+                        {
+                            ent.properties["action"] = "activate";
+                        }
                         break;
-                    case 12:
+                    case 12: // Level exit
                         ent.properties["action"] = "end level";
-                        ent.properties["destination"] = (link == 255) ? "secret" : "next";
+                        ent.properties["level"] = "TODO!";
+                        ent.properties.erase("link");
                         break;
-                    case 13:
+                    case 13: // Conveyor belt
                         ent.properties["action"] = "push";
-                        ent.properties["direction"] = std::to_string(link * 90);
+                        switch (link) 
+                        {
+                        case 0: ent.properties["direction"] = "forward"; break;
+                        case 1: ent.properties["direction"] = "right"; break;
+                        case 2: ent.properties["direction"] = "backward"; break;
+                        case 3: ent.properties["direction"] = "left"; break;
+                        }
+                        ent.properties.erase("link");
                         break;
                     }
                     
@@ -207,7 +237,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             return false;
         }
         std::getline(file, line);
-        int floorCount = atoi(line.c_str());
+        int floorCount = std::stoi(line);
         tilesToAdd.reserve(tileCount + floorCount);
         for (int t = 0; t < floorCount; ++t)
         {
@@ -215,10 +245,10 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             std::vector<std::string> tokens = SplitString(line, ",");
             
             // Original grid position (needs to be offset by minX/minZ)
-            int i = atoi(tokens[0].c_str()) / 16;
+            int i = std::stoi(tokens[0]) / 16;
             minX = Min(minX, i);
             maxX = Max(maxX, i);
-            int k = atoi(tokens[1].c_str()) / 16;
+            int k = std::stoi(tokens[1]) / 16;
             minZ = Min(minZ, k);
             maxZ = Max(maxZ, k);
 
@@ -228,7 +258,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             textureName.append(".png");
             tile.texture = GetOrAddTexID(fs::path(App::Get()->GetTexturesDir()) / textureName);
             
-            bool isCeiling = (bool)atoi(tokens[4].c_str());
+            bool isCeiling = (bool)std::stoi(tokens[4]);
             
             tilesToAdd.push_back({i, isCeiling ? 2 : 0, k, tile});
         }
@@ -243,7 +273,6 @@ bool MapMan::LoadTE2Map(fs::path filePath)
         {
             // Add the tiles to the grid, offset from the top left corner
             _tileGrid.SetTile(i - minX, j, k - minZ, tile);
-
         }
         
         // Get & convert entities
@@ -255,35 +284,39 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             return false;
         }
         std::getline(file, line);
-        int entCount = atoi(line.c_str());
+
+        int entCount = std::stoi(line);
         for (int e = 0; e < entCount; ++e)
         {
             std::getline(file, line);
             std::vector<std::string> tokens = SplitString(line, ",");
 
-            int i = (atoi(tokens[0].c_str()) / 16) - minX;
-            int k = (atoi(tokens[1].c_str()) / 16) - minZ;
-            // Ignore out of bounds entities. I don't think the original game even has any...?
-            if (i < 0 || k < 0 || i >= width || k >= length)
-                continue;
+            size_t i = (std::stoul(tokens[0]) / 16) - minX;
+            size_t k = (std::stoul(tokens[1]) / 16) - minZ;
 
-            Ent ent = Ent(1.0f);
+            // Ignore out of bounds entities.
+            if (i < 0 || k < 0 || i >= width || k >= length) 
+            {
+                TraceLog(LOG_WARNING, TextFormat("There is an entity out of bounds at position (%s, %s).", tokens[0].c_str(), tokens[1].c_str()));
+                continue;
+            }
+
+            Ent ent = Ent(0.8f);
             ent.lastRenderedPosition = Vector3 { 
                 (float)i * _tileGrid.GetSpacing(), 
                 1.0f * _tileGrid.GetSpacing(), 
                 (float)k * _tileGrid.GetSpacing() 
             };
-            ent.yaw = atoi(tokens[4].c_str()) * 45 + 90;
+            ent.yaw = 270 - (std::stoi(tokens[4]) * 45);
             
-            int type = atoi(tokens[2].c_str());
+            int type = std::stoi(tokens[2]);
             switch(type)
             {
             case 0: // Player
-                // ent.color = BROWN;
+                ent.color = BROWN;
                 ent.properties["type"] = "player";
                 ent.properties["name"] = "player";
-                ent.display = Ent::DisplayMode::SPRITE;
-                ent.texture = Assets::GetTexture("assets/textures/icons/segan_icon.png");
+                ent.display = Ent::DisplayMode::SPHERE;
                 break;
             case 1: // Prop
                 ent.properties["type"] = "prop";
@@ -303,8 +336,6 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                 ent.properties["type"] = "weapon";
                 ent.properties["weapon"] = tokens[3];
                 ent.properties["name"] = tokens[3];
-                // ent.color = ORANGE;
-                // ent.radius = 0.5f;
                 ent.display = Ent::DisplayMode::SPRITE;
                 ent.texture = Assets::GetTexture("assets/textures/icons/" + tokens[3] + ".png");
                 break;
@@ -312,7 +343,6 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "wraith";
                 ent.properties["name"] = ent.properties["enemy"];
-                // ent.color = BLUE;
                 ent.display = Ent::DisplayMode::SPRITE;
                 ent.texture = Assets::GetTexture("assets/textures/icons/wraith_icon.png");
                 break;
@@ -320,23 +350,29 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "fire wraith";
                 ent.properties["name"] = ent.properties["enemy"];
-                // ent.color = RED;
                 ent.display = Ent::DisplayMode::SPRITE;
                 ent.texture = Assets::GetTexture("assets/textures/icons/firewraith_icon.png");
                 break;
             case 6: // Dummkopf
+            case 14: // Dummkopf (disguised)
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "dummkopf";
                 ent.properties["name"] = ent.properties["enemy"];
-                // ent.color = PURPLE;
                 ent.display = Ent::DisplayMode::SPRITE;
-                ent.texture = Assets::GetTexture("assets/textures/icons/dummkopf_icon.png");
+                if (type == 14)
+                {
+                    ent.properties["disguised"] = "true";
+                    ent.texture = Assets::GetTexture("assets/textures/icons/dummkopf_pawn_icon.png");
+                }
+                else
+                {
+                    ent.texture = Assets::GetTexture("assets/textures/icons/dummkopf_icon.png");
+                }
                 break;
             case 7: // Caco wraith
                 ent.properties["type"] = "enemy";
-                ent.properties["enemy"] = "caco wraith";
+                ent.properties["enemy"] = "mother wraith";
                 ent.properties["name"] = ent.properties["enemy"];
-                // ent.color = Color { 41, 120, 255, 255 }; // Teal-ish
                 ent.display = Ent::DisplayMode::SPRITE;
                 ent.texture = Assets::GetTexture("assets/textures/icons/cacowraith_icon.png");
                 break;
@@ -344,7 +380,6 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "prisrak";
                 ent.properties["name"] = ent.properties["enemy"];
-                // ent.color = ORANGE;
                 ent.display = Ent::DisplayMode::SPRITE;
                 ent.texture = Assets::GetTexture("assets/textures/icons/prisrak_icon.png");
                 break;
@@ -353,8 +388,6 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                 ent.properties["enemy"] = "providence";
                 ent.properties["name"] = ent.properties["enemy"];
                 ent.properties["boss"] = "true";
-                // ent.color = YELLOW;
-                // ent.radius = 2.0f;
                 ent.display = Ent::DisplayMode::SPRITE;
                 ent.texture = Assets::GetTexture("assets/textures/icons/providence_icon.png");
                 break;
@@ -362,7 +395,6 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "fundie";
                 ent.properties["name"] = ent.properties["enemy"];
-                // ent.color = BROWN;
                 ent.display = Ent::DisplayMode::SPRITE;
                 ent.texture = Assets::GetTexture("assets/textures/icons/fundie_icon.png");
                 break;
@@ -370,7 +402,6 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "banshee";
                 ent.properties["name"] = ent.properties["enemy"];
-                // ent.color = DARKGRAY;
                 ent.display = Ent::DisplayMode::SPRITE;
                 ent.texture = Assets::GetTexture("assets/textures/icons/banshee_icon.png");
                 break;
@@ -378,7 +409,6 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "mutant wraith";
                 ent.properties["name"] = ent.properties["enemy"];
-                // ent.color = GRAY;
                 ent.display = Ent::DisplayMode::SPRITE;
                 ent.texture = Assets::GetTexture("assets/textures/icons/mutant_icon.png");
                 break;
@@ -387,27 +417,14 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                 ent.properties["enemy"] = "mecha";
                 ent.properties["name"] = ent.properties["enemy"];
                 ent.properties["boss"] = "true";
-                // ent.color = RED;
-                // ent.radius = 2.0f;
                 ent.display = Ent::DisplayMode::SPRITE;
                 ent.texture = Assets::GetTexture("assets/textures/icons/mecha_icon.png");
-                break;
-            case 14: // Dummkopf (disguised)
-                ent.properties["type"] = "enemy";
-                ent.properties["enemy"] = "dummkopf";
-                ent.properties["name"] = ent.properties["enemy"];
-                ent.properties["disguised"] = "true";
-                // ent.color = PURPLE;
-                ent.display = Ent::DisplayMode::SPRITE;
-                ent.texture = Assets::GetTexture("assets/textures/icons/dummkopf_pawn_icon.png");
                 break;
             case 15: // Tophat demon (final boss)
                 ent.properties["type"] = "enemy";
                 ent.properties["enemy"] = "tophat demon";
                 ent.properties["name"] = ent.properties["enemy"];
                 ent.properties["boss"] = "true";
-                // ent.color = DARKPURPLE;
-                // ent.radius = 4.0f;
                 ent.display = Ent::DisplayMode::SPRITE;
                 ent.texture = Assets::GetTexture("assets/textures/icons/demon_icon.png");
                 break;

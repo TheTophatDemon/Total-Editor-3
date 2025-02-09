@@ -84,9 +84,13 @@ inline std::vector<std::string> SplitString(const std::string& input, const std:
         result.push_back(input.substr(tokenStart, tokenEnd - tokenStart));
         tokenStart = tokenEnd + delimeter.length();
     }
+    
     // Add the remaining text after the last delimeter
-    if (tokenStart < input.length())
+    if (tokenStart < input.length()) 
+    {
         result.push_back(input.substr(tokenStart));
+    }
+    
     return result;
 }
 
