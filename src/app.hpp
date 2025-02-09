@@ -54,20 +54,9 @@ public:
         std::string defaultTexturePath;
         std::string defaultShapePath;
         std::tuple<uint8_t, uint8_t, uint8_t> backgroundColor;
-        std::map<std::string, std::tuple<int, int, int, int>> textureWindows;
+        std::string assetHideRegex;
 
-        Settings() 
-        {
-            texturesDir = "assets/textures/tiles/";
-            shapesDir = "assets/models/shapes/";
-            undoMax = 30UL;
-            mouseSensitivity = 0.5f;
-            exportSeparateGeometry = false;
-            cullFaces = true;
-            defaultTexturePath = "assets/textures/tiles/brickwall.png";
-            defaultShapePath = "assets/models/shapes/cube.obj";
-            textureWindows = {};
-        }
+        Settings();
     };
     static void to_json(nlohmann::json& json, const App::Settings& settings);
     static void from_json(const nlohmann::json& json, App::Settings& settings);
@@ -131,8 +120,8 @@ private:
 
     Settings _settings;
     
-    std::unique_ptr<MenuBar> _menuBar;
     std::unique_ptr<MapMan> _mapMan;
+    std::unique_ptr<MenuBar> _menuBar;
 
     std::unique_ptr<PlaceMode> _tilePlaceMode;
     std::unique_ptr<PickMode> _texPickMode;

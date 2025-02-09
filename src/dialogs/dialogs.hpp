@@ -29,9 +29,9 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-#include "tile.hpp"
-#include "ent.hpp"
-#include "app.hpp"
+#include "../tile.hpp"
+#include "../ent.hpp"
+#include "../app.hpp"
 
 class Dialog 
 { 
@@ -107,6 +107,8 @@ protected:
     char _shapeDirBuffer[TEXT_FIELD_MAX];
     char _defaultTexBuffer[TEXT_FIELD_MAX];
     char _defaultShapeBuffer[TEXT_FIELD_MAX];
+    char _hiddenAssetRegexBuffer[TEXT_FIELD_MAX];
+    bool _hiddenAssetRegexValid;
     std::unique_ptr<FileDialog> _fileDialog;
 };
 
@@ -147,22 +149,6 @@ protected:
     App::Settings &_settings;
     std::unique_ptr<FileDialog> _dialog;
     char _filePathBuffer[TEXT_FIELD_MAX];
-};
-
-class TextureSettingsDialog : public Dialog
-{
-public:
-    const int ICON_SIZE = 128;
-    TextureSettingsDialog(App::Settings &settings, const fs::path texturePath);
-    virtual ~TextureSettingsDialog() override;
-    virtual bool Draw() override;
-    virtual void Update() override;
-protected:
-    App::Settings &_settings;
-    fs::path _texturePath;
-    std::shared_ptr<Assets::TexHandle> _texture;
-    RenderTexture _renderTexture;
-    int _viewFrame[4];
 };
 
 #endif

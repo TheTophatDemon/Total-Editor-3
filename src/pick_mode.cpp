@@ -30,6 +30,7 @@
 #include <chrono>
 #include <fstream>
 #include <stdio.h>
+#include <regex>
 
 #include "assets.hpp"
 #include "text_util.hpp"
@@ -135,7 +136,7 @@ RenderTexture2D PickMode::_GetShapeIcon(const fs::path path)
 void PickMode::_GetFrames()
 {
     _frames.clear();
-    
+
     for (const fs::path path : _foundFiles)
     {
         Frame frame(path, _rootDir);
@@ -161,31 +162,50 @@ void PickMode::_GetFrames()
 
 void PickMode::OnEnter()
 {
-    // Get the paths to all assets if this hasn't been done already.
-    _rootDir = (_mode == Mode::SHAPES) ? fs::path(App::Get()->GetShapesDir()) : fs::path(App::Get()->GetTexturesDir());
-    if (_foundFiles.empty())
+    std::regex hiddenFileRegex;
+    try 
     {
-        if (!fs::is_directory(_rootDir)) 
-        {
-            std::cerr << "Asset directory in settings is not a directory!" << std::endl;
-            return;
-        }
-        
-        for (auto const& entry : fs::recursive_directory_iterator{_rootDir})
-        {
-            if (entry.is_directory() || !entry.is_regular_file()) continue;
-            
-            //Filter out files with the wrong extensions
-            auto extensionStr = TextToLower(entry.path().extension().string().c_str());
-            if (
-                (_mode != Mode::TEXTURES || !TextIsEqual(extensionStr, ".png")) &&
-                (_mode != Mode::SHAPES   || !TextIsEqual(extensionStr, ".obj"))
-            ) {
-                continue;
-            }
+        hiddenFileRegex = std::regex(_settings.assetHideRegex, std::regex_constants::icase | std::regex_constants::ECMAScript);
+    }
+    catch (const std::regex_error& err) 
+    {
+        std::cerr << "Error: Invalid assetHideRegex '" << _settings.assetHideRegex << "': " << err.what() << std::endl;
+        std::cerr << __FILE__ << ':' << __LINE__ << std::endl;
+    }
+    catch (...)
+    {
+        std::cerr << "Error: Unknown regex-related error when loading textures." << std::endl;
+        std::cerr << __FILE__ << ':' << __LINE__ << std::endl;
+    }
 
-            _foundFiles.insert(entry.path());
+    // Get the paths to all assets if this hasn't been done already.
+    _foundFiles.clear();
+    _rootDir = (_mode == Mode::SHAPES) ? fs::path(App::Get()->GetShapesDir()) : fs::path(App::Get()->GetTexturesDir());
+    if (!fs::is_directory(_rootDir)) 
+    {
+        std::cerr << "Asset directory in settings is not a directory!" << std::endl;
+        return;
+    }
+    
+    for (auto const& entry : fs::recursive_directory_iterator{_rootDir})
+    {
+        if (entry.is_directory() || !entry.is_regular_file()) continue;
+
+        //Filter out files with the wrong extensions
+        std::string extensionStr = StringToLower(entry.path().extension().string());
+        if (
+            (_mode != Mode::TEXTURES || extensionStr != ".png") &&
+            (_mode != Mode::SHAPES   || extensionStr != ".obj")
+        ) {
+            continue;
         }
+
+        if (std::regex_match(entry.path().string(), hiddenFileRegex)) 
+        {
+            continue;
+        }
+
+        _foundFiles.insert(entry.path());
     }
 
     _GetFrames();
@@ -251,17 +271,6 @@ void PickMode::Draw()
         {
             _GetFrames();
         }
-        
-        // I'm not sure how I'll implement this "texture window" feature without
-        // breaking everything so I'm going to hide it for now.
-
-        // ImGui::SameLine(0.0f, 48.0f);
-        // ImGui::BeginDisabled(_selectedFrame.filePath.empty());
-        // if (_mode == Mode::TEXTURES && ImGui::Button("Settings")) 
-        // {
-        //     _activeDialog.reset(new TextureSettingsDialog(_settings, _selectedFrame.filePath));
-        // }
-        // ImGui::EndDisabled();
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0, 8.0));
         ImGui::Separator();
@@ -279,7 +288,7 @@ void PickMode::Draw()
                 {
                     ImGui::TableNextColumn();
 
-                    int frameIndex = c + r * NUM_COLS;
+                    size_t frameIndex = c + r * NUM_COLS;
                     if (frameIndex >= _frames.size()) break;
 
                     fs::path filePath = _frames[frameIndex].filePath;
@@ -296,16 +305,6 @@ void PickMode::Draw()
                     Texture* frameTexture = &_frames[frameIndex].texture;
                     
                     float left = 0.0f, top = 0.0f, right = 1.0f, bottom = 1.0f;
-                    auto windowSettings = _settings.textureWindows.find(filePath.string());
-                    if (windowSettings != _settings.textureWindows.end()) 
-                    {
-                        auto [winX, winY, winW, winH] = windowSettings->second;
-                        left = float(winX) / frameTexture->width;
-                        top = float(winY) / frameTexture->height;
-                        right = float(winX + winW) / frameTexture->width;
-                        bottom = float(winY + winH) / frameTexture->height;
-                    }
-
                     bool clicked = ImGui::ImageButton(
                         filePath.string().c_str(), (ImTextureID)frameTexture,
                         ImVec2(ICON_SIZE, ICON_SIZE),

@@ -33,7 +33,7 @@
 #include <set>
 
 #include "app.hpp"
-#include "dialogs.hpp"
+#include "dialogs/dialogs.hpp"
 
 #define SEARCH_BUFFER_SIZE 256
 

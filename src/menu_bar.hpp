@@ -25,7 +25,7 @@
 #include <memory>
 
 #include "app.hpp"
-#include "dialogs.hpp"
+#include "dialogs/dialogs.hpp"
 
 class MenuBar 
 {

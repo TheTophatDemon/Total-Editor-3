@@ -30,14 +30,15 @@
 #include <iostream>
 #include <set>
 #include <string>
+#include <regex>
 
-#include "assets.hpp"
-#include "math_stuff.hpp"
-#include "app.hpp"
-#include "map_man.hpp"
-#include "text_util.hpp"
-#include "draw_extras.h"
-#include "defer.hpp"
+#include "../assets.hpp"
+#include "../math_stuff.hpp"
+#include "../app.hpp"
+#include "../map_man.hpp"
+#include "../text_util.hpp"
+#include "../draw_extras.h"
+#include "../defer.hpp"
 
 Rectangle DialogRec(float w, float h)
 {
@@ -329,119 +330,6 @@ bool CloseDialog::Draw()
     return open;
 }
 
-AssetPathDialog::AssetPathDialog(App::Settings &settings)
-    : _settings(settings),
-    _fileDialog(nullptr)
-{
-    strcpy(_texDirBuffer, App::Get()->GetTexturesDir().c_str());
-    strcpy(_shapeDirBuffer, App::Get()->GetShapesDir().c_str());
-    strcpy(_defaultTexBuffer, App::Get()->GetDefaultTexturePath().c_str());
-    strcpy(_defaultShapeBuffer, App::Get()->GetDefaultShapePath().c_str());
-}
-
-#define ASSET_PATH_FILE_DIALOG_CALLBACK(buffer)                         \
-    [&](fs::path path)                                                  \
-    {                                                                           \
-        fs::path relativePath = fs::relative(path, fs::current_path());         \
-        strcpy(buffer, relativePath.generic_string().c_str());           \
-    }                                                                           \
-
-bool AssetPathDialog::Draw()
-{
-    if (_fileDialog)
-    {
-        bool open = _fileDialog->Draw();
-        if (!open) _fileDialog.reset(nullptr);
-        return true;
-    }
-
-    bool open = true;
-    ImGui::OpenPopup("CONFIGURE ASSET PATHS");
-    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    if (ImGui::BeginPopupModal("CONFIGURE ASSET PATHS", &open, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        if (ImGui::Button("Browse##texdir"))
-        {
-            _fileDialog.reset(new FileDialog("Select textures directory", {}, ASSET_PATH_FILE_DIALOG_CALLBACK(_texDirBuffer), false));
-        }
-        ImGui::SameLine();
-        ImGui::InputText("Textures Directory", _texDirBuffer, TEXT_FIELD_MAX);
-
-        if (ImGui::Button("Browse##deftex"))
-        {
-            _fileDialog.reset(new FileDialog("Select default texture", {".png"}, ASSET_PATH_FILE_DIALOG_CALLBACK(_defaultTexBuffer), false));
-        }
-        ImGui::SameLine();
-        ImGui::InputText("Default Texture", _defaultTexBuffer, TEXT_FIELD_MAX);
-
-        if (ImGui::Button("Browse##shapedir"))
-        {
-            _fileDialog.reset(new FileDialog("Select shapes directory", {}, ASSET_PATH_FILE_DIALOG_CALLBACK(_shapeDirBuffer), false));
-        }
-        ImGui::SameLine();
-        ImGui::InputText("Shapes Directory", _shapeDirBuffer, TEXT_FIELD_MAX);
-
-        if (ImGui::Button("Browse##defshape"))
-        {
-            _fileDialog.reset(new FileDialog("Select default shape", {".obj"}, ASSET_PATH_FILE_DIALOG_CALLBACK(_defaultShapeBuffer), false));
-        }
-        ImGui::SameLine();
-        ImGui::InputText("Default Shape", _defaultShapeBuffer, TEXT_FIELD_MAX);
-
-        if (ImGui::Button("Confirm"))
-        {
-            // Validate all of the entered paths
-            bool bad = false;
-            fs::directory_entry texEntry { _texDirBuffer };
-            if (!texEntry.exists() || !texEntry.is_directory())
-            {
-                strcpy(_texDirBuffer, "Invalid!");
-                bad = true;
-            }
-            fs::directory_entry defTexEntry { _defaultTexBuffer };
-            if (!defTexEntry.exists() || !defTexEntry.is_regular_file())
-            {
-                strcpy(_defaultTexBuffer, "Invalid!");
-                bad = true;
-            }
-            fs::directory_entry shapeEntry { _shapeDirBuffer };
-            if (!shapeEntry.exists() || !shapeEntry.is_directory())
-            {
-                strcpy(_shapeDirBuffer, "Invalid!");
-                bad = true;
-            }
-            fs::directory_entry defShapeEntry { _defaultShapeBuffer };
-            if (!defShapeEntry.exists() || !defShapeEntry.is_regular_file())
-            {
-                strcpy(_defaultShapeBuffer, "Invalid!");
-                bad = true;
-            }
-            if (!bad) 
-            {
-                _settings.texturesDir = texEntry.path().string();
-                _settings.defaultTexturePath = defTexEntry.path().string();
-                _settings.shapesDir = shapeEntry.path().string();
-                _settings.defaultShapePath = defShapeEntry.path().string();
-                App::Get()->SaveSettings();
-                ImGui::EndPopup();
-                return false;
-            }
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Cancel"))
-        {
-            ImGui::EndPopup();
-            return false;
-        }
-
-        ImGui::EndPopup();
-        return true;
-    }
-
-    return open;
-}
-
 SettingsDialog::SettingsDialog(App::Settings &settings)
     : _settingsOriginal(settings),
       _settingsCopy(settings)
@@ -660,105 +548,6 @@ bool ExportDialog::Draw()
         }
 
         ImGui::EndPopup();
-        return true;
-    }
-
-    return open;
-}
-
-
-TextureSettingsDialog::TextureSettingsDialog(App::Settings &settings, const fs::path texturePath)
-    : _settings(settings)
-{
-    _texturePath = texturePath;
-    _texture = Assets::GetTexture(texturePath);
-    _renderTexture = LoadRenderTexture(ICON_SIZE, ICON_SIZE);
-
-    auto textureWindowIter = settings.textureWindows.find(texturePath.string());
-    if (textureWindowIter == settings.textureWindows.end()) 
-    {
-        _viewFrame[0] = 0;
-        _viewFrame[1] = 0;
-        _viewFrame[2] = _renderTexture.texture.width;
-        _viewFrame[3] = _renderTexture.texture.height;
-    }
-    else 
-    {
-        std::tie(_viewFrame[0], _viewFrame[1], _viewFrame[2], _viewFrame[3]) = textureWindowIter->second;
-    }
-}
-
-TextureSettingsDialog::~TextureSettingsDialog() {
-    UnloadRenderTexture(_renderTexture);
-}
-
-void TextureSettingsDialog::Update() 
-{
-    Texture texture = _texture->GetTexture();
-
-    BeginTextureMode(_renderTexture);
-    ClearBackground(BLACK);
-    DrawTexturePro(texture, 
-        Rectangle{
-            .x = 0, .y = 0, .width = (float)texture.width, .height = (float)texture.height,
-        }, Rectangle{
-            .x = 0, .y = 0, .width = (float)ICON_SIZE, .height = (float)ICON_SIZE,
-        }, Vector2{0.0f, 0.0f}, 0.0f, WHITE);
-
-    float xScale = (float) ICON_SIZE / texture.width;
-    float yScale = (float) ICON_SIZE / texture.height;
-    int viewX = (int)(_viewFrame[0] * xScale);
-    int viewY = (int)(_viewFrame[1] * yScale);
-    int viewWidth = (int)(_viewFrame[2] * xScale);
-    int viewHeight = (int)(_viewFrame[3] * yScale);
-    // Draw border displaying where the view region is.
-    DrawRectangleLines(viewX + 1, viewY + 1, viewWidth - 2, viewHeight - 2, BLACK);
-    DrawRectangleLines(viewX, viewY, viewWidth - 2, viewHeight - 2, WHITE);
-    EndTextureMode();
-}
-
-bool TextureSettingsDialog::Draw()
-{
-    const char* MODAL_NAME = "Texture Settings";
-
-    bool open = true;
-    ImGui::OpenPopup(MODAL_NAME);
-    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    
-    if (ImGui::BeginPopupModal(MODAL_NAME, &open, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        DEFER(ImGui::EndPopup());
-        
-        ImGui::TextUnformatted(_texturePath.string().c_str());
-
-        float offset = (ImGui::GetContentRegionAvail().x / 2.0f) - 64;
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
-
-        rlImGuiImageRect(&_renderTexture.texture, ICON_SIZE, ICON_SIZE, Rectangle{
-            .width = (float)ICON_SIZE, .height = -(float)ICON_SIZE,
-        });
-
-        ImGui::TextUnformatted("View Window (X, Y, Width, Height)");
-        ImGui::InputInt4("##View Window", _viewFrame);
-
-        // Keep window coordinates within bounds of texture.
-        _viewFrame[0] = Max(0, Min(_texture->GetTexture().width - 1, _viewFrame[0]));
-        _viewFrame[1] = Max(0, Min(_texture->GetTexture().height - 1, _viewFrame[1]));
-        _viewFrame[2] = Max(1, Min(_texture->GetTexture().width - _viewFrame[0], _viewFrame[2]));
-        _viewFrame[3] = Max(1, Min(_texture->GetTexture().height - _viewFrame[1], _viewFrame[3]));
-
-        if (ImGui::Button("Cancel")) {
-            return false;
-        }
-
-        ImGui::SameLine();
-        if (ImGui::Button("Save")) {
-            _settings.textureWindows[_texturePath.string()] = {_viewFrame[0], _viewFrame[1], _viewFrame[2], _viewFrame[3]};
-            App::Get()->SaveSettings();
-            return false;
-        }
-
         return true;
     }
 

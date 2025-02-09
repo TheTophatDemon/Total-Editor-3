@@ -35,6 +35,7 @@ bin_dir = 'debug' if is_debug else 'release'
 
 env.Append(OBJPREFIX='../obj/%s/' % bin_dir)
 sources = []
-sources.append(Glob('src/*.cpp'))
+for root, dirs, files in os.walk("src"):
+  sources.append(Glob(f"{root}/*.cpp"))
 sources.append(Glob('libraries/src/imgui/*.cpp'))
 env.Program(target='./bin/%s/%s' % (bin_dir, project_name), source=sources)

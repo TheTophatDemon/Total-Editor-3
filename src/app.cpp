@@ -60,14 +60,14 @@ App *App::Get()
 App::App()
     : _settings(),
     _mapMan        (std::make_unique<MapMan>()),
+    _menuBar       (std::make_unique<MenuBar>(_settings)),
     _tilePlaceMode (std::make_unique<PlaceMode>(*_mapMan.get())),
     _texPickMode   (std::make_unique<PickMode>(PickMode::Mode::TEXTURES, _settings)),
     _shapePickMode (std::make_unique<PickMode>(PickMode::Mode::SHAPES, _settings)),
     _entMode       (std::make_unique<EntMode>()),
     _editorMode    (_tilePlaceMode.get()),
-    _previewDraw   (false),
     _lastSavedPath (),
-    _menuBar       (std::make_unique<MenuBar>(_settings)),
+    _previewDraw   (false),
     _quit          (false)
 {
     std::filesystem::directory_entry entry { SETTINGS_FILE_PATH };
@@ -387,9 +387,9 @@ void App::SaveSettings()
         std::ofstream file(SETTINGS_FILE_PATH);
         file << jData;
     }
-    catch (std::exception e)
+    catch (const std::exception& ex)
     {
-        std::cerr << "Error saving settings: " << e.what() << std::endl;
+        std::cerr << "Error saving settings: " << ex.what() << std::endl;
     }
 }
 
@@ -402,10 +402,24 @@ void App::LoadSettings()
         file >> jData;
         App::from_json(jData, _settings);
     }
-    catch (std::exception e)
+    catch (const std::exception &ex)
     {
-        std::cerr << "Error loading settings: " << e.what() << std::endl;
+        std::cerr << "Error loading settings: " << ex.what() << std::endl;
     }
+}
+
+// Specifies the defaults for each settings value.
+App::Settings::Settings() 
+{
+    texturesDir = "assets/textures/tiles/";
+    shapesDir = "assets/models/shapes/";
+    undoMax = 30UL;
+    mouseSensitivity = 0.5f;
+    exportSeparateGeometry = false;
+    cullFaces = true;
+    defaultTexturePath = "assets/textures/tiles/brickwall.png";
+    defaultShapePath = "assets/models/shapes/cube.obj";
+    assetHideRegex = ".+_(atlas|hidden)\\..+";
 }
 
 void App::to_json(nlohmann::json& json, const App::Settings& settings)
@@ -420,7 +434,7 @@ void App::to_json(nlohmann::json& json, const App::Settings& settings)
     json["defaultTexturePath"] = settings.defaultTexturePath;
     json["defaultShapePath"] = settings.defaultShapePath;
     json["backgroundColor"] = settings.backgroundColor;
-    json["textureWindows"] = settings.textureWindows;
+    json["assetHideRegex"] = settings.assetHideRegex;
 }
 
 void App::from_json(const nlohmann::json& json, App::Settings& settings)
@@ -436,5 +450,5 @@ void App::from_json(const nlohmann::json& json, App::Settings& settings)
     settings.defaultTexturePath     = json.value("defaultTexturePath", defaultSettings.defaultTexturePath);
     settings.defaultShapePath       = json.value("defaultShapePath", defaultSettings.defaultShapePath);
     settings.backgroundColor        = json.value("backgroundColor", defaultSettings.backgroundColor);
-    settings.textureWindows         = json.value("textureWindows", defaultSettings.textureWindows);
+    settings.assetHideRegex         = json.value("assetHideRegex", defaultSettings.assetHideRegex);
 }

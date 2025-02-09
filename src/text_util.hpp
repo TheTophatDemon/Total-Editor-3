@@ -25,6 +25,8 @@
 #include "math_stuff.hpp"
 
 #include <string>
+#include <cctype>
+#include <algorithm>
 #include <initializer_list>
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -92,6 +94,13 @@ inline std::vector<std::string> SplitString(const std::string& input, const std:
     }
     
     return result;
+}
+
+// Returns the lower case version of the given string.
+inline std::string StringToLower(std::string str) {
+    std::transform(str.begin(), str.end(), str.begin(), 
+        [](unsigned char c) { return std::tolower(c); });
+    return str;
 }
 
 #endif

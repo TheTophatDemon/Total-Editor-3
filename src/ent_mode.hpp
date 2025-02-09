@@ -23,7 +23,7 @@
 
 #include "app.hpp"
 #include "ent.hpp"
-#include "dialogs.hpp"
+#include "dialogs/dialogs.hpp"
 
 #include <memory>
 
