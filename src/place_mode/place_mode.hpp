@@ -25,12 +25,13 @@
 
 #include <vector>
 #include <string>
+#include <array>
 
-#include "tile.hpp"
-#include "ent.hpp"
-#include "app.hpp"
-#include "menu_bar.hpp"
-#include "map_man.hpp"
+#include "../tile.hpp"
+#include "../ent.hpp"
+#include "../app.hpp"
+#include "../menu_bar.hpp"
+#include "../map_man.hpp"
 
 class PlaceMode : public App::ModeImpl {
 public:
@@ -43,10 +44,10 @@ public:
     virtual void OnExit() override;
 
     void SetCursorShape(std::shared_ptr<Assets::ModelHandle> shape);
-    void SetCursorTexture(std::shared_ptr<Assets::TexHandle> tex);
+    void SetCursorTextures(std::array<std::shared_ptr<Assets::TexHandle>, TEXTURES_PER_TILE> tex);
     void SetCursorEnt(const Ent &ent);
     std::shared_ptr<Assets::ModelHandle> GetCursorShape() const;
-    std::shared_ptr<Assets::TexHandle> GetCursorTexture() const;
+    std::array<std::shared_ptr<Assets::TexHandle>, TEXTURES_PER_TILE> GetCursorTextures() const;
     const Ent &GetCursorEnt() const;
 
     void ResetCamera();
@@ -59,25 +60,39 @@ protected:
     {
         Vector3 position;
         Vector3 endPosition;
+
+        virtual void Update(MapMan& mapMan) = 0;
+        virtual void Draw() = 0;
     };
 
     struct TileCursor : public Cursor
     {
         std::shared_ptr<Assets::ModelHandle> model;
-        std::shared_ptr<Assets::TexHandle> tex;
-        int angle, pitch;
+        std::array<std::shared_ptr<Assets::TexHandle>, TEXTURES_PER_TILE> textures;
+        std::array<Material, TEXTURES_PER_TILE> materials;
+        uint16_t yaw, pitch;
 
-        Tile GetTile(MapMan& mapMan) const;
+        TileCursor();
+        void Update(MapMan& mapMan) override;
+        void Draw() override;
     };
 
     struct BrushCursor : public Cursor
     {
         TileGrid brush;
+
+        BrushCursor(MapMan& mapMan);
+        void Update(MapMan& mapMan) override;
+        void Draw() override;
     };
 
     struct EntCursor : public Cursor
     {
         Ent ent;
+
+        EntCursor();
+        void Update(MapMan& mapMan) override;
+        void Draw() override;
     };
 
     void MoveCamera();
@@ -90,15 +105,14 @@ protected:
     float _cameraPitch;
     float _cameraMoveSpeed;
 
-    Cursor* _cursor; //The current cursor being used in the editor. Will point to one of: _tileCursor, _brushCursor, _entCursor
     TileCursor _tileCursor;
     BrushCursor _brushCursor;
     EntCursor _entCursor;
+    Cursor* _cursor; // The current cursor being used in the editor. Will point to one of: _tileCursor, _brushCursor, _entCursor
     Vector3 _cursorPreviousGridPos;
     Vector2 _previousMousePosition;
 
-    Material _cursorMaterial; //Material used to render the cursor
-    float _outlineScale; //How much the wire box around the cursor is larger than its contents
+    float _outlineScale; // How much the wire box around the cursor is larger than its contents
 
     int _layerViewMin, _layerViewMax;
 

@@ -82,7 +82,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             minZ = Min(minZ, k);
             maxZ = Max(maxZ, k);
 
-            Tile tile(NO_MODEL, 0, NO_TEX, 0);
+            Tile tile;
 
             std::string textureName = tokens[3] + ".png";
             fs::path texturePath = fs::path(App::Get()->GetTexturesDir()) / textureName;
@@ -93,15 +93,15 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             // Set angles for doors & panels
             if (flag == 7) 
             {
-                tile.angle = (link == 0) ? 0 : 90;
+                tile.yaw = (link == 0) ? 0 : 90;
             }
             else if (flag == 2 || flag == 9) 
             {
-                tile.angle = 90;
+                tile.yaw = 90;
             }
             else if (flag == 5)
             {
-                tile.angle = (90 + (link * 90)) % 360;
+                tile.yaw = (90 + (link * 90)) % 360;
             }
             
             // Set shape depending on tile type
@@ -126,7 +126,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
                 Ent ent = Ent(1.0f);
                 ent.model = _modelList[tile.shape];
                 ent.texture = Assets::GetTexture(texturePath);
-                ent.yaw = tile.angle;
+                ent.yaw = tile.yaw;
                 ent.pitch = tile.pitch;
                 ent.display = Ent::DisplayMode::MODEL;
                 switch (flag)
@@ -224,7 +224,8 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             else
             {
                 // Have to load the texture only when the tile isn't an entity, or the IDs will get messed up in the map model.
-                tile.texture = GetOrAddTexID(texturePath);
+                TexID id = GetOrAddTexID(texturePath);
+                for (int i = 0; i < TEXTURES_PER_TILE; ++i) tile.textures[i] = id;
                 tilesToAdd.push_back({i, 1, k, tile});
             }
         }
@@ -252,11 +253,12 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             minZ = Min(minZ, k);
             maxZ = Max(maxZ, k);
 
-            Tile tile(cubeID, 0, NO_TEX, 0);
+            Tile tile(cubeID, NO_TEX, NO_TEX, 0, 0);
 
             std::string textureName = tokens[5];
             textureName.append(".png");
-            tile.texture = GetOrAddTexID(fs::path(App::Get()->GetTexturesDir()) / textureName);
+            TexID texId = GetOrAddTexID(fs::path(App::Get()->GetTexturesDir()) / textureName);
+            for (int i = 0; i < TEXTURES_PER_TILE; ++i) tile.textures[i] = texId;
             
             bool isCeiling = (bool)std::stoi(tokens[4]);
             
@@ -268,7 +270,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
         size_t length = (maxZ - minZ) + 1;
 
         // Fill tile grid
-        _tileGrid = TileGrid(this, width, 3, length, TILE_SPACING_DEFAULT, Tile());
+        _tileGrid = TileGrid(*this, width, 3, length, TILE_SPACING_DEFAULT, Tile());
         for (const auto[i, j, k, tile] : tilesToAdd)
         {
             // Add the tiles to the grid, offset from the top left corner

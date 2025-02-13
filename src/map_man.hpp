@@ -71,91 +71,21 @@ public:
         Ent  _newEnt;
     };
 
-    
-    inline void NewMap(int width, int height, int length) 
-    {
-        _tileGrid = TileGrid(this, width, height, length);
-        _entGrid = EntGrid(width, height, length);
-        _undoHistory.clear();
-        _redoHistory.clear();
-    }
+    MapMan();
+
+    void NewMap(int width, int height, int length);
 
     inline const TileGrid& Tiles() const { return _tileGrid; }
     inline const EntGrid& Ents() const { return _entGrid; }
 
     void DrawMap(Camera &camera, int fromY, int toY);
-
-    inline void Draw2DElements(Camera &camera, int fromY, int toY)
-    {
-        _entGrid.DrawLabels(camera, fromY, toY);
-    }
+    void Draw2DElements(Camera &camera, int fromY, int toY);
 
     //Regenerates the map, extending one of the grid's dimensions on the given axis. Returns false if the change would result in an invalid map size.
-    inline void ExpandMap(Direction axis, int amount)
-    {
-        int newWidth  = _tileGrid.GetWidth();
-        int newHeight = _tileGrid.GetHeight();
-        int newLength = _tileGrid.GetLength();
-        int ofsx, ofsy, ofsz;
-        ofsx = ofsy = ofsz = 0;
-
-        switch (axis)
-        {
-            case Direction::Z_NEG: newLength += amount; ofsz += amount; break;
-            case Direction::Z_POS: newLength += amount; break;
-            case Direction::X_NEG: newWidth += amount; ofsx += amount; break;
-            case Direction::X_POS: newWidth += amount; break;
-            case Direction::Y_NEG: newHeight += amount; ofsy += amount; break;
-            case Direction::Y_POS: newHeight += amount; break;
-        }
-
-        _undoHistory.clear();
-        _redoHistory.clear();
-        TileGrid oldTiles = _tileGrid;
-        EntGrid oldEnts = _entGrid;
-        _tileGrid = TileGrid(this, newWidth, newHeight, newLength);
-        _entGrid = EntGrid(newWidth, newHeight, newLength);       
-        _tileGrid.CopyTiles(ofsx, ofsy, ofsz, oldTiles, false);
-        _entGrid.CopyEnts(ofsx, ofsy, ofsz, oldEnts);
-    }
+    void ExpandMap(Direction axis, int amount);
 
     //Reduces the size of the grid until it fits perfectly around all the non-empty cels in the map.
-    inline void ShrinkMap()
-    {
-        size_t minX, minY, minZ;
-        size_t maxX, maxY, maxZ;
-        minX = minY = minZ = std::numeric_limits<size_t>::max();
-        maxX = maxY = maxZ = 0;
-        for (size_t x = 0; x < _tileGrid.GetWidth(); ++x)
-        {
-            for (size_t y = 0; y < _tileGrid.GetHeight(); ++y)
-            {
-                for (size_t z = 0; z < _tileGrid.GetLength(); ++z)
-                {
-                    if (_tileGrid.GetTile(x, y, z) || _entGrid.HasEnt(x, y, z))
-                    {
-                        if (x < minX) minX = x;
-                        if (y < minY) minY = y;
-                        if (z < minZ) minZ = z;
-                        if (x > maxX) maxX = x;
-                        if (y > maxY) maxY = y;
-                        if (z > maxZ) maxZ = z;
-                    }
-                }
-            }
-        }
-        if (minX > maxX || minY > maxY || minZ > maxZ)
-        {
-            //If there aren't any tiles, just make it 1x1x1.
-            _tileGrid = TileGrid(this, 1, 1, 1);
-            _entGrid = EntGrid(1, 1, 1);
-        }
-        else
-        {
-            _tileGrid = _tileGrid.Subsection(minX, minY, minZ, maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1);
-            _entGrid = _entGrid.Subsection(minX, minY, minZ, maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1);
-        }
-    }
+    void ShrinkMap();
 
     //Saves the map as a .te3 file at the given path. Returns false if there was an error.
     bool SaveTE3Map(fs::path filePath);
@@ -180,61 +110,13 @@ public:
     //Executes an undoable entity action for removing an entity.
     void ExecuteEntRemoval(int i, int j, int k);
 
-    inline TexID GetOrAddTexID(const fs::path texturePath) 
-    {
-        //Look for existing ID
-        for (int i = 0; i < _textureList.size(); ++i)
-        {
-            if (_textureList[i]->GetPath() == texturePath)
-            {
-                return (TexID)(i);
-            }
-        }
-        //Create new ID and append texture to list
-        TexID newID = _textureList.size();
-        _textureList.push_back(Assets::GetTexture(texturePath));
-        return newID;
-    }
+    TexID GetOrAddTexID(const fs::path &texturePath);
+    ModelID GetOrAddModelID(const fs::path &modelPath);
 
-    inline ModelID GetOrAddModelID(const fs::path modelPath)
-    {
-        //Look for existing ID
-        for (int i = 0; i < _modelList.size(); ++i)
-        {
-            if (_modelList[i]->GetPath() == modelPath)
-            {
-                return (ModelID)(i);
-            }
-        }
-        //Create new ID and append texture to list
-        ModelID newID = _modelList.size();
-        _modelList.push_back(Assets::GetModel(modelPath));
-        return newID;
-    }
-
-    inline fs::path PathFromTexID(const TexID id) const
-    {
-        if (id == NO_TEX || id >= _textureList.size()) return fs::path();
-        return _textureList[id]->GetPath();
-    }
-
-    inline fs::path PathFromModelID(const ModelID id) const
-    {
-        if (id == NO_MODEL || id >= _modelList.size()) return fs::path();
-        return _modelList[id]->GetPath();
-    }
-
-    inline Model ModelFromID(const ModelID id) const
-    {
-        if (id == NO_MODEL || id >= _modelList.size()) return Model{};
-        return _modelList[id]->GetModel();
-    }
-
-    inline Texture TexFromID(const TexID id) const
-    {
-        if (id == NO_TEX || id >= _textureList.size()) return Texture{};
-        return _textureList[id]->GetTexture();
-    }
+    fs::path PathFromTexID(const TexID id) const;
+    fs::path PathFromModelID(const ModelID id) const;
+    Model ModelFromID(const ModelID id) const;
+    Texture TexFromID(const TexID id) const;
 
     inline const std::vector<std::shared_ptr<Assets::ModelHandle>> GetModelList() const { return _modelList; }
     const std::vector<fs::path> GetModelPathList() const;
@@ -248,25 +130,8 @@ public:
     inline Vector3 GetDefaultCameraAngles() const { return _defaultCameraAngles; }
     inline void SetDefaultCameraAngles(Vector3 angles) { _defaultCameraAngles = angles; }
 
-    inline void Undo()
-    {
-        if (!_undoHistory.empty())
-        {
-            _undoHistory.back()->Undo(*this);
-            _redoHistory.push_back(_undoHistory.back());
-            _undoHistory.pop_back();
-        }
-    }
-
-    inline void Redo()
-    {
-        if (!_redoHistory.empty())
-        {
-            _redoHistory.back()->Do(*this);
-            _undoHistory.push_back(_redoHistory.back());
-            _redoHistory.pop_back();
-        }
-    }
+    void Undo();
+    void Redo();
 private:
     void _Execute(std::shared_ptr<Action> action);
 

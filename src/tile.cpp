@@ -31,20 +31,15 @@
 #include "map_man.hpp"
 #include "c_helpers.hpp"
 
-TileGrid::TileGrid()
-    : TileGrid(nullptr, 0, 0, 0)
+TileGrid::TileGrid(MapMan& mapMan, size_t width, size_t height, size_t length)
+    : TileGrid(mapMan, width, height, length, TILE_SPACING_DEFAULT, Tile())
 {
 }
 
-TileGrid::TileGrid(MapMan* mapMan, size_t width, size_t height, size_t length)
-    : TileGrid(mapMan, width, height, length, TILE_SPACING_DEFAULT, Tile { NO_MODEL, 0, NO_TEX, 0 })
+TileGrid::TileGrid(MapMan& mapMan, size_t width, size_t height, size_t length, float spacing, Tile fill)
+    : Grid<Tile>(width, height, length, spacing, fill),
+    _mapMan(mapMan)
 {
-}
-
-TileGrid::TileGrid(MapMan* mapMan, size_t width, size_t height, size_t length, float spacing, Tile fill)
-    : Grid<Tile>(width, height, length, spacing, fill)
-{
-    _mapMan = mapMan;
     _batchFromY = 0;
     _batchToY = height - 1;
     _batchPosition = Vector3Zero();
@@ -52,10 +47,6 @@ TileGrid::TileGrid(MapMan* mapMan, size_t width, size_t height, size_t length, f
     _regenBatches = true;
     _regenModel = true;
     _modelCulled = false;
-}
-
-TileGrid::~TileGrid()
-{
 }
 
 Tile TileGrid::GetTile(int i, int j, int k) const 
@@ -150,8 +141,6 @@ TileGrid TileGrid::Subsection(int i, int j, int k, int w, int h, int l) const
 
 void TileGrid::_RegenBatches(Vector3 position, int fromY, int toY)
 {
-    if (!_mapMan) return;
-
     _drawBatches.clear();
     _batchFromY = fromY;
     _batchToY = toY;
@@ -170,10 +159,10 @@ void TileGrid::_RegenBatches(Vector3 position, int fromY, int toY)
                 // Calculate world space matrix for the tile
                 Vector3 gridPos = UnflattenIndex(t);
                 Vector3 worldPos = Vector3Add(position, GridToWorldPos(gridPos, true));
-                Matrix rotMatrix = TileRotationMatrix(tile);
+                Matrix rotMatrix = TileRotationMatrix(tile.yaw, tile.pitch);
                 Matrix matrix = MatrixMultiply(rotMatrix, MatrixTranslate(worldPos.x, worldPos.y, worldPos.z));
 
-                const Model &shape = _mapMan->ModelFromID(tile.shape);
+                const Model &shape = _mapMan.get().ModelFromID(tile.shape);
                 for (int m = 0; m < shape.meshCount; ++m) 
                 {
                     // Add the tile's transform to the instance arrays for each mesh
@@ -411,9 +400,9 @@ Model* TileGrid::_GenerateModel(bool culling)
                 for (int tri = 0; tri < shape.triangleCount; ++tri)
                 {
                     // Vertex indices
-                    unsigned short v0Index = (unsigned short)(vBase + shape.indices[tri * 3 + 0]);
-                    unsigned short v1Index = (unsigned short)(vBase + shape.indices[tri * 3 + 1]);
-                    unsigned short v2Index = (unsigned short)(vBase + shape.indices[tri * 3 + 2]);
+                    uint16_t v0Index = (uint16_t)(vBase + shape.indices[tri * 3 + 0]);
+                    uint16_t v1Index = (uint16_t)(vBase + shape.indices[tri * 3 + 1]);
+                    uint16_t v2Index = (uint16_t)(vBase + shape.indices[tri * 3 + 2]);
 
                     // Do face culling
                     if (culling)
@@ -424,10 +413,7 @@ Model* TileGrid::_GenerateModel(bool culling)
                         Vector3 v2 = Vector3 { mesh.positions[v2Index * 3 + 0], mesh.positions[v2Index * 3 + 1], mesh.positions[v2Index * 3 + 2] };
 
                         // Figure out if this triangle is near the border of the grid cel so it can be culled
-                        Vector3 planeNormal = Vector3CrossProduct(
-                            Vector3Subtract(v1, v0),
-                            Vector3Subtract(v2, v0)
-                        );
+                        Vector3 planeNormal = Vector3CrossProduct(v1 - v0, v2 - v0);
                         planeNormal = Vector3Normalize(planeNormal);
 
                         float planeDistance = -Vector3DotProduct(planeNormal, v0);
@@ -438,12 +424,12 @@ Model* TileGrid::_GenerateModel(bool culling)
                         int neighborX = (int)tileGridPosition.x;
                         int neighborY = (int)tileGridPosition.y; 
                         int neighborZ = (int)tileGridPosition.z;
-                        if      (Vector3Equals(planeNormal, Vector3 { +1.0f,  0.0f,  0.0f })) neighborX += 1;
-                        else if (Vector3Equals(planeNormal, Vector3 { -1.0f,  0.0f,  0.0f })) neighborX -= 1;
-                        else if (Vector3Equals(planeNormal, Vector3 {  0.0f,  0.0f, -1.0f })) neighborZ -= 1;
-                        else if (Vector3Equals(planeNormal, Vector3 {  0.0f,  0.0f, +1.0f })) neighborZ += 1;
-                        else if (Vector3Equals(planeNormal, Vector3 {  0.0f, +1.0f,  0.0f })) neighborY += 1;
-                        else if (Vector3Equals(planeNormal, Vector3 {  0.0f, -1.0f,  0.0f })) neighborY -= 1;
+                        if      (planeNormal == Vector3 { +1.0f,  0.0f,  0.0f }) neighborX += 1;
+                        else if (planeNormal == Vector3 { -1.0f,  0.0f,  0.0f }) neighborX -= 1;
+                        else if (planeNormal == Vector3 {  0.0f,  0.0f, -1.0f }) neighborZ -= 1;
+                        else if (planeNormal == Vector3 {  0.0f,  0.0f, +1.0f }) neighborZ += 1;
+                        else if (planeNormal == Vector3 {  0.0f, +1.0f,  0.0f }) neighborY += 1;
+                        else if (planeNormal == Vector3 {  0.0f, -1.0f,  0.0f }) neighborY -= 1;
                         else goto nocull;
 
                         // Look at the neighboring tile's faces to determine whether to cull this triangle or not.
@@ -451,10 +437,12 @@ Model* TileGrid::_GenerateModel(bool culling)
                         {
                             Tile neighborTile = GetTile(neighborX, neighborY, neighborZ);
                             if (!neighborTile) 
+                            {
                                 goto nocull;
+                            }
                             
                             Vector3 nWorldPos = GridToWorldPos(Vector3 { (float)neighborX, (float)neighborY, (float)neighborZ }, true);
-                            Matrix nRotMatrix = TileRotationMatrix(neighborTile);
+                            Matrix nRotMatrix = TileRotationMatrix(neighborTile.yaw, neighborTile.pitch);
                             Matrix nMatrix = MatrixMultiply(nRotMatrix, MatrixTranslate(nWorldPos.x, nWorldPos.y, nWorldPos.z));
 
                             Model neighborModel = _mapMan->ModelFromID(neighborTile.shape);

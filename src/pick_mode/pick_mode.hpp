@@ -26,14 +26,11 @@
 
 #include <vector>
 #include <string>
-#include <assert.h>
-#include <mutex>
-#include <future>
 #include <map>
 #include <set>
 
-#include "app.hpp"
-#include "dialogs/dialogs.hpp"
+#include "../app.hpp"
+#include "../dialogs/dialogs.hpp"
 
 #define SEARCH_BUFFER_SIZE 256
 
@@ -51,50 +48,74 @@ public:
         Frame(const fs::path filePath, const fs::path rootDir);
     };
 
-    enum class Mode { TEXTURES, SHAPES };
-
-    PickMode(Mode mode, App::Settings &settings);
+    PickMode(App::Settings &settings, int maxSelectionCount, std::string fileExtension);
+    virtual void OnEnter() override;
     virtual void Update() override;
     virtual void Draw() override;
+protected:
+    virtual Texture GetFrameTexture(const fs::path& filePath) = 0;
+    virtual void SelectFrame(const Frame frame) = 0;
+
+    // Retrieves files, recursively, and generates frames for each.
+    
+    App::Settings &_settings;
+    std::set<fs::path> _foundFiles;
+    std::vector<Frame> _frames;
+    fs::path _rootDir;
+    std::string _fileExtension;
+    int _maxSelectionCount;
+    
+private:
+    void _GetFrames();
+
+    std::unique_ptr<Dialog> _activeDialog;
+    char _searchFilterBuffer[SEARCH_BUFFER_SIZE];
+    char _searchFilterPrevious[SEARCH_BUFFER_SIZE];
+};
+
+class TexturePickMode : public PickMode
+{
+public:
+    using TexSelection = std::array<std::shared_ptr<Assets::TexHandle>, TEXTURES_PER_TILE>;
+
+    TexturePickMode(App::Settings &settings);
     virtual void OnEnter() override;
     virtual void OnExit() override;
-    
-    inline Mode GetMode() const { return _mode; }
 
-    std::shared_ptr<Assets::TexHandle> GetPickedTexture() const;
-    void SetPickedTexture(std::shared_ptr<Assets::TexHandle> newTexture);
+    TexSelection GetPickedTextures() const;
+    void SetPickedTextures(TexSelection newTextures);
+protected:
+    virtual Texture GetFrameTexture(const fs::path& filePath) override;
+    virtual void SelectFrame(const Frame frame) override;
+
+    std::map<fs::path, Texture2D> _loadedTextures;
+    TexSelection _selectedTextures;
+};
+
+class ShapePickMode : public PickMode
+{
+public:
+    ShapePickMode(App::Settings &settings);
+    virtual void OnEnter() override;
+    virtual void Update() override;
+    virtual void OnExit() override;
 
     std::shared_ptr<Assets::ModelHandle> GetPickedShape() const;
     void SetPickedShape(std::shared_ptr<Assets::ModelHandle> newModel);
-
 protected:
-    //Retrieves files, recursively, and generates frames for each.
-    void _GetFrames();
-
-    //Load or retrieve cached texture
-    Texture2D       _GetTexture(const fs::path path);
-    //Load or retrieve cached model
-    Model           _GetModel(const fs::path path);
-    //Load or retrieve cached render texture
+    virtual Texture GetFrameTexture(const fs::path& filePath) override;
+    virtual void SelectFrame(const Frame frame) override;
+    
+    // Load or retrieve cached model
+    Model _GetModel(const fs::path path);
+    // Load or retrieve cached render texture
     RenderTexture2D _GetShapeIcon(const fs::path path);
 
-    std::map<fs::path, Texture2D> _loadedTextures;
+    Camera _iconCamera; // Camera for rendering 3D shape preview icons
+
+    std::shared_ptr<Assets::ModelHandle> _selectedShape;
     std::map<fs::path, Model> _loadedModels;
     std::map<fs::path, RenderTexture2D> _loadedIcons;
-    std::set<fs::path> _foundFiles;
-    std::vector<Frame> _frames;
-    
-    Frame _selectedFrame;
-    Camera _iconCamera; //Camera for rendering 3D shape preview icons
-    
-    char _searchFilterBuffer[SEARCH_BUFFER_SIZE];
-    char _searchFilterPrevious[SEARCH_BUFFER_SIZE];
-
-    Mode _mode;
-    fs::path _rootDir;
-
-    App::Settings &_settings;
-    std::unique_ptr<Dialog> _activeDialog;
 };
 
 #endif

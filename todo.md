@@ -1,10 +1,12 @@
 # TODO
-- GLTF node names may break if textures use ../ in their path.
 - Allow secondary textures on tiles
+- Unsaved changes warning
 
 - Refactor
   - Make App not a singleton.
   - Seperate dialogs into different files.
+  - Put map_man files into folder
+  - Put ent_mode files into folder
 
 - Document
   - Hidden file regex

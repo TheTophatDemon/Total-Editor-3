@@ -20,7 +20,6 @@
 
 #include "map_man.hpp"
 
-#include "rlgl.h"
 #include "json.hpp"
 #include "cppcodec/base64_default_rfc4648.hpp"
 

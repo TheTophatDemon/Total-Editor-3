@@ -38,8 +38,8 @@
 
 #include "assets.hpp"
 #include "menu_bar.hpp"
-#include "place_mode.hpp"
-#include "pick_mode.hpp"
+#include "place_mode/place_mode.hpp"
+#include "pick_mode/pick_mode.hpp"
 #include "ent_mode.hpp"
 #include "map_man.hpp"
 
@@ -62,8 +62,8 @@ App::App()
     _mapMan        (std::make_unique<MapMan>()),
     _menuBar       (std::make_unique<MenuBar>(_settings)),
     _tilePlaceMode (std::make_unique<PlaceMode>(*_mapMan.get())),
-    _texPickMode   (std::make_unique<PickMode>(PickMode::Mode::TEXTURES, _settings)),
-    _shapePickMode (std::make_unique<PickMode>(PickMode::Mode::SHAPES, _settings)),
+    _texPickMode   (std::make_unique<TexturePickMode>(_settings)),
+    _shapePickMode (std::make_unique<ShapePickMode>(_settings)),
     _entMode       (std::make_unique<EntMode>()),
     _editorMode    (_tilePlaceMode.get()),
     _lastSavedPath (),
@@ -81,39 +81,58 @@ App::App()
     }
 }
 
-void App::ChangeEditorMode(const App::Mode newMode) {
+void App::ChangeEditorMode(const App::Mode newMode) 
+{
     _editorMode->OnExit();
 
-    if (_editorMode == _texPickMode.get() && _texPickMode->GetPickedTexture()) {
-        _tilePlaceMode->SetCursorTexture(_texPickMode->GetPickedTexture());
+    if (_editorMode == _texPickMode.get()) 
+    {
+        TexturePickMode::TexSelection selection = _texPickMode->GetPickedTextures();
+        for (const std::shared_ptr<Assets::TexHandle>& tex : selection) 
+        {
+            if (tex != nullptr) 
+            {
+                _tilePlaceMode->SetCursorTextures(_texPickMode->GetPickedTextures());
+                break;
+            }
+        }
     }
-    else if (_editorMode == _shapePickMode.get() && _shapePickMode->GetPickedShape()) {
+    else if (_editorMode == _shapePickMode.get() && _shapePickMode->GetPickedShape() != nullptr) 
+    {
         _tilePlaceMode->SetCursorShape(_shapePickMode->GetPickedShape());
     }
 
-    switch (newMode) {
-        case App::Mode::PICK_SHAPE: {
-            if (_editorMode == _tilePlaceMode.get()) {
+    switch (newMode) 
+    {
+        case App::Mode::PICK_SHAPE: 
+        {
+            if (_editorMode == _tilePlaceMode.get()) 
+            {
                 _shapePickMode->SetPickedShape(_tilePlaceMode->GetCursorShape());
             }
             _editorMode = _shapePickMode.get(); 
         }
         break;
-        case App::Mode::PICK_TEXTURE: {
-            if (_editorMode == _tilePlaceMode.get()) {
-                _texPickMode->SetPickedTexture(_tilePlaceMode->GetCursorTexture());
+        case App::Mode::PICK_TEXTURE: 
+        {
+            if (_editorMode == _tilePlaceMode.get()) 
+            {
+                _texPickMode->SetPickedTextures(_tilePlaceMode->GetCursorTextures());
             }
             _editorMode = _texPickMode.get(); 
         }
         break;
-        case App::Mode::PLACE_TILE: {
-            if (_editorMode == _entMode.get()) {
+        case App::Mode::PLACE_TILE: 
+        {
+            if (_editorMode == _entMode.get()) 
+            {
                 _tilePlaceMode->SetCursorEnt(_entMode->GetEnt());
             }
             _editorMode = _tilePlaceMode.get(); 
         }
         break;
-        case App::Mode::EDIT_ENT: {
+        case App::Mode::EDIT_ENT: 
+        {
             if (_editorMode == _tilePlaceMode.get()) _entMode->SetEnt(_tilePlaceMode->GetCursorEnt());
             _editorMode = _entMode.get();
         }
@@ -439,6 +458,7 @@ void App::to_json(nlohmann::json& json, const App::Settings& settings)
 
 void App::from_json(const nlohmann::json& json, App::Settings& settings)
 {
+    // We have to do this manually instead of using the macro because weirdness.
     App::Settings defaultSettings = App::Settings();
     settings.texturesDir            = json.value("texturesDir", defaultSettings.texturesDir);
     settings.shapesDir              = json.value("shapesDir", defaultSettings.shapesDir);

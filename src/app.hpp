@@ -33,7 +33,8 @@ namespace fs = std::filesystem;
 #include "tile.hpp"
 
 class PlaceMode;
-class PickMode;
+class TexturePickMode;
+class ShapePickMode;
 class EntMode;
 class MenuBar;
 class MapMan;
@@ -124,8 +125,8 @@ private:
     std::unique_ptr<MenuBar> _menuBar;
 
     std::unique_ptr<PlaceMode> _tilePlaceMode;
-    std::unique_ptr<PickMode> _texPickMode;
-    std::unique_ptr<PickMode> _shapePickMode;
+    std::unique_ptr<TexturePickMode> _texPickMode;
+    std::unique_ptr<ShapePickMode> _shapePickMode;
     std::unique_ptr<EntMode> _entMode;
 
     ModeImpl *_editorMode;

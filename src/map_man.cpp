@@ -92,18 +92,260 @@ void MapMan::EntAction::Undo(MapMan& map) const
 // MAP MAN
 // ======================================================================
 
-void MapMan::_Execute(std::shared_ptr<Action> action)
+MapMan::MapMan()
+    : _tileGrid(*this, 0, 0, 0)
+{}
+
+void MapMan::NewMap(int width, int height, int length) 
 {
-    _undoHistory.push_back(action);
-    if (_undoHistory.size() > App::Get()->GetUndoMax()) _undoHistory.pop_front();
+    _tileGrid = TileGrid(*this, width, height, length);
+    _entGrid = EntGrid(width, height, length);
+    _undoHistory.clear();
     _redoHistory.clear();
-    _undoHistory.back()->Do(*this);
+}
+
+void MapMan::DrawMap(Camera &camera, int fromY, int toY) 
+{
+    _tileGrid.Draw(Vector3Zero(), fromY, toY);
+    _entGrid.Draw(camera, fromY, toY);
+}
+
+void MapMan::Draw2DElements(Camera &camera, int fromY, int toY)
+{
+    _entGrid.DrawLabels(camera, fromY, toY);
+}
+
+//Regenerates the map, extending one of the grid's dimensions on the given axis. Returns false if the change would result in an invalid map size.
+void MapMan::ExpandMap(Direction axis, int amount)
+{
+    int newWidth  = _tileGrid.GetWidth();
+    int newHeight = _tileGrid.GetHeight();
+    int newLength = _tileGrid.GetLength();
+    int ofsx, ofsy, ofsz;
+    ofsx = ofsy = ofsz = 0;
+
+    switch (axis)
+    {
+    case Direction::Z_NEG: newLength += amount; ofsz += amount; break;
+    case Direction::Z_POS: newLength += amount; break;
+    case Direction::X_NEG: newWidth += amount; ofsx += amount; break;
+    case Direction::X_POS: newWidth += amount; break;
+    case Direction::Y_NEG: newHeight += amount; ofsy += amount; break;
+    case Direction::Y_POS: newHeight += amount; break;
+    }
+
+    _undoHistory.clear();
+    _redoHistory.clear();
+    TileGrid oldTiles = _tileGrid;
+    EntGrid oldEnts = _entGrid;
+    _tileGrid = TileGrid(*this, newWidth, newHeight, newLength);
+    _entGrid = EntGrid(newWidth, newHeight, newLength);       
+    _tileGrid.CopyTiles(ofsx, ofsy, ofsz, oldTiles, false);
+    _entGrid.CopyEnts(ofsx, ofsy, ofsz, oldEnts);
+}
+
+//Reduces the size of the grid until it fits perfectly around all the non-empty cels in the map.
+void MapMan::ShrinkMap()
+{
+    size_t minX, minY, minZ;
+    size_t maxX, maxY, maxZ;
+    minX = minY = minZ = std::numeric_limits<size_t>::max();
+    maxX = maxY = maxZ = 0;
+    for (size_t x = 0; x < _tileGrid.GetWidth(); ++x)
+    {
+        for (size_t y = 0; y < _tileGrid.GetHeight(); ++y)
+        {
+            for (size_t z = 0; z < _tileGrid.GetLength(); ++z)
+            {
+                if (_tileGrid.GetTile(x, y, z) || _entGrid.HasEnt(x, y, z))
+                {
+                    if (x < minX) minX = x;
+                    if (y < minY) minY = y;
+                    if (z < minZ) minZ = z;
+                    if (x > maxX) maxX = x;
+                    if (y > maxY) maxY = y;
+                    if (z > maxZ) maxZ = z;
+                }
+            }
+        }
+    }
+    if (minX > maxX || minY > maxY || minZ > maxZ)
+    {
+        //If there aren't any tiles, just make it 1x1x1.
+        _tileGrid = TileGrid(*this, 1, 1, 1);
+        _entGrid = EntGrid(1, 1, 1);
+    }
+    else
+    {
+        _tileGrid = _tileGrid.Subsection(minX, minY, minZ, maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1);
+        _entGrid = _entGrid.Subsection(minX, minY, minZ, maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1);
+    }
+}
+
+bool MapMan::SaveTE3Map(fs::path filePath)
+{
+    using namespace nlohmann;
+
+    try
+    {
+        json jData;
+
+        // Version information
+        jData["meta"] = {{"editor", "Total Editor"}, {"version", "3.2"}};
+
+        jData["tiles"] = json::object();
+        jData["tiles"]["width"] = _tileGrid.GetWidth();
+        jData["tiles"]["height"] = _tileGrid.GetHeight();
+        jData["tiles"]["length"] = _tileGrid.GetLength();
+
+        // Make new texture & model lists containing only used assets
+        // This prevents extraneous assets from accumulating in the file every time it's saved
+        auto [usedTexIDs, usedModelIDs] = _tileGrid.GetUsedIDs();
+        std::vector<std::string> usedTexPaths, usedModelPaths;
+        usedTexPaths.resize(usedTexIDs.size());
+        usedModelPaths.resize(usedModelIDs.size());
+        std::transform(usedTexIDs.begin(), usedTexIDs.end(), usedTexPaths.begin(), 
+            [&](TexID id){
+                return _textureList[id]->GetPath().generic_string();
+            });
+        std::transform(usedModelIDs.begin(), usedModelIDs.end(), usedModelPaths.begin(),
+            [&](ModelID id){
+                return _modelList[id]->GetPath().generic_string();
+            });
+
+        jData["tiles"]["textures"] = usedTexPaths;
+        jData["tiles"]["shapes"] = usedModelPaths;
+
+        // Make a copy of the map that reassigns all IDs to match the new lists
+        const int tileArea = _tileGrid.GetWidth() * _tileGrid.GetHeight() * _tileGrid.GetLength();
+        TileGrid optimizedGrid = _tileGrid.Subsection(0, 0, 0, _tileGrid.GetWidth(), _tileGrid.GetHeight(), _tileGrid.GetLength());
+        for (int i = 0; i < tileArea; ++i)
+        {
+            Tile tile = optimizedGrid.GetTile(i);
+            for (size_t t = 0; t < usedTexIDs.size(); ++t)
+            {
+                for (int i = 0; i < TEXTURES_PER_TILE; ++i)
+                {
+                    if (usedTexIDs[t] == tile.textures[i]) {
+                        tile.textures[i] = (TexID)t;
+                        break;
+                    }
+                }
+            }
+            for (size_t m = 0; m < usedModelIDs.size(); ++m)
+            {
+                if (usedModelIDs[m] == tile.shape)
+                {
+                    tile.shape = m;
+                    break;
+                }
+            }
+            optimizedGrid.SetTile(i, tile);
+        }
+
+        // Save the modified tile data
+        jData["tiles"]["data"] = optimizedGrid.GetOptimizedTileDataBase64();
+
+        jData["ents"] = _entGrid.GetEntList();
+
+        // Save camera orientation
+        jData["editorCamera"] = {
+            {"position", {_defaultCameraPosition.x, _defaultCameraPosition.y, _defaultCameraPosition.z}},
+            {"eulerAngles", {_defaultCameraAngles.x * RAD2DEG, _defaultCameraAngles.y * RAD2DEG, _defaultCameraAngles.z * RAD2DEG}},
+        };
+
+        std::ofstream file(filePath);
+        file << to_string(jData);
+
+        if (file.fail()) return false;
+    }
+    catch (const std::exception &e)
+    {
+        std::cout << e.what() << std::endl;
+        return false;
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool MapMan::LoadTE3Map(fs::path filePath)
+{
+    _undoHistory.clear();
+    _redoHistory.clear();
+    
+    using namespace nlohmann;
+
+    std::ifstream file(filePath);
+    json jData;
+    file >> jData;
+
+    try
+    {
+        json tData = jData.at("tiles");
+        
+        //Replace our textures with the listed ones
+        std::vector<std::string> texturePaths = tData.at("textures");
+        _textureList.clear();
+        _textureList.reserve(texturePaths.size());
+        for (const std::string& path : texturePaths)
+        {
+            _textureList.push_back(Assets::GetTexture(fs::path(path)));
+        }
+
+        //Same with models
+        std::vector<std::string> shapePaths = tData.at("shapes");
+        _modelList.clear();
+        _modelList.reserve(shapePaths.size());
+        for (const std::string& path : shapePaths)
+        {
+            _modelList.push_back(Assets::GetModel(fs::path(path)));
+        }
+
+        _tileGrid = TileGrid(*this, tData.at("width"), tData.at("height"), tData.at("length"), TILE_SPACING_DEFAULT, Tile());
+        _tileGrid.SetTileDataBase64(tData.at("data"));
+        
+        _entGrid = EntGrid(_tileGrid.GetWidth(), _tileGrid.GetHeight(), _tileGrid.GetLength());
+        for (const Ent& e : jData.at("ents").get<std::vector<Ent>>())
+        {
+            Vector3 gridPos = _entGrid.WorldToGridPos(e.lastRenderedPosition);
+            _entGrid.AddEnt((int) gridPos.x, (int) gridPos.y, (int) gridPos.z, e);
+        }
+
+        if (jData.contains("editorCamera"))
+        {
+            json::array_t posArr = jData["editorCamera"]["position"];
+            _defaultCameraPosition = Vector3 {
+                (float)posArr[0], (float)posArr[1], (float)posArr[2]
+            };
+            json::array_t rotArr = jData["editorCamera"]["eulerAngles"];
+            _defaultCameraAngles = Vector3 {
+                (float)rotArr[0] * DEG2RAD, (float)rotArr[1] * DEG2RAD, (float)rotArr[2] * DEG2RAD
+            };
+        }
+    }
+    catch (const std::exception &e)
+    {
+        std::cout << e.what() << std::endl;
+        return false;
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    if (file.fail()) return false;
+
+    return true;
 }
 
 void MapMan::ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile)
 {
     TileGrid prevState = _tileGrid.Subsection(i, j, k, w, h, l);
-    TileGrid newState = TileGrid(this, w, h, l, _tileGrid.GetSpacing(), newTile);
+    TileGrid newState(*this, w, h, l, _tileGrid.GetSpacing(), newTile);
 
     _Execute(std::static_pointer_cast<Action>(
         std::make_shared<TileAction>(i, j, k, prevState, newState)
@@ -142,157 +384,60 @@ void MapMan::ExecuteEntRemoval(int i, int j, int k)
     ));
 }
 
-bool MapMan::SaveTE3Map(fs::path filePath)
+TexID MapMan::GetOrAddTexID(const fs::path &texturePath) 
 {
-    using namespace nlohmann;
-
-    try
+    //Look for existing ID
+    for (size_t i = 0; i < _textureList.size(); ++i)
     {
-        json jData;
-        jData["tiles"] = json::object();
-        jData["tiles"]["width"] = _tileGrid.GetWidth();
-        jData["tiles"]["height"] = _tileGrid.GetHeight();
-        jData["tiles"]["length"] = _tileGrid.GetLength();
-
-        // Make new texture & model lists containing only used assets
-        // This prevents extraneous assets from accumulating in the file every time it's saved
-        auto [usedTexIDs, usedModelIDs] = _tileGrid.GetUsedIDs();
-        std::vector<std::string> usedTexPaths, usedModelPaths;
-        usedTexPaths.resize(usedTexIDs.size());
-        usedModelPaths.resize(usedModelIDs.size());
-        std::transform(usedTexIDs.begin(), usedTexIDs.end(), usedTexPaths.begin(), 
-            [&](TexID id){
-                return _textureList[id]->GetPath().generic_string();
-            });
-        std::transform(usedModelIDs.begin(), usedModelIDs.end(), usedModelPaths.begin(),
-            [&](ModelID id){
-                return _modelList[id]->GetPath().generic_string();
-            });
-
-        jData["tiles"]["textures"] = usedTexPaths;
-        jData["tiles"]["shapes"] = usedModelPaths;
-
-        // Make a copy of the map that reassigns all IDs to match the new lists
-        const int tileArea = _tileGrid.GetWidth() * _tileGrid.GetHeight() * _tileGrid.GetLength();
-        TileGrid optimizedGrid = _tileGrid.Subsection(0, 0, 0, _tileGrid.GetWidth(), _tileGrid.GetHeight(), _tileGrid.GetLength());
-        for (size_t i = 0; i < tileArea; ++i)
+        if (_textureList[i]->GetPath() == texturePath)
         {
-            Tile tile = optimizedGrid.GetTile(i);
-            for (int t = 0; t < usedTexIDs.size(); ++t)
-            {
-                if (usedTexIDs[t] == tile.texture)
-                {
-                    tile.texture = t;
-                    break;
-                }
-            }
-            for (int m = 0; m < usedModelIDs.size(); ++m)
-            {
-                if (usedModelIDs[m] == tile.shape)
-                {
-                    tile.shape = m;
-                    break;
-                }
-            }
-            optimizedGrid.SetTile(i, tile);
+            return (TexID)(i);
         }
-
-        // Save the modified tile data
-        jData["tiles"]["data"] = optimizedGrid.GetOptimizedTileDataBase64();
-
-        jData["ents"] = _entGrid.GetEntList();
-
-        // Save camera orientation
-        jData["editorCamera"] = json::object();
-        jData["editorCamera"]["position"] = json::array({_defaultCameraPosition.x, _defaultCameraPosition.y, _defaultCameraPosition.z});
-        jData["editorCamera"]["eulerAngles"] = json::array({_defaultCameraAngles.x * RAD2DEG, _defaultCameraAngles.y * RAD2DEG, _defaultCameraAngles.z * RAD2DEG});
-
-        std::ofstream file(filePath);
-        file << to_string(jData);
-
-        if (file.fail()) return false;
     }
-    catch (const std::exception &e)
-    {
-        std::cout << e.what() << std::endl;
-        return false;
-    }
-    catch (...)
-    {
-        return false;
-    }
-
-    return true;
+    //Create new ID and append texture to list
+    TexID newID = _textureList.size();
+    _textureList.push_back(Assets::GetTexture(texturePath));
+    return newID;
 }
 
-bool MapMan::LoadTE3Map(fs::path filePath)
+ModelID MapMan::GetOrAddModelID(const fs::path &modelPath)
 {
-    _undoHistory.clear();
-    _redoHistory.clear();
-    
-    using namespace nlohmann;
-
-    std::ifstream file(filePath);
-    json jData;
-    file >> jData;
-
-    try
+    //Look for existing ID
+    for (size_t i = 0; i < _modelList.size(); ++i)
     {
-        auto tData = jData.at("tiles");
-        
-        //Replace our textures with the listed ones
-        std::vector<std::string> texturePaths = tData.at("textures");
-        _textureList.clear();
-        _textureList.reserve(texturePaths.size());
-        for (const auto& path : texturePaths)
+        if (_modelList[i]->GetPath() == modelPath)
         {
-            _textureList.push_back(Assets::GetTexture(fs::path(path)));
-        }
-
-        //Same with models
-        std::vector<std::string> shapePaths = tData.at("shapes");
-        _modelList.clear();
-        _modelList.reserve(shapePaths.size());
-        for (const auto& path : shapePaths)
-        {
-            _modelList.push_back(Assets::GetModel(fs::path(path)));
-        }
-
-        _tileGrid = TileGrid(this, tData.at("width"), tData.at("height"), tData.at("length"), TILE_SPACING_DEFAULT, Tile());
-        _tileGrid.SetTileDataBase64(tData.at("data"));
-        
-        _entGrid = EntGrid(_tileGrid.GetWidth(), _tileGrid.GetHeight(), _tileGrid.GetLength());
-        for (const Ent& e : jData.at("ents").get<std::vector<Ent>>())
-        {
-            Vector3 gridPos = _entGrid.WorldToGridPos(e.lastRenderedPosition);
-            _entGrid.AddEnt((int) gridPos.x, (int) gridPos.y, (int) gridPos.z, e);
-        }
-
-        if (jData.contains("editorCamera"))
-        {
-            json::array_t posArr = jData["editorCamera"]["position"];
-            _defaultCameraPosition = Vector3 {
-                (float)posArr[0], (float)posArr[1], (float)posArr[2]
-            };
-            json::array_t rotArr = jData["editorCamera"]["eulerAngles"];
-            _defaultCameraAngles = Vector3 {
-                (float)rotArr[0] * DEG2RAD, (float)rotArr[1] * DEG2RAD, (float)rotArr[2] * DEG2RAD
-            };
+            return (ModelID)(i);
         }
     }
-    catch (const std::exception &e)
-    {
-        std::cout << e.what() << std::endl;
-        return false;
-    }
-    catch (...)
-    {
-        return false;
-    }
+    //Create new ID and append texture to list
+    ModelID newID = _modelList.size();
+    _modelList.push_back(Assets::GetModel(modelPath));
+    return newID;
+}
 
-    if (file.fail()) return false;
+fs::path MapMan::PathFromTexID(const TexID id) const
+{
+    if (id == NO_TEX || (size_t)id >= _textureList.size()) return fs::path();
+    return _textureList[id]->GetPath();
+}
 
-    return true;
+fs::path MapMan::PathFromModelID(const ModelID id) const
+{
+    if (id == NO_MODEL || (size_t)id >= _modelList.size()) return fs::path();
+    return _modelList[id]->GetPath();
+}
+
+Model MapMan::ModelFromID(const ModelID id) const
+{
+    if (id == NO_MODEL || (size_t)id >= _modelList.size()) return Model{};
+    return _modelList[id]->GetModel();
+}
+
+Texture MapMan::TexFromID(const TexID id) const
+{
+    if (id == NO_TEX || (size_t)id >= _textureList.size()) return Texture{};
+    return _textureList[id]->GetTexture();
 }
 
 const std::vector<fs::path> MapMan::GetModelPathList() const 
@@ -315,8 +460,30 @@ const std::vector<fs::path> MapMan::GetTexturePathList() const
     return paths;
 }
 
-void MapMan::DrawMap(Camera &camera, int fromY, int toY) 
+void MapMan::Undo()
 {
-    _tileGrid.Draw(Vector3Zero(), fromY, toY);
-    _entGrid.Draw(camera, fromY, toY);
+    if (!_undoHistory.empty())
+    {
+        _undoHistory.back()->Undo(*this);
+        _redoHistory.push_back(_undoHistory.back());
+        _undoHistory.pop_back();
+    }
+}
+
+void MapMan::Redo()
+{
+    if (!_redoHistory.empty())
+    {
+        _redoHistory.back()->Do(*this);
+        _undoHistory.push_back(_redoHistory.back());
+        _redoHistory.pop_back();
+    }
+}
+
+void MapMan::_Execute(std::shared_ptr<Action> action)
+{
+    _undoHistory.push_back(action);
+    if (_undoHistory.size() > App::Get()->GetUndoMax()) _undoHistory.pop_front();
+    _redoHistory.clear();
+    _undoHistory.back()->Do(*this);
 }

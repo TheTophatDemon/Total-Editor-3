@@ -24,16 +24,12 @@
 #include "imgui/rlImGui.h"
 
 #include <cstring>
-#include <stack>
 #include <iostream>
-#include <thread>
-#include <chrono>
-#include <fstream>
 #include <stdio.h>
 #include <regex>
 
-#include "assets.hpp"
-#include "text_util.hpp"
+#include "../assets.hpp"
+#include "../text_util.hpp"
 
 #define FRAME_SIZE 196
 #define ICON_SIZE 64
@@ -48,89 +44,12 @@ PickMode::Frame::Frame(const fs::path filePath, const fs::path rootDir)
     label = fs::relative(filePath, rootDir).string();
 }
 
-PickMode::PickMode(Mode mode, App::Settings &settings)
-    : _mode(mode), _settings(settings)
+PickMode::PickMode(App::Settings &settings, int maxSelectionCount, std::string fileExtension)
+    : _settings(settings), 
+      _maxSelectionCount(maxSelectionCount), 
+      _fileExtension(fileExtension)
 {
     memset(_searchFilterBuffer, 0, sizeof(char) * SEARCH_BUFFER_SIZE);
-    
-    _iconCamera = Camera {
-        .position = Vector3 { 4.0f, 4.0f, 4.0f },
-        .target = Vector3Zero(),
-        .up = Vector3 { 0.0f, -1.0f, 0.0f },
-        .fovy = 45.0f,
-        .projection = CAMERA_PERSPECTIVE
-    };
-}
-
-std::shared_ptr<Assets::TexHandle> PickMode::GetPickedTexture() const
-{
-    assert(_mode == Mode::TEXTURES);
-    if (_selectedFrame.filePath.empty())
-    {
-        return Assets::GetTexture(fs::path(App::Get()->GetDefaultTexturePath()));
-    }
-    else
-    {
-        return Assets::GetTexture(_selectedFrame.filePath);
-    }
-}
-
-void PickMode::SetPickedTexture(std::shared_ptr<Assets::TexHandle> newTexture)
-{
-    assert(_mode == Mode::TEXTURES);
-    _selectedFrame = Frame(newTexture->GetPath(), _rootDir);
-}
-
-std::shared_ptr<Assets::ModelHandle> PickMode::GetPickedShape() const
-{
-    assert(_mode == Mode::SHAPES);
-    if (_selectedFrame.filePath.empty())
-    {
-        return Assets::GetModel(fs::path(App::Get()->GetDefaultShapePath()));
-    }
-    else
-    {
-        return Assets::GetModel(_selectedFrame.filePath);
-    }
-}
-
-void PickMode::SetPickedShape(std::shared_ptr<Assets::ModelHandle> newModel)
-{
-    assert(_mode == Mode::SHAPES);
-    _selectedFrame = Frame(newModel->GetPath(), _rootDir);
-}
-
-Texture2D PickMode::_GetTexture(const fs::path path)
-{
-    if (_loadedTextures.find(path) == _loadedTextures.end())
-    {
-        Texture2D tex = LoadTexture(path.string().c_str());
-        _loadedTextures[path] = tex;
-        return tex;
-    }
-    return _loadedTextures[path];
-}
-
-Model PickMode::_GetModel(const fs::path path)
-{
-    if (_loadedModels.find(path) == _loadedModels.end())
-    {
-        Model model = LoadModel(path.string().c_str());
-        _loadedModels[path] = model;
-        return model;
-    }
-    return _loadedModels[path];
-}
-
-RenderTexture2D PickMode::_GetShapeIcon(const fs::path path)
-{
-    if (_loadedIcons.find(path) == _loadedIcons.end())
-    {
-        RenderTexture2D icon = LoadRenderTexture(ICON_SIZE, ICON_SIZE);
-        _loadedIcons[path] = icon;
-        return icon;
-    }
-    return _loadedIcons[path];
 }
 
 void PickMode::_GetFrames()
@@ -149,9 +68,9 @@ void PickMode::_GetFrames()
         };
 
         // Filter out files that don't contain the search term
-        std::string lowerCaseLabel = TextToLower(frame.label.c_str());
+        std::string lowerCaseLabel = StringToLower(frame.label);
         if (strlen(_searchFilterBuffer) > 0 && 
-            lowerCaseLabel.find(TextToLower(_searchFilterBuffer)) == std::string::npos)
+            lowerCaseLabel.find(StringToLower(std::string(_searchFilterBuffer))) == std::string::npos)
         {
             continue;
         }
@@ -180,7 +99,6 @@ void PickMode::OnEnter()
 
     // Get the paths to all assets if this hasn't been done already.
     _foundFiles.clear();
-    _rootDir = (_mode == Mode::SHAPES) ? fs::path(App::Get()->GetShapesDir()) : fs::path(App::Get()->GetTexturesDir());
     if (!fs::is_directory(_rootDir)) 
     {
         std::cerr << "Asset directory in settings is not a directory!" << std::endl;
@@ -193,14 +111,7 @@ void PickMode::OnEnter()
 
         //Filter out files with the wrong extensions
         std::string extensionStr = StringToLower(entry.path().extension().string());
-        if (
-            (_mode != Mode::TEXTURES || extensionStr != ".png") &&
-            (_mode != Mode::SHAPES   || extensionStr != ".obj")
-        ) {
-            continue;
-        }
-
-        if (std::regex_match(entry.path().string(), hiddenFileRegex)) 
+        if (extensionStr != _fileExtension || std::regex_match(entry.path().string(), hiddenFileRegex)) 
         {
             continue;
         }
@@ -211,45 +122,8 @@ void PickMode::OnEnter()
     _GetFrames();
 }
 
-void PickMode::OnExit()
-{
-    for (const auto& pair : _loadedModels)
-    {
-        UnloadModel(pair.second);
-    }
-    _loadedModels.clear();
-    
-    for (const auto& pair : _loadedTextures)
-    {
-        UnloadTexture(pair.second);
-    }
-    _loadedTextures.clear();
-
-    for (const auto& pair : _loadedIcons)
-    {
-        UnloadRenderTexture(pair.second);
-    }
-    _loadedIcons.clear();
-}
-
 void PickMode::Update()
 {
-    if (_mode == Mode::SHAPES)
-    {
-        for (Frame& frame : _frames) 
-        {
-            // Update/redraw the shape preview icons so that they spin.
-            // This has to be done before the main application renders or it won't work.
-            BeginTextureMode(_GetShapeIcon(frame.filePath));
-            ClearBackground(BLACK);
-            BeginMode3D(_iconCamera);
-
-            DrawModelWiresEx(_GetModel(frame.filePath), Vector3Zero(), Vector3{0.0f, 1.0f, 0.0f}, float(GetTime() * 180.0f), Vector3One(), GREEN);
-
-            EndMode3D();
-            EndTextureMode();
-        }
-    }
     if (_activeDialog.get())
     {
         _activeDialog->Update();
@@ -311,19 +185,13 @@ void PickMode::Draw()
                         ImVec2(left, top), ImVec2(right, bottom)
                     );
 
-                    if (clicked)
-                    {
-                        _selectedFrame = _frames[frameIndex];
-                    }
+                    if (clicked) SelectFrame(_frames[frameIndex]);
+                    
                     ImGui::PopStyleColor(1);
 
                     if (ImGui::IsItemVisible() && !IsTextureValid(_frames[frameIndex].texture)) 
                     {
-                        switch (_mode)
-                        {
-                        case Mode::TEXTURES: _frames[frameIndex].texture = _GetTexture(filePath); break;
-                        case Mode::SHAPES: _frames[frameIndex].texture = _GetShapeIcon(filePath).texture; break;
-                        }
+                        _frames[frameIndex].texture = GetFrameTexture(filePath);
                     }
 
                     ImGui::TextColored(color, _frames[frameIndex].label.c_str());

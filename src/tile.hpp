@@ -31,6 +31,8 @@
 #include <map>
 #include <set>
 #include <memory>
+#include <functional>
+#include <array>
 
 #include "grid.hpp"
 #include "math_stuff.hpp"
@@ -42,34 +44,42 @@ class MapMan;
 
 enum class Direction { Z_POS, Z_NEG, X_POS, X_NEG, Y_POS, Y_NEG };
 
-typedef int TexID;
-typedef int ModelID;
+typedef uint16_t TexID;
+typedef uint16_t ModelID;
 
-#define NO_TEX -1
-#define NO_MODEL -1
+#define NO_TEX (uint16_t)(0xFFFF)
+#define NO_MODEL (uint16_t)(0xFFFF)
+#define TEXTURES_PER_TILE 2
 
 struct Tile 
 {
     ModelID shape;
-    int angle; //Yaw in whole number of degrees
-    TexID texture;
-    int pitch; //Pitch in whole number of degrees
+    std::array<TexID, TEXTURES_PER_TILE> textures;
+    int16_t yaw, pitch; // Angles are in whole number of degrees.
 
-    // bool flipped; //True if flipped vertically
-    // char padding[3]; //This is here to ensure that the byte layout is consistent across compilers.
-
-    inline Tile() : shape(NO_MODEL), angle(0), texture(NO_TEX), pitch(0) {}
-    inline Tile(ModelID s, int a, TexID t, int p) : shape(s), angle(a), texture(t), pitch(p) {}
+    inline Tile() : shape(NO_MODEL), yaw(0), pitch(0) {}
+    
+    inline Tile(ModelID shape, TexID tex1, TexID tex2, uint16_t yaw, uint16_t pitch)
+        : shape(shape), yaw(yaw), pitch(pitch) 
+    {
+        textures[0] = tex1;
+        textures[1] = tex2;
+    }
 
     inline operator bool() const
     {
-        return shape > NO_MODEL && texture > NO_TEX;
+        return shape != NO_MODEL;
     }
 };
 
 inline bool operator==(const Tile &lhs, const Tile &rhs)
 {
-    return (lhs.shape == rhs.shape) && (lhs.texture == rhs.texture) && (lhs.angle == rhs.angle) && (lhs.pitch == rhs.pitch);
+    if (lhs.shape != rhs.shape) return false;
+    for (int i = 0; i < TEXTURES_PER_TILE; ++i) 
+    {
+        if (lhs.textures[i] != rhs.textures[i]) return false;
+    }
+    return (lhs.yaw == rhs.yaw) && (lhs.pitch == rhs.pitch);
 }
 
 inline bool operator!=(const Tile &lhs, const Tile &rhs)
@@ -77,22 +87,21 @@ inline bool operator!=(const Tile &lhs, const Tile &rhs)
     return !(lhs == rhs);
 }
 
-inline Matrix TileRotationMatrix(const Tile &tile)
+inline Matrix TileRotationMatrix(int16_t tileYaw, int16_t tilePitch)
 {
-    return MatrixMultiply( 
-        MatrixRotateX(ToRadians(float(-tile.pitch))), MatrixRotYDeg(float(-tile.angle)));
+    return MatrixRotateX(ToRadians(float(-tilePitch))) * MatrixRotYDeg(float(-tileYaw));
 }
 
 class TileGrid : public Grid<Tile>
 {
 public:
-    //Constructs a blank TileGrid with no size
-    TileGrid();
     //Constructs a TileGrid full of empty tiles.
-    TileGrid(MapMan* mapMan, size_t width, size_t height, size_t length);
+    TileGrid(MapMan& mapMan, size_t width, size_t height, size_t length);
     //Constructs a TileGrid filled with the given tile.
-    TileGrid(MapMan* mapMan, size_t width, size_t height, size_t length, float spacing, Tile fill);
-    ~TileGrid();
+    TileGrid(MapMan& mapMan, size_t width, size_t height, size_t length, float spacing, Tile fill);
+
+    TileGrid(const TileGrid& other) = default;
+    TileGrid& operator=(const TileGrid& other) = default;
 
     Tile GetTile(int i, int j, int k) const;
     Tile GetTile(int flatIndex) const;
@@ -130,7 +139,7 @@ public:
 
     const Model GetModel();
 protected:
-    MapMan* _mapMan;
+    std::reference_wrapper<MapMan> _mapMan;
 
     // Calculates lists of transformations for each tile, separated by texture and shape, to be drawn as instances.
     void _RegenBatches(Vector3 position, int fromY, int toY);
