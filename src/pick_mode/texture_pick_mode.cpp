@@ -65,11 +65,12 @@ Texture TexturePickMode::GetFrameTexture(const fs::path& filePath)
 void TexturePickMode::SelectFrame(const Frame frame)
 {
     std::shared_ptr<Assets::TexHandle> tex = Assets::GetTexture(frame.filePath);
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) 
+    
+    if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) 
     {
         _selectedTextures[0] = tex;
     }
-    else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+    else if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
     {
         _selectedTextures[1] = tex;
     }

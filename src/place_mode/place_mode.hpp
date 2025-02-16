@@ -31,7 +31,7 @@
 #include "../ent.hpp"
 #include "../app.hpp"
 #include "../menu_bar.hpp"
-#include "../map_man.hpp"
+#include "../map_man/map_man.hpp"
 
 class PlaceMode : public App::ModeImpl {
 public:

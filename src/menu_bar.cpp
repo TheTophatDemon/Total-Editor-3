@@ -25,7 +25,7 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-#include "map_man.hpp"
+#include "map_man/map_man.hpp"
 
 MenuBar::MenuBar(App::Settings& settings)
     : _settings(settings),

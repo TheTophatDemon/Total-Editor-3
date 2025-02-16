@@ -29,8 +29,8 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-#include "tile.hpp"
-#include "ent.hpp"
+#include "../tile.hpp"
+#include "../ent.hpp"
 
 //It's either a class that manages map data modification, saving/loading, and undo/redo operations, or a lame new Megaman boss.
 class MapMan

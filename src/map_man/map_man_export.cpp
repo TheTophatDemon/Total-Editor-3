@@ -28,10 +28,10 @@
 #include <limits>
 #include <vector>
 
-#include "app.hpp"
-#include "assets.hpp"
-#include "text_util.hpp"
-#include "c_helpers.hpp"
+#include "../app.hpp"
+#include "../assets.hpp"
+#include "../text_util.hpp"
+#include "../c_helpers.hpp"
 
 #define TARGET_ARRAY_BUFFER 34962
 #define TARGET_ELEMENT_BUFFER 34963

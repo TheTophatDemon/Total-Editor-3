@@ -89,7 +89,7 @@ inline bool operator!=(const Tile &lhs, const Tile &rhs)
 
 inline Matrix TileRotationMatrix(uint8_t tileYaw, uint8_t tilePitch)
 {
-    return MatrixRotateX(float(tilePitch % 4) * -PI / 2.0f) * MatrixRotYDeg(float(tileYaw % 4) * -PI / 2.0f);
+    return MatrixRotateX(float(tilePitch % 4) * -PI / 2.0f) * MatrixRotateY(float(tileYaw % 4) * -PI / 2.0f);
 }
 
 class TileGrid : public Grid<Tile>

@@ -24,9 +24,9 @@
 #include <iostream>
 #include <limits>
 
-#include "app.hpp"
-#include "assets.hpp"
-#include "text_util.hpp"
+#include "../app.hpp"
+#include "../assets.hpp"
+#include "../text_util.hpp"
 
 #define TE2_FORMAT_ERR "ERROR: This is not a properly formatted .ti file."
 
@@ -271,7 +271,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
 
         // Fill tile grid
         _tileGrid = TileGrid(*this, width, 3, length, TILE_SPACING_DEFAULT, Tile());
-        for (const auto[i, j, k, tile] : tilesToAdd)
+        for (const auto& [i, j, k, tile] : tilesToAdd)
         {
             // Add the tiles to the grid, offset from the top left corner
             _tileGrid.SetTile(i - minX, j, k - minZ, tile);
@@ -442,7 +442,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
         }
 
         // Insert tile entities
-        for (const auto[i, j, k, ent] : tileEntities)
+        for (const auto& [i, j, k, ent] : tileEntities)
         {
             _entGrid.AddEnt(i - minX, j, k - minZ, ent);
         }

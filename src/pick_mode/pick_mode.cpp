@@ -176,13 +176,16 @@ void PickMode::Draw()
                     Texture* frameTexture = &_frames[frameIndex].texture;
                     
                     float left = 0.0f, top = 0.0f, right = 1.0f, bottom = 1.0f;
-                    bool clicked = ImGui::ImageButton(
+                    ImGui::ImageButton(
                         filePath.string().c_str(), (ImTextureID)frameTexture,
                         ImVec2(ICON_SIZE, ICON_SIZE),
                         ImVec2(left, top), ImVec2(right, bottom)
                     );
+                    if (ImGui::IsItemHovered() && (ImGui::IsMouseReleased(ImGuiMouseButton_Left) || ImGui::IsMouseReleased(ImGuiMouseButton_Right)))
+                    {
+                        SelectFrame(_frames[frameIndex]);
+                    }
 
-                    if (clicked) SelectFrame(_frames[frameIndex]);
                     
                     ImGui::PopStyleColor(1);
 

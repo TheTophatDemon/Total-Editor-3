@@ -29,7 +29,7 @@
 #include "draw_extras.h"
 #include "text_util.hpp"
 #include "assets.hpp"
-#include "map_man.hpp"
+#include "map_man/map_man.hpp"
 
 #define DISPLAY_NAME_THRESHOLD 0.9995f
 

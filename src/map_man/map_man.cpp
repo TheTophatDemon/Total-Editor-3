@@ -28,9 +28,9 @@
 #include <iostream>
 #include <limits>
 
-#include "app.hpp"
-#include "assets.hpp"
-#include "text_util.hpp"
+#include "../app.hpp"
+#include "../assets.hpp"
+#include "../text_util.hpp"
 
 // ======================================================================
 // TILE ACTION

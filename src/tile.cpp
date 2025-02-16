@@ -28,7 +28,7 @@
 
 #include "assets.hpp"
 #include "app.hpp"
-#include "map_man.hpp"
+#include "map_man/map_man.hpp"
 #include "c_helpers.hpp"
 
 TileGrid::TileGrid(MapMan& mapMan, size_t width, size_t height, size_t length)
@@ -233,12 +233,12 @@ std::string TileGrid::GetTileDataBase64() const
     std::vector<uint8_t> bin;
     bin.reserve(_grid.size() * sizeof(Tile));
 
-    int runLength = 0;
+    ModelID runLength = 0;
     for (size_t i = 0; i < _grid.size(); ++i)
     {
         Tile savedTile = _grid[i];
 
-        if (!savedTile && i < _grid.size() - 1)
+        if (!savedTile && i < _grid.size() - 1 && runLength < INT16_MAX)
         {
             // Blank tiles (except for the last tile in the grid) are represented as runs.
             ++runLength;
@@ -252,10 +252,13 @@ std::string TileGrid::GetTileDataBase64() const
                 runLength = 0;
             }
             
-            AppendBytes(bin, savedTile.shape);
-            for (TexID id : savedTile.textures) AppendBytes(bin, id);
-            bin.push_back(savedTile.yaw);
-            bin.push_back(savedTile.pitch);
+            if (savedTile)
+            {
+                AppendBytes(bin, savedTile.shape);
+                for (TexID id : savedTile.textures) AppendBytes(bin, id);
+                bin.push_back(savedTile.yaw);
+                bin.push_back(savedTile.pitch);
+            }
         }
     }
 
@@ -315,11 +318,11 @@ void TileGrid::SetTileDataBase64(std::string data)
 
         if (modelID < 0)
         {
-            for (size_t t = 0; t < (size_t)-modelID; ++t)
+            for (size_t t = 0; t < (size_t)(-modelID); ++t)
             {
                 _grid[gridIndex + t] = Tile();
             }
-            gridIndex += -modelID;
+            gridIndex += 1 - modelID;
             continue;
         }
 
