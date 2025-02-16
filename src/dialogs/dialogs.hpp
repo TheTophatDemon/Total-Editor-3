@@ -57,8 +57,8 @@ public:
     ExpandMapDialog();
     virtual bool Draw() override;
 protected:
-    bool _chooserActive;
     bool _spinnerActive;
+    bool _chooserActive;
     int _amount;
     Direction _direction;
 };
@@ -78,9 +78,9 @@ public:
     virtual bool Draw() override;
 protected:
     //Called when a file has been successfully selected.
-    std::function<void(fs::path)> _callback;
     std::string _title;
     std::set<std::string> _extensions;
+    std::function<void(fs::path)> _callback;
     fs::path _currentDir, _overwriteDir;
 
     char _fileNameBuffer[TEXT_FIELD_MAX];

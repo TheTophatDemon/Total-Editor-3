@@ -244,7 +244,7 @@ bool MapMan::SaveTE3Map(fs::path filePath)
         }
 
         // Save the modified tile data
-        jData["tiles"]["data"] = optimizedGrid.GetOptimizedTileDataBase64();
+        jData["tiles"]["data"] = optimizedGrid.GetTileDataBase64();
 
         jData["ents"] = _entGrid.GetEntList();
 
@@ -285,10 +285,24 @@ bool MapMan::LoadTE3Map(fs::path filePath)
 
     try
     {
-        json tData = jData.at("tiles");
+        int versionMajor = 3;
+        int versionMinor = 1;
+        if (jData.contains("meta") && jData["meta"].contains("version"))
+        {
+            std::string versionStr = jData["meta"]["version"];
+            size_t periodLoc = versionStr.find('.');
+            if (periodLoc == std::string::npos)
+            {
+                throw std::runtime_error("TE3 file version is invalid");
+            }
+            versionMajor = std::stoi(versionStr.substr(0, periodLoc));
+            versionMinor = std::stoi(versionStr.substr(periodLoc + 1));
+        }
+
+        json tiles = jData["tiles"];
         
         //Replace our textures with the listed ones
-        std::vector<std::string> texturePaths = tData.at("textures");
+        std::vector<std::string> texturePaths = tiles["textures"];
         _textureList.clear();
         _textureList.reserve(texturePaths.size());
         for (const std::string& path : texturePaths)
@@ -297,7 +311,7 @@ bool MapMan::LoadTE3Map(fs::path filePath)
         }
 
         //Same with models
-        std::vector<std::string> shapePaths = tData.at("shapes");
+        std::vector<std::string> shapePaths = tiles["shapes"];
         _modelList.clear();
         _modelList.reserve(shapePaths.size());
         for (const std::string& path : shapePaths)
@@ -305,11 +319,27 @@ bool MapMan::LoadTE3Map(fs::path filePath)
             _modelList.push_back(Assets::GetModel(fs::path(path)));
         }
 
-        _tileGrid = TileGrid(*this, tData.at("width"), tData.at("height"), tData.at("length"), TILE_SPACING_DEFAULT, Tile());
-        _tileGrid.SetTileDataBase64(tData.at("data"));
+        _tileGrid = TileGrid(
+            *this, 
+            (size_t) tiles["width"], 
+            (size_t) tiles["height"], 
+            (size_t) tiles["length"], 
+            TILE_SPACING_DEFAULT, 
+            Tile()
+        );
+
+        json tileData = tiles["data"];
+        if (versionMajor >= 3 && versionMinor >= 2) 
+        {
+            _tileGrid.SetTileDataBase64(tileData);
+        }
+        else
+        {
+            _tileGrid.SetTileDataBase64OldFormat(tileData);
+        }
         
         _entGrid = EntGrid(_tileGrid.GetWidth(), _tileGrid.GetHeight(), _tileGrid.GetLength());
-        for (const Ent& e : jData.at("ents").get<std::vector<Ent>>())
+        for (const Ent& e : jData["ents"].get<std::vector<Ent>>())
         {
             Vector3 gridPos = _entGrid.WorldToGridPos(e.lastRenderedPosition);
             _entGrid.AddEnt((int) gridPos.x, (int) gridPos.y, (int) gridPos.z, e);

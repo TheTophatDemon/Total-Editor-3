@@ -35,43 +35,42 @@ PlaceMode::TileCursor::TileCursor()
     }
 }
 
-void PlaceMode::TileCursor::Update(MapMan& mapMan) 
+PlaceMode::TileCursor::~TileCursor()
+{
+    for (Material& mat : materials) 
+    {
+        //Free the cursor material
+        //Do not use UnloadMaterial, because it will free the texture that the material uses, which might be being used somewhere else.
+        RL_FREE(mat.maps);
+    }
+}
+
+void PlaceMode::TileCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l)
 {
     bool multiSelect = IsKeyDown(KEY_LEFT_SHIFT);
     if (!multiSelect)
     {
-        _tileCursor.endPosition = _tileCursor.position;
+        endPosition = position;
     }
 
-    // Perform Tile operations
-    Vector3 cursorStartGridPos = mapMan.Tiles().WorldToGridPos(position);
-    Vector3 cursorEndGridPos = mapMan.Tiles().WorldToGridPos(endPosition);
-    Vector3 gridPosMin = Vector3Min(cursorStartGridPos, cursorEndGridPos);
-    Vector3 gridPosMax = Vector3Max(cursorStartGridPos, cursorEndGridPos);
-    size_t i = (size_t)gridPosMin.x; 
-    size_t j = (size_t)gridPosMin.y;
-    size_t k = (size_t)gridPosMin.z;
-    size_t w = (size_t)gridPosMax.x - i + 1;
-    size_t h = (size_t)gridPosMax.y - j + 1;
-    size_t l = (size_t)gridPosMax.z - k + 1;
     Tile underTile = mapMan.Tiles().GetTile(i, j, k); // * hi. my name's sans undertile...you get it?
 
     // Rotate cursor
     if (IsKeyPressed(KEY_Q))
     {
-        yaw = OffsetDegrees(yaw, -90);
+        yaw = (yaw + 3) % 4;
     }
     else if (!IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E))
     {
-        yaw = OffsetDegrees(yaw, 90);
+        yaw = (yaw + 1) % 4;
     }
     if (IsKeyPressed(KEY_F))
     {
-        pitch = OffsetDegrees(pitch, 90);
+        pitch = (pitch + 1) % 4;
     }
     else if (IsKeyPressed(KEY_V))
     {
-        pitch = OffsetDegrees(pitch, -90);
+        pitch = (pitch + 3) % 4;
     }
     // Reset tile orientation
     if (IsKeyPressed(KEY_R))
@@ -129,7 +128,7 @@ void PlaceMode::TileCursor::Update(MapMan& mapMan)
     }
 }
 
-PlaceMode::TileCursor::Draw()
+void PlaceMode::TileCursor::Draw()
 {
     if (!IsKeyDown(KEY_LEFT_SHIFT))
     {
@@ -139,10 +138,10 @@ PlaceMode::TileCursor::Draw()
         }
         
         Matrix cursorTransform = TileRotationMatrix(yaw, pitch)
-            * MatrixTranslate(position.x, position.y, position.z));
+            * MatrixTranslate(position.x, position.y, position.z);
         
-        const Model &shape = _tileCursor.model->GetModel();
-        for (size_t m = 0; m < shape.meshCount; ++m) 
+        const Model &shape = model->GetModel();
+        for (size_t m = 0; m < (size_t)shape.meshCount; ++m) 
         {
             DrawMesh(shape.meshes[m], materials[m], cursorTransform);
         }

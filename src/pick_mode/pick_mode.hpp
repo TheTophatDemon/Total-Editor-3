@@ -33,6 +33,8 @@
 #include "../dialogs/dialogs.hpp"
 
 #define SEARCH_BUFFER_SIZE 256
+#define FRAME_SIZE 196
+#define ICON_SIZE 64
 
 class PickMode : public App::ModeImpl
 {
@@ -55,6 +57,7 @@ public:
 protected:
     virtual Texture GetFrameTexture(const fs::path& filePath) = 0;
     virtual void SelectFrame(const Frame frame) = 0;
+    virtual bool IsFrameSelected(const fs::path& filePath) = 0;
 
     // Retrieves files, recursively, and generates frames for each.
     
@@ -87,6 +90,7 @@ public:
 protected:
     virtual Texture GetFrameTexture(const fs::path& filePath) override;
     virtual void SelectFrame(const Frame frame) override;
+    virtual bool IsFrameSelected(const fs::path& filePath) override;
 
     std::map<fs::path, Texture2D> _loadedTextures;
     TexSelection _selectedTextures;
@@ -105,6 +109,7 @@ public:
 protected:
     virtual Texture GetFrameTexture(const fs::path& filePath) override;
     virtual void SelectFrame(const Frame frame) override;
+    virtual bool IsFrameSelected(const fs::path& filePath) override;
     
     // Load or retrieve cached model
     Model _GetModel(const fs::path path);

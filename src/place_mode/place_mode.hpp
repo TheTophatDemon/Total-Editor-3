@@ -36,7 +36,6 @@
 class PlaceMode : public App::ModeImpl {
 public:
     PlaceMode(MapMan &mapMan);
-    ~PlaceMode();
 
     virtual void Update() override;
     virtual void Draw() override;
@@ -61,7 +60,7 @@ protected:
         Vector3 position;
         Vector3 endPosition;
 
-        virtual void Update(MapMan& mapMan) = 0;
+        virtual void Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l) = 0;
         virtual void Draw() = 0;
     };
 
@@ -70,10 +69,11 @@ protected:
         std::shared_ptr<Assets::ModelHandle> model;
         std::array<std::shared_ptr<Assets::TexHandle>, TEXTURES_PER_TILE> textures;
         std::array<Material, TEXTURES_PER_TILE> materials;
-        uint16_t yaw, pitch;
+        uint8_t yaw, pitch;
 
         TileCursor();
-        void Update(MapMan& mapMan) override;
+        ~TileCursor();
+        void Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l) override;
         void Draw() override;
     };
 
@@ -82,7 +82,7 @@ protected:
         TileGrid brush;
 
         BrushCursor(MapMan& mapMan);
-        void Update(MapMan& mapMan) override;
+        void Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l) override;
         void Draw() override;
     };
 
@@ -91,7 +91,7 @@ protected:
         Ent ent;
 
         EntCursor();
-        void Update(MapMan& mapMan) override;
+        void Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l) override;
         void Draw() override;
     };
 

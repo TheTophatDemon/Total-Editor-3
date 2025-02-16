@@ -28,15 +28,9 @@ PlaceMode::EntCursor::EntCursor()
     ent.properties["name"] = "entity";
 }
 
-void PlaceMode::EntCursor::Update(MapMan& mapMan) 
+void PlaceMode::EntCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l)
 {
-    // Perform Tile operations
-    Vector3 gridPos = mapMan.Tiles().WorldToGridPos(position);
-    size_t i = (size_t)gridPos.x; 
-    size_t j = (size_t)gridPos.y;
-    size_t k = (size_t)gridPos.z;
-
-    _entCursor.endPosition = _entCursor.position;
+    endPosition = position;
 
     // Turn entity
     const int ANGLE_INC = IsKeyDown(KEY_LEFT_SHIFT) ? 15 : 45;

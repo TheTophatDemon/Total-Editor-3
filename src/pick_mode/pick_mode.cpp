@@ -31,9 +31,6 @@
 #include "../assets.hpp"
 #include "../text_util.hpp"
 
-#define FRAME_SIZE 196
-#define ICON_SIZE 64
-
 PickMode::Frame::Frame()
     : Frame(fs::path(), fs::path())
 {}
@@ -46,8 +43,8 @@ PickMode::Frame::Frame(const fs::path filePath, const fs::path rootDir)
 
 PickMode::PickMode(App::Settings &settings, int maxSelectionCount, std::string fileExtension)
     : _settings(settings), 
-      _maxSelectionCount(maxSelectionCount), 
-      _fileExtension(fileExtension)
+      _fileExtension(fileExtension),
+      _maxSelectionCount(maxSelectionCount) 
 {
     memset(_searchFilterBuffer, 0, sizeof(char) * SEARCH_BUFFER_SIZE);
 }
@@ -56,7 +53,7 @@ void PickMode::_GetFrames()
 {
     _frames.clear();
 
-    for (const fs::path path : _foundFiles)
+    for (const fs::path& path : _foundFiles)
     {
         Frame frame(path, _rootDir);
         frame.texture = Texture {
@@ -168,7 +165,7 @@ void PickMode::Draw()
                     fs::path filePath = _frames[frameIndex].filePath;
                     
                     ImColor color = ImColor(1.0f, 1.0f, 1.0f);
-                    if (_selectedFrame.filePath == _frames[frameIndex].filePath)
+                    if (IsFrameSelected(_frames[frameIndex].filePath))
                     {
                         // Set color when selected to yellow
                         color = ImColor(1.0f, 1.0f, 0.0f);
@@ -194,7 +191,7 @@ void PickMode::Draw()
                         _frames[frameIndex].texture = GetFrameTexture(filePath);
                     }
 
-                    ImGui::TextColored(color, _frames[frameIndex].label.c_str());
+                    ImGui::TextColored(color, "%s", _frames[frameIndex].label.c_str());
                 }
             }
             ImGui::EndTable();

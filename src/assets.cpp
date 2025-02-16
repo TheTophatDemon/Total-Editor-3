@@ -49,6 +49,8 @@ Assets::ModelHandle::ModelHandle(fs::path path)
 { 
     _path = path; 
 
+    //TODO: Extract this out or replace with regular .obj loader.
+
     // We are loading the .OBJ file manually because Raylib's loader doesn't take indices into account.
     typedef struct Vertex 
     {

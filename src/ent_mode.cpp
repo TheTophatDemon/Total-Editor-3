@@ -197,7 +197,7 @@ void EntMode::Draw()
                 ImGui::TableNextRow();
                 
                 ImGui::TableNextColumn();
-                ImGui::Text(key.c_str());
+                ImGui::Text("%s", key.c_str());
 
                 ImGui::TableNextColumn();
                 std::string valID = std::string("##Val") + key;

@@ -44,22 +44,22 @@ class MapMan;
 
 enum class Direction { Z_POS, Z_NEG, X_POS, X_NEG, Y_POS, Y_NEG };
 
-typedef uint16_t TexID;
-typedef uint16_t ModelID;
+typedef int16_t TexID;
+typedef int16_t ModelID;
 
-#define NO_TEX (uint16_t)(0xFFFF)
-#define NO_MODEL (uint16_t)(0xFFFF)
+#define NO_TEX (int16_t)(-1)
+#define NO_MODEL (int16_t)(-1)
 #define TEXTURES_PER_TILE 2
 
 struct Tile 
 {
     ModelID shape;
     std::array<TexID, TEXTURES_PER_TILE> textures;
-    int16_t yaw, pitch; // Angles are in whole number of degrees.
+    uint8_t yaw, pitch; // These are values in the range of 0-3 representing 90 degree rotations.
 
     inline Tile() : shape(NO_MODEL), yaw(0), pitch(0) {}
     
-    inline Tile(ModelID shape, TexID tex1, TexID tex2, uint16_t yaw, uint16_t pitch)
+    inline Tile(ModelID shape, TexID tex1, TexID tex2, uint8_t yaw, uint8_t pitch)
         : shape(shape), yaw(yaw), pitch(pitch) 
     {
         textures[0] = tex1;
@@ -87,17 +87,17 @@ inline bool operator!=(const Tile &lhs, const Tile &rhs)
     return !(lhs == rhs);
 }
 
-inline Matrix TileRotationMatrix(int16_t tileYaw, int16_t tilePitch)
+inline Matrix TileRotationMatrix(uint8_t tileYaw, uint8_t tilePitch)
 {
-    return MatrixRotateX(ToRadians(float(-tilePitch))) * MatrixRotYDeg(float(-tileYaw));
+    return MatrixRotateX(float(tilePitch % 4) * -PI / 2.0f) * MatrixRotYDeg(float(tileYaw % 4) * -PI / 2.0f);
 }
 
 class TileGrid : public Grid<Tile>
 {
 public:
-    //Constructs a TileGrid full of empty tiles.
+    // Constructs a TileGrid full of empty tiles.
     TileGrid(MapMan& mapMan, size_t width, size_t height, size_t length);
-    //Constructs a TileGrid filled with the given tile.
+    // Constructs a TileGrid filled with the given tile.
     TileGrid(MapMan& mapMan, size_t width, size_t height, size_t length, float spacing, Tile fill);
 
     TileGrid(const TileGrid& other) = default;
@@ -108,33 +108,35 @@ public:
     void SetTile(int i, int j, int k, const Tile& tile);
     void SetTile(int flatIndex, const Tile& tile);
 
-    //Sets a range of tiles in the grid inside of the rectangular prism with a corner at (i, j, k) and size (w, h, l).
+    // Sets a range of tiles in the grid inside of the rectangular prism with a corner at (i, j, k) and size (w, h, l).
     void SetTileRect(int i, int j, int k, int w, int h, int l, const Tile& tile);
 
-    //Takes the tiles of `src` and places them in this grid starting at the offset at (i, j, k)
-    //If the offset results in `src` exceeding the current grid's boundaries, it is cut off.
-    //If `ignoreEmpty` is true, then empty tiles do not overwrite existing tiles.
+    // Takes the tiles of `src` and places them in this grid starting at the offset at (i, j, k)
+    // If the offset results in `src` exceeding the current grid's boundaries, it is cut off.
+    // If `ignoreEmpty` is true, then empty tiles do not overwrite existing tiles.
     void CopyTiles(int i, int j, int k, const TileGrid &src, bool ignoreEmpty = false);
 
 
     void UnsetTile(int i, int j, int k);
 
-    //Returns a smaller TileGrid with a copy of the tile data in the rectangle defined by coordinates (i, j, k) and size (w, h, l).
+    // Returns a smaller TileGrid with a copy of the tile data in the rectangle defined by coordinates (i, j, k) and size (w, h, l).
     TileGrid Subsection(int i, int j, int k, int w, int h, int l) const;
 
-    //Draws the tile grid, hiding all layers that are outside of the given y coordinate range.
+    // Draws the tile grid, hiding all layers that are outside of the given y coordinate range.
     void Draw(Vector3 position, int fromY, int toY);
     void Draw(Vector3 position);
 
-    //Returns a base64 encoded string with the binary representations of all tiles.
+
+    // Returns a base64 encoded string with the binary representations of all tiles.
     std::string GetTileDataBase64() const;
 
-    std::string GetOptimizedTileDataBase64() const;
+    // Assigns tiles based on base 64 encoded data from Total Edtor 3.1 or earlier.
+    void SetTileDataBase64OldFormat(std::string data);
 
-    //Assigns tiles based on the binary data encoded in base 64. Assumes that the sizes of the data and the current grid are the same.
+    // Assigns tiles based on the binary data encoded in base 64. Assumes that the sizes of the data and the current grid are the same.
     void SetTileDataBase64(std::string data);
 
-    //Returns the list of texture and model IDs that are actually used in this tile grid
+    // Returns the list of texture and model IDs that are actually used in this tile grid
     std::pair<std::vector<TexID>, std::vector<ModelID>> GetUsedIDs() const;
 
     const Model GetModel();

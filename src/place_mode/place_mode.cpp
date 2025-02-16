@@ -53,16 +53,6 @@ PlaceMode::PlaceMode(MapMan &mapMan)
     ResetGrid();
 }
 
-PlaceMode::~PlaceMode() 
-{
-    for (Material& mat : _tileCursor.materials) 
-    {
-        //Free the cursor material
-        //Do not use UnloadMaterial, because it will free the texture that the material uses, which might be being used somewhere else.
-        RL_FREE(_cursorMaterial.maps);
-    }
-}
-
 void PlaceMode::SetCursorShape(std::shared_ptr<Assets::ModelHandle> shape) 
 { 
     _tileCursor.model = shape;
@@ -247,6 +237,15 @@ void PlaceMode::UpdateCursor()
     _previousMousePosition = currentMousePosition;
 
     Vector3 cursorStartGridPos = _mapMan.Tiles().WorldToGridPos(_cursor->position);
+    Vector3 cursorEndGridPos = _mapMan.Tiles().WorldToGridPos(_cursor->endPosition);
+    Vector3 gridPosMin = Vector3Min(cursorStartGridPos, cursorEndGridPos);
+    Vector3 gridPosMax = Vector3Max(cursorStartGridPos, cursorEndGridPos);
+    size_t i = (size_t)gridPosMin.x; 
+    size_t j = (size_t)gridPosMin.y;
+    size_t k = (size_t)gridPosMin.z;
+    size_t w = (size_t)gridPosMax.x - i + 1;
+    size_t h = (size_t)gridPosMax.y - j + 1;
+    size_t l = (size_t)gridPosMax.z - k + 1;
     
     if (_cursorPreviousGridPos != cursorStartGridPos) 
     {
@@ -265,7 +264,7 @@ void PlaceMode::UpdateCursor()
         _brushCursor.endPosition = _tileCursor.endPosition;
     }
 
-    _cursor->Update(_mapMan);
+    _cursor->Update(_mapMan, i, j, k, w, h, l);
 }
 
 void PlaceMode::Update() 
@@ -303,7 +302,7 @@ void PlaceMode::Update()
         // Layer hiding
         if (IsKeyPressed(KEY_H))
         {
-            if (_layerViewMin == 0 && _layerViewMax == _mapMan.Tiles().GetHeight() - 1)
+            if (_layerViewMin == 0 && (size_t)_layerViewMax == _mapMan.Tiles().GetHeight() - 1)
             {
                 _layerViewMax = _layerViewMin = (int) _planeGridPos.y;
             }
@@ -314,7 +313,7 @@ void PlaceMode::Update()
             }
         }
 
-        if (_layerViewMin > 0 || _layerViewMax < _mapMan.Tiles().GetHeight() - 1)
+        if (_layerViewMin > 0 || (size_t)_layerViewMax < _mapMan.Tiles().GetHeight() - 1)
         {
             App::Get()->DisplayStatusMessage("PRESS H TO UNHIDE LAYERS", 0.25f, 1);
         }

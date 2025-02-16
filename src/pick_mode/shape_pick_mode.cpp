@@ -93,6 +93,11 @@ void ShapePickMode::SelectFrame(const Frame frame)
     _selectedShape = Assets::GetModel(frame.filePath);
 }
 
+bool ShapePickMode::IsFrameSelected(const fs::path& filePath)
+{
+    return _selectedShape->GetPath() == filePath;
+}
+
 Model ShapePickMode::_GetModel(const fs::path path)
 {
     if (_loadedModels.find(path) == _loadedModels.end())

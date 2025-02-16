@@ -1,6 +1,7 @@
 # TODO
 - Allow secondary textures on tiles
 - Unsaved changes warning
+- Add easier to read font for text fields.
 
 - Refactor
   - Make App not a singleton.

@@ -141,11 +141,11 @@ bool ShrinkMapDialog::Draw()
 
 FileDialog::FileDialog(std::string title, std::initializer_list<std::string> extensions, std::function<void(std::filesystem::path)> callback, bool writeMode) 
     : _title(title),
-        _extensions(extensions),
-        _callback(callback),
-        _currentDir(fs::current_path()),
-        _overwritePromptOpen(false),
-        _writeMode(writeMode)
+      _extensions(extensions),
+      _callback(callback),
+      _currentDir(fs::current_path()),
+      _overwritePromptOpen(false),
+      _writeMode(writeMode)
 {
     memset(&_fileNameBuffer, 0, sizeof(char) * TEXT_FIELD_MAX);
 }
@@ -472,7 +472,7 @@ bool ShortcutsDialog::Draw()
     {
         for (int i = 0; i < SHORTCUT_COUNT; ++i)
         {
-            ImGui::TextColored(ImColor(1.0f, 1.0f, 0.0f), SHORTCUT_KEYS[i]);
+            ImGui::TextColored(ImColor(1.0f, 1.0f, 0.0f), "%s", SHORTCUT_KEYS[i]);
             ImGui::SameLine();
             ImGui::TextColored(ImColor(1.0f, 1.0f, 0.0f), "-");
             ImGui::SameLine();

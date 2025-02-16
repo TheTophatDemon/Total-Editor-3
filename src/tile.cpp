@@ -128,7 +128,7 @@ void TileGrid::UnsetTile(int i, int j, int k)
 TileGrid TileGrid::Subsection(int i, int j, int k, int w, int h, int l) const
 {
     assert(i >= 0 && j >= 0 && k >= 0);
-    assert(i + w <= int(_width) && j + h <=int(_height) && k + l <= int(_length));
+    assert(i + w <= int(_width) && j + h <= int(_height) && k + l <= int(_length));
 
     TileGrid newGrid(_mapMan, w, h, l);
 
@@ -158,15 +158,15 @@ void TileGrid::_RegenBatches(Vector3 position, int fromY, int toY)
             {
                 // Calculate world space matrix for the tile
                 Vector3 gridPos = UnflattenIndex(t);
-                Vector3 worldPos = Vector3Add(position, GridToWorldPos(gridPos, true));
+                Vector3 worldPos = position + GridToWorldPos(gridPos, true);
                 Matrix rotMatrix = TileRotationMatrix(tile.yaw, tile.pitch);
-                Matrix matrix = MatrixMultiply(rotMatrix, MatrixTranslate(worldPos.x, worldPos.y, worldPos.z));
+                Matrix matrix = rotMatrix * MatrixTranslate(worldPos.x, worldPos.y, worldPos.z);
 
                 const Model &shape = _mapMan.get().ModelFromID(tile.shape);
                 for (int m = 0; m < shape.meshCount; ++m) 
                 {
                     // Add the tile's transform to the instance arrays for each mesh
-                    auto pair = std::make_pair(tile.texture, &shape.meshes[m]);
+                    auto pair = std::make_pair(tile.textures[Min(m, TEXTURES_PER_TILE)], &shape.meshes[m]);
                     if (_drawBatches.find(pair) == _drawBatches.end()) 
                     {
                         // Put in a vector for this pair if there hasn't been one already
@@ -186,16 +186,13 @@ void TileGrid::Draw(Vector3 position)
 
 void TileGrid::Draw(Vector3 position, int fromY, int toY)
 {
-    // std::cout << "TILE DRAWING IDs" << std::endl;
-    if (!_mapMan) return;
-
     if (App::Get()->IsPreviewing())
     {
         DrawModel(GetModel(), position, 1.0f, WHITE);
     }
     else
     {
-        if (_regenBatches || fromY != _batchFromY || toY != _batchToY || !Vector3Equals(position, _batchPosition))
+        if (_regenBatches || fromY != _batchFromY || toY != _batchToY || position != _batchPosition)
         {
             _RegenBatches(position, fromY, toY);
         }
@@ -203,40 +200,35 @@ void TileGrid::Draw(Vector3 position, int fromY, int toY)
         Material tileMaterial = LoadMaterialDefault();
         tileMaterial.shader = Assets::GetMapShader(true);
 
-        //Call DrawMeshInstanced for each combination of material and mesh.
-        for (auto& [pair, matrices] : _drawBatches) {
-            //Reusing the same material for everything and just changing the albedo map between batches
-            Texture2D texture = _mapMan->TexFromID(pair.first);
-            // std::cout << texture.id << std::endl;
+        // Call DrawMeshInstanced for each combination of material and mesh.
+        for (const auto& [pair, matrices] : _drawBatches) 
+        {
+            // Reusing the same material for everything and just changing the albedo map between batches
+            Texture2D texture = _mapMan.get().TexFromID(pair.first);
             SetMaterialTexture(&tileMaterial, MATERIAL_MAP_ALBEDO, texture);
             DrawMeshInstanced(*pair.second, tileMaterial, matrices.data(), matrices.size());
         }
 
-        //Free material w/o unloading its textures
+        // Free material w/o unloading its textures
         RL_FREE(tileMaterial.maps);
     }
 }
 
-std::string TileGrid::GetTileDataBase64() const 
+template<typename T>
+static void AppendBytes(std::vector<uint8_t>& bytes, T value)
 {
-    std::vector<uint8_t> bin;
-    bin.reserve(_grid.size() * sizeof(Tile));
-    for (size_t i = 0; i < _grid.size(); ++i)
+    static const uint16_t testInt = 1;
+    static const bool bigEndian = !*(unsigned char *)&testInt;
+
+    const uint8_t* valuesBytes = reinterpret_cast<const uint8_t*>(&value);
+    
+    for (size_t b = 0; b < sizeof(T); ++b)
     {
-        Tile savedTile = _grid[i];
-
-        //Reinterpret each tile as a series of bytes and push them onto the vector.
-        const char *tileBin = reinterpret_cast<const char *>(&savedTile);
-        for (size_t b = 0; b < sizeof(Tile); ++b)
-        {
-            bin.push_back(tileBin[b]);
-        }
+        bytes.push_back(valuesBytes[bigEndian ? sizeof(T) - 1 - b : b]);
     }
-
-    return base64::encode(bin);
 }
 
-std::string TileGrid::GetOptimizedTileDataBase64() const
+std::string TileGrid::GetTileDataBase64() const
 {
     std::vector<uint8_t> bin;
     bin.reserve(_grid.size() * sizeof(Tile));
@@ -255,64 +247,108 @@ std::string TileGrid::GetOptimizedTileDataBase64() const
         { 
             if (runLength > 0)
             {
-                //Insert a special tile signifying the number of empty tiles preceding this one.
-                Tile runTile = { -runLength, runLength, -runLength, runLength };
-                const char *tileBin = reinterpret_cast<const char *>(&runTile);
-                for (size_t b = 0; b < sizeof(Tile); ++b)
-                {
-                    bin.push_back(tileBin[b]);
-                }
+                //Insert a special value signifying the number of empty tiles preceding this one.
+                AppendBytes(bin, -runLength);
                 runLength = 0;
             }
             
-            //Reinterpret the tile as a series of bytes and push them onto the vector.
-            const char *tileBin = reinterpret_cast<const char *>(&savedTile);
-            for (size_t b = 0; b < sizeof(Tile); ++b)
-            {
-                bin.push_back(tileBin[b]);
-            }
+            AppendBytes(bin, savedTile.shape);
+            for (TexID id : savedTile.textures) AppendBytes(bin, id);
+            bin.push_back(savedTile.yaw);
+            bin.push_back(savedTile.pitch);
         }
     }
 
     return base64::encode(bin);
 }
 
+void TileGrid::SetTileDataBase64OldFormat(std::string data)
+{
+    std::vector<uint8_t> bin = base64::decode(data);
+    
+    size_t gridIndex = 0, byteIndex = 0;
+
+    while (byteIndex < bin.size())
+    {
+        int32_t oldModelID = *reinterpret_cast<int32_t*>(&bin[byteIndex]);
+        ModelID modelID = (ModelID) oldModelID;
+        byteIndex += sizeof(int32_t);
+
+        if (modelID < 0)
+        {
+            for (size_t t = 0; t < (size_t)-modelID; ++t)
+            {
+                _grid[gridIndex + t] = Tile();
+            }
+            gridIndex += -modelID;
+            byteIndex += 3 * sizeof(int32_t);
+            continue;
+        }
+
+        int32_t angle = *reinterpret_cast<int32_t*>(&bin[byteIndex]);
+        uint8_t yaw = (uint8_t)((angle % 360) / 90);
+        byteIndex += sizeof(int32_t);
+
+        int32_t oldTexID = *reinterpret_cast<int32_t*>(&bin[byteIndex]); 
+        TexID texID = (TexID) oldTexID;
+        byteIndex += sizeof(int32_t);
+
+        int32_t oldPitch = *reinterpret_cast<int32_t*>(&bin[byteIndex]);
+        uint8_t pitch = (uint8_t)((oldPitch % 360) / 90);
+        byteIndex += sizeof(int32_t);
+
+        _grid[gridIndex] = Tile(modelID, texID, texID, yaw, pitch);
+        ++gridIndex;
+    }
+}
+
 void TileGrid::SetTileDataBase64(std::string data)
 {
     std::vector<uint8_t> bin = base64::decode(data);
-    size_t gridIndex = 0;
-    for (size_t b = 0; b < bin.size(); b += sizeof(Tile))
+    
+    size_t gridIndex = 0, byteIndex = 0;
+
+    while (byteIndex < bin.size())
     {
-        // Reinterpret groups of bytes as tiles and place them into the grid.
-        Tile loadedTile = *(reinterpret_cast<Tile *>(&bin[b]));
-        if (loadedTile.shape < 0)
+        ModelID modelID = *reinterpret_cast<ModelID*>(&bin[byteIndex]);
+        byteIndex += sizeof(ModelID);
+
+        if (modelID < 0)
         {
-            // This tile represents a run of blank tiles
-            int j = 0;
-            for (j = 0; j < -loadedTile.shape; ++j)
+            for (size_t t = 0; t < (size_t)-modelID; ++t)
             {
-                _grid[gridIndex + j] = Tile { NO_MODEL, 0, NO_TEX, 0 };
+                _grid[gridIndex + t] = Tile();
             }
-            gridIndex += j;
+            gridIndex += -modelID;
+            continue;
         }
-        else
-        {
-            _grid[gridIndex] = loadedTile;
-            ++gridIndex;
-        }
+
+        TexID tex1ID = *reinterpret_cast<TexID*>(&bin[byteIndex]);
+        byteIndex += sizeof(TexID);
+
+        TexID tex2ID = *reinterpret_cast<TexID*>(&bin[byteIndex]);
+        byteIndex += sizeof(TexID);
+
+        uint8_t yaw = *reinterpret_cast<uint8_t*>(&bin[byteIndex]);
+        byteIndex += sizeof(uint8_t);
+        
+        uint8_t pitch = *reinterpret_cast<uint8_t*>(&bin[byteIndex]);
+        byteIndex += sizeof(uint8_t);
+
+        _grid[gridIndex] = Tile(modelID, tex1ID, tex2ID, yaw, pitch);
+        ++gridIndex;
     }
-    std::cout << std::endl;
 }
 
 std::pair<std::vector<TexID>, std::vector<ModelID>> TileGrid::GetUsedIDs() const
 {
     std::set<TexID> usedTexIDs;
     std::set<ModelID> usedModelIDs;
-    for (const auto& tile : _grid)
+    for (const Tile& tile : _grid)
     {
         if (tile)
         {
-            usedTexIDs.insert(tile.texture);
+            for (const TexID tex : tile.textures) usedTexIDs.insert(tex);
             usedModelIDs.insert(tile.shape);
         }
     }
@@ -325,8 +361,6 @@ std::pair<std::vector<TexID>, std::vector<ModelID>> TileGrid::GetUsedIDs() const
 
 Model* TileGrid::_GenerateModel(bool culling)
 {
-    if (!_mapMan) return nullptr;
-
     _RegenBatches(Vector3Zero(), 0, _height - 1);
 
     // Collects vertex data for one of the model's meshes
@@ -340,7 +374,7 @@ Model* TileGrid::_GenerateModel(bool culling)
         int triCount; // Independent form indices count since some models may not have indices
     };
 
-    DynMesh meshMap[_mapMan->GetNumTextures()];
+    DynMesh meshMap[_mapMan.get().GetNumTextures()];
     for (auto& dynMesh : meshMap)
     {
         dynMesh.positions = std::vector<float>();
@@ -366,7 +400,7 @@ Model* TileGrid::_GenerateModel(bool culling)
                 {
                     //Transform shape vertices into tile's orientation and position
                     Vector3 vec = Vector3 { shape.vertices[v*3], shape.vertices[v*3 + 1], shape.vertices[v*3 + 2] };
-                    vec = Vector3Transform(vec, matrix);
+                    vec = vec * matrix;
                     mesh.positions.push_back(vec.x);
                     mesh.positions.push_back(vec.y);
                     mesh.positions.push_back(vec.z);
@@ -433,7 +467,8 @@ Model* TileGrid::_GenerateModel(bool culling)
                         else goto nocull;
 
                         // Look at the neighboring tile's faces to determine whether to cull this triangle or not.
-                        if (neighborX >= 0 && neighborY >= 0 && neighborZ >= 0 && neighborX < _width && neighborY < _height && neighborZ < _length)
+                        if (neighborX >= 0 && neighborY >= 0 && neighborZ >= 0 && 
+                            (size_t) neighborX < _width && (size_t) neighborY < _height && (size_t) neighborZ < _length)
                         {
                             Tile neighborTile = GetTile(neighborX, neighborY, neighborZ);
                             if (!neighborTile) 
@@ -445,7 +480,7 @@ Model* TileGrid::_GenerateModel(bool culling)
                             Matrix nRotMatrix = TileRotationMatrix(neighborTile.yaw, neighborTile.pitch);
                             Matrix nMatrix = MatrixMultiply(nRotMatrix, MatrixTranslate(nWorldPos.x, nWorldPos.y, nWorldPos.z));
 
-                            Model neighborModel = _mapMan->ModelFromID(neighborTile.shape);
+                            Model neighborModel = _mapMan.get().ModelFromID(neighborTile.shape);
                             for (int nm = 0; nm < neighborModel.meshCount; ++nm)
                             {
                                 Mesh neighborMesh = neighborModel.meshes[nm];
@@ -465,10 +500,7 @@ Model* TileGrid::_GenerateModel(bool culling)
                                     nV2 = Vector3Transform(nV2, nMatrix);
 
                                     // Get neighbor's plane
-                                    Vector3 nPlaneNormal = Vector3CrossProduct(
-                                        Vector3Subtract(nV1, nV0),
-                                        Vector3Subtract(nV2, nV0)
-                                    );
+                                    Vector3 nPlaneNormal = Vector3CrossProduct(nV1 - nV0, nV2 - nV0);
                                     nPlaneNormal = Vector3Normalize(nPlaneNormal);
 
                                     float nPlaneDistance = -Vector3DotProduct(nPlaneNormal, nV0);
@@ -478,9 +510,9 @@ Model* TileGrid::_GenerateModel(bool culling)
                                     {
                                         // Cull if all of the checked triangle's points correspond one of the neighbor's.
                                         if (
-                                            (Vector3Equals(v0, nV0) || Vector3Equals(v0, nV1) || Vector3Equals(v0, nV2)) && 
-                                            (Vector3Equals(v1, nV0) || Vector3Equals(v1, nV1) || Vector3Equals(v1, nV2)) && 
-                                            (Vector3Equals(v2, nV0) || Vector3Equals(v2, nV1) || Vector3Equals(v2, nV2)))
+                                            (v0 == nV0 || v0 == nV1 || v0 == nV2) && 
+                                            (v1 == nV0 || v1 == nV1 || v1 == nV2) && 
+                                            (v2 == nV0 || v2 == nV1 || v2 == nV2))
                                         {
                                             goto cull;
                                         }
@@ -509,12 +541,12 @@ Model* TileGrid::_GenerateModel(bool culling)
     // Count the number of meshes (that aren't empty.)
     int numMeshes = 0;
     // We don't want to include any empty meshes, because that will cause an error in certain .gltf parsers.
-    for (int i = 0; i < _mapMan->GetNumTextures(); ++i) 
+    for (int i = 0; i < _mapMan.get().GetNumTextures(); ++i) 
     {
         if (meshMap[i].triCount > 0) ++numMeshes;
     }
 
-    model->materialCount = _mapMan->GetNumTextures();
+    model->materialCount = _mapMan.get().GetNumTextures();
     model->materials = SAFE_MALLOC(Material, model->materialCount);
 
     model->meshCount = numMeshes;
@@ -531,7 +563,7 @@ Model* TileGrid::_GenerateModel(bool culling)
     {
         model->materials[m] = LoadMaterialDefault();
         model->materials[m].shader = Assets::GetMapShader(false);
-        model->materials[m].maps[MATERIAL_MAP_ALBEDO].texture = _mapMan->TexFromID(m);
+        model->materials[m].maps[MATERIAL_MAP_ALBEDO].texture = _mapMan.get().TexFromID(m);
     }
     
     // Copy mesh data into Raylib mesh
@@ -577,7 +609,6 @@ Model* TileGrid::_GenerateModel(bool culling)
 
 const Model TileGrid::GetModel()
 {
-    if (!_mapMan) return Model{};
     bool newCull = App::Get()->IsCullingEnabled();
     if (_regenModel || _model == nullptr || newCull != _modelCulled)
     {

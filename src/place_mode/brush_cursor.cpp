@@ -24,20 +24,8 @@ PlaceMode::BrushCursor::BrushCursor(MapMan& mapMan)
     : brush(mapMan, 1, 1, 1)
 {}
 
-void PlaceMode::BrushCursor::Update(MapMan& mapMan) 
+void PlaceMode::BrushCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l)
 {
-    // Perform Tile operations
-    Vector3 cursorStartGridPos = mapMan.Tiles().WorldToGridPos(position);
-    Vector3 cursorEndGridPos = mapMan.Tiles().WorldToGridPos(endPosition);
-    Vector3 gridPosMin = Vector3Min(cursorStartGridPos, cursorEndGridPos);
-    Vector3 gridPosMax = Vector3Max(cursorStartGridPos, cursorEndGridPos);
-    size_t i = (size_t)gridPosMin.x; 
-    size_t j = (size_t)gridPosMin.y;
-    size_t k = (size_t)gridPosMin.z;
-    size_t w = (size_t)gridPosMax.x - i + 1;
-    size_t h = (size_t)gridPosMax.y - j + 1;
-    size_t l = (size_t)gridPosMax.z - k + 1;
-
     // Put the end position at the other extent of the bounding box so that a border can be drawn later
     endPosition = Vector3 {
         position.x + ((brush.GetWidth() - 1) * brush.GetSpacing()),

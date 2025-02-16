@@ -53,13 +53,13 @@ void TexturePickMode::SetPickedTextures(TexturePickMode::TexSelection newTexture
 
 Texture TexturePickMode::GetFrameTexture(const fs::path& filePath)
 {
-    if (_loadedTextures.find(path) == _loadedTextures.end())
+    if (_loadedTextures.find(filePath) == _loadedTextures.end())
     {
-        Texture2D tex = LoadTexture(path.string().c_str());
-        _loadedTextures[path] = tex;
+        Texture2D tex = LoadTexture(filePath.string().c_str());
+        _loadedTextures[filePath] = tex;
         return tex;
     }
-    return _loadedTextures[path];
+    return _loadedTextures[filePath];
 }
 
 void TexturePickMode::SelectFrame(const Frame frame)
@@ -73,4 +73,13 @@ void TexturePickMode::SelectFrame(const Frame frame)
     {
         _selectedTextures[1] = tex;
     }
+}
+
+bool TexturePickMode::IsFrameSelected(const fs::path& filePath)
+{
+    for (const std::shared_ptr<Assets::TexHandle>& tex : _selectedTextures)
+    {
+        if (tex->GetPath() == filePath) return true;
+    }
+    return false;
 }
