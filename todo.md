@@ -1,6 +1,5 @@
 # TODO
 - Allow secondary textures on tiles
-  - Fix loading maps in the new format
   - Add GUI indicator of first and second texture selection
   - Make obj loader load material groups
   - Test exporting
@@ -15,6 +14,8 @@
 
 - Document
   - Hidden file regex
+  - New map format
+  - Two texture feature
 
 ## Future updates
 

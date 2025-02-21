@@ -247,8 +247,9 @@ std::string TileGrid::GetTileDataBase64() const
         { 
             if (runLength > 0)
             {
-                //Insert a special value signifying the number of empty tiles preceding this one.
-                AppendBytes(bin, -runLength);
+                // Insert a special value signifying the number of empty tiles preceding this one.
+                // Why the hell does C++ infer an int32 type here unless I specify the type manually???
+                AppendBytes<ModelID>(bin, -runLength);
                 runLength = 0;
             }
             
@@ -322,7 +323,7 @@ void TileGrid::SetTileDataBase64(std::string data)
             {
                 _grid[gridIndex + t] = Tile();
             }
-            gridIndex += 1 - modelID;
+            gridIndex += -modelID;
             continue;
         }
 
