@@ -1,6 +1,7 @@
 # TODO
 - Allow secondary textures on tiles
-  - Make obj loader load material groups
+  - Add secondary textures to all shapes
+  - Remove redundant hacky shapes
   - Add warning for converting old maps
 - Unsaved changes warning before switching maps
 - Add easier to read font for text fields.
@@ -14,6 +15,7 @@
   - Hidden file regex
   - New map format
   - Two texture feature
+    - Blender export settings
 
 ## Future updates
 
