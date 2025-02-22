@@ -84,3 +84,13 @@ bool TexturePickMode::IsFrameSelected(const fs::path& filePath)
     }
     return false;
 }
+
+std::string TexturePickMode::GetSideLabel(const Frame frame)
+{
+    bool primary = frame.filePath == _selectedTextures[0]->GetPath();
+    bool secondary = frame.filePath == _selectedTextures[1]->GetPath();
+    std::stringstream sideLabel;
+    if (primary) sideLabel << "(P)\n";
+    if (secondary) sideLabel << "(S)";
+    return sideLabel.str();
+}

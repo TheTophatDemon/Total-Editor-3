@@ -1,10 +1,8 @@
 # TODO
 - Allow secondary textures on tiles
-  - Add GUI indicator of first and second texture selection
   - Make obj loader load material groups
-  - Test exporting
   - Add warning for converting old maps
-- Unsaved changes warning
+- Unsaved changes warning before switching maps
 - Add easier to read font for text fields.
 
 - Refactor

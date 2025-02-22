@@ -181,11 +181,19 @@ void PickMode::Draw()
                         ImVec2(ICON_SIZE, ICON_SIZE),
                         ImVec2(left, top), ImVec2(right, bottom)
                     );
+
                     if (ImGui::IsItemHovered() && (ImGui::IsMouseReleased(ImGuiMouseButton_Left) || ImGui::IsMouseReleased(ImGuiMouseButton_Right)))
                     {
                         SelectFrame(_frames[frameIndex]);
                     }
 
+                    if (std::string sideLabel = GetSideLabel(_frames[frameIndex]); sideLabel.length() > 0) 
+                    {
+                        ImGui::SameLine();
+                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(color));
+                        ImGui::TextUnformatted(sideLabel.begin().base(), sideLabel.end().base());
+                        ImGui::PopStyleColor(1);
+                    }
                     
                     ImGui::PopStyleColor(1);
 
@@ -208,4 +216,9 @@ void PickMode::Draw()
 
         ImGui::End();
     }
+}
+
+std::string PickMode::GetSideLabel(const Frame frame) 
+{
+    return {};
 }

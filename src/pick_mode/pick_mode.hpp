@@ -58,6 +58,7 @@ protected:
     virtual Texture GetFrameTexture(const fs::path& filePath) = 0;
     virtual void SelectFrame(const Frame frame) = 0;
     virtual bool IsFrameSelected(const fs::path& filePath) = 0;
+    virtual std::string GetSideLabel(const Frame frame);
 
     // Retrieves files, recursively, and generates frames for each.
     
@@ -91,8 +92,10 @@ protected:
     virtual Texture GetFrameTexture(const fs::path& filePath) override;
     virtual void SelectFrame(const Frame frame) override;
     virtual bool IsFrameSelected(const fs::path& filePath) override;
+    virtual std::string GetSideLabel(const Frame frame) override;
 
     std::map<fs::path, Texture2D> _loadedTextures;
+    // The first one is the primary texture and the second one is the secondary texture.
     TexSelection _selectedTextures;
 };
 
