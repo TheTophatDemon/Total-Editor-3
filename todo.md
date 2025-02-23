@@ -1,7 +1,6 @@
 # TODO
 - Allow secondary textures on tiles
-  - Add secondary textures to all shapes
-  - Remove redundant hacky shapes
+  - Fix old maps using the hacky tiles
   - Add warning for converting old maps
 - Unsaved changes warning before switching maps
 - Add easier to read font for text fields.
