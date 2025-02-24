@@ -66,28 +66,29 @@ public:
     static std::shared_ptr<TexHandle>   GetTexture(fs::path path); //Returns a shared pointer to the cached texture at `path`, loading it if it hasn't been loaded.
     static std::shared_ptr<ModelHandle> GetModel(fs::path path);   //Returns a shared pointer to the cached model at `path`, loading it if it hasn't been loaded.
 
-    static const Font&   GetFont(); //Returns the default application font (dejavu.fnt)
-    static const Shader& GetMapShader(bool instanced); //Returns the shader used to render tiles
+    static const Font&   GetFont(); // Returns the default application font (dejavu.fnt)
+    static const Shader& GetMapShader(bool instanced); // Returns the shader used to render tiles
     static const Shader& GetSpriteShader(); // Returns the shader used to render billboards
-    static const Model&  GetEntSphere(); //Returns the sphere that represents entities visually
+    static const Model&  GetEntSphere(); // Returns the sphere that represents entities visually
     static const Mesh& GetSpriteQuad();
     static Texture GetMissingTexture();
+    static const Model& GetMissingModel(); // Returns the model used when a loading error occurs.
 protected:
-    //Asset caches that hold weak references to all the loaded textures and models
+    // Asset caches that hold weak references to all the loaded textures and models
     std::map<fs::path, std::weak_ptr<TexHandle>>   _textures;
     std::map<fs::path, std::weak_ptr<ModelHandle>> _models;
 
-    //Assets that are alive the whole application
-    Font _font; //Default application font (dejavu.fnt)
-    Texture2D _missingTexture; //Texture to display when the texture file to be loaded isn't found
-    Model _entSphere; //The sphere that represents entities visually
-    Shader _mapShader; //The non-instanced version that is used to render tiles outside of the map itself
-    Shader _mapShaderInstanced; //The instanced version is used to render the tiles
+    // Assets that are alive the whole application
+    Font _font; // Default application font (dejavu.fnt)
+    Texture2D _missingTexture; // Texture to display when the texture file to be loaded isn't found
+    Model _entSphere; // The sphere that represents entities visually
+    Model _missingModel; // Model to display when a model file to be loaded isn't found
+    Shader _mapShader; // The non-instanced version that is used to render tiles outside of the map itself
+    Shader _mapShaderInstanced; // The instanced version is used to render the tiles
     Shader _spriteShader;
     Mesh _spriteQuad;
 private:
     Assets();
-    ~Assets();
     static Assets *_Get();
 };
 

@@ -1,6 +1,5 @@
 # TODO
 - Allow secondary textures on tiles
-  - Fix old maps using the hacky tiles
   - Add warning for converting old maps
 - Unsaved changes warning before switching maps
 - Add easier to read font for text fields.
@@ -15,6 +14,8 @@
   - New map format
   - Two texture feature
     - Blender export settings
+
+- Add ability to use sprite window on entities only.
 
 ## Future updates
 

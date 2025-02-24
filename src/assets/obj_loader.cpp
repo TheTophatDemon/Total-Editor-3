@@ -13,7 +13,8 @@
 #include "../c_helpers.hpp"
 #include "../tile.hpp"
 
-Model LoadOBJModelButBetter(const std::filesystem::path& path)
+// Returns the model with an error message.
+static Model LoadOBJModelFromStream(std::istream& stream)
 {
     struct Vertex 
     {
@@ -43,13 +44,12 @@ Model LoadOBJModelButBetter(const std::filesystem::path& path)
     objNormals.reserve(128);
 
     // Parse the .obj file
-    std::ifstream objFile(path);
     std::string line;
     std::string objectName;
 
     size_t meshIndex = 0;
 
-    while (std::getline(objFile, line), !line.empty())
+    while (std::getline(stream, line), !line.empty())
     {
         // Get the items between spaces
         std::vector<std::string> tokens = SplitString(line, " ");
@@ -85,7 +85,7 @@ Model LoadOBJModelButBetter(const std::filesystem::path& path)
         {
             if (tokens.size() > 4)
             {
-                std::cerr << "Error: Shape loaded from " << path << " should be triangulated!" << std::endl;
+                throw "shape should be triangulated";
             }
             
             for (size_t i = 1; i < tokens.size(); ++i)
@@ -93,8 +93,7 @@ Model LoadOBJModelButBetter(const std::filesystem::path& path)
                 std::vector<std::string> indices = SplitString(tokens[i], "/");
                 if (indices.size() != 3 || indices[0].empty() || indices[1].empty() || indices[2].empty())
                 {
-                    std::cerr << "Error: Face in .OBJ file " << path << "does not have the right number of indices.";
-                    break;
+                    throw "face does not have the right number of indices";
                 }
                 
                 int posIdx = std::stoi(indices[0]) - 1,
@@ -102,8 +101,7 @@ Model LoadOBJModelButBetter(const std::filesystem::path& path)
                     normIdx = std::stoi(indices[2]) - 1;
                 if (posIdx < 0 || uvIdx < 0 || normIdx < 0)
                 {
-                    std::cerr << "Error: Invalid indices in .OBJ file " << path << "." << std::endl;
-                    break;
+                    throw "negative indices";
                 }
 
                 // Add indices to mesh
@@ -203,4 +201,40 @@ Model LoadOBJModelButBetter(const std::filesystem::path& path)
     }
 
     return model;
+}
+
+Model LoadOBJModelButBetter(const std::filesystem::path& path)
+{
+    std::ifstream objFile(path);
+
+    if (!objFile.is_open())
+    {
+        std::cerr << "Failed to load file " << path << std::endl;
+        return {};
+    }
+
+    try
+    {
+        return LoadOBJModelFromStream(objFile);
+    }
+    catch(const char* message)
+    {
+        std::cerr << "Error loading obj file from " << path << ": " << message << std::endl;
+        return {};
+    }
+}
+
+Model LoadOBJModelFromString(const std::string stringContents)
+{
+    std::stringstream stream(stringContents);
+
+    try 
+    {
+        return LoadOBJModelFromStream(stream);
+    }
+    catch (const char* message)
+    {
+        std::cerr << "Error loading OBJ model from string: " << message << std::endl;
+        return {};
+    }
 }

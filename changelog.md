@@ -5,3 +5,5 @@
 - Tile cursor will stay in place while using the scroll wheel if the mouse is not moved.
 - Textures and shapes copied from other tiles will be highlighted properly in the texture/shape picker modes.
 - Added setting for hiding certain file names from the texture / shape pickers.
+- Tiles can now have primary and secondary textures.
+- Missing shape model files are now replaced by question marks.

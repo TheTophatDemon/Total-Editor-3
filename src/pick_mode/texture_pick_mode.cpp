@@ -90,7 +90,7 @@ std::string TexturePickMode::GetSideLabel(const Frame frame)
     bool primary = frame.filePath == _selectedTextures[0]->GetPath();
     bool secondary = frame.filePath == _selectedTextures[1]->GetPath();
     std::stringstream sideLabel;
-    if (primary) sideLabel << "(P)\n";
-    if (secondary) sideLabel << "(S)";
+    if (primary) sideLabel << "(Primary)\n";
+    if (secondary) sideLabel << "(Secondary)";
     return sideLabel.str();
 }

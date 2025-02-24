@@ -26,6 +26,7 @@
 #include "assets/shaders/map_shader.hpp"
 #include "assets/shaders/sprite_shader.hpp"
 #include "assets/fonts/font_dejavu.h"
+#include "assets/models/missing_obj.h"
 #include "assets/obj_loader.hpp"
 #include "c_helpers.hpp"
 
@@ -47,6 +48,10 @@ Assets::ModelHandle::ModelHandle(fs::path path)
 { 
     _path = path; 
     _model = LoadOBJModelButBetter(path);
+    if (!IsModelValid(_model))
+    {
+        _model = Assets::GetMissingModel();
+    }
 }
 
 Assets::ModelHandle::~ModelHandle() 
@@ -85,6 +90,11 @@ Assets::Assets()
     }
     _missingTexture = LoadTextureFromImage(texImg);
     free(texImg.data);
+
+    // Load missing model
+    std::string objFile;
+    objFile.assign((const char *)missing_obj, (size_t)missing_obj_len);
+    _missingModel = LoadOBJModelFromString(objFile);
 
     // Initialize instanced shader for map geometry
     _mapShaderInstanced = LoadShaderFromMemory(MAP_SHADER_INSTANCED_V_SRC, MAP_SHADER_F_SRC);
@@ -165,6 +175,11 @@ const Mesh& Assets::GetSpriteQuad()
     return _Get()->_spriteQuad;
 }
 
+const Model& Assets::GetMissingModel()
+{
+    return _Get()->_missingModel;
+}
+
 Texture Assets::GetMissingTexture()
 {
     return _Get()->_missingTexture;
@@ -209,6 +224,11 @@ std::shared_ptr<Assets::ModelHandle> Assets::GetModel(fs::path path)
 
     //Load the model if it is no longer stored in the cache
     auto sharedPtr = std::make_shared<ModelHandle>(path);
+    if (!IsModelValid(sharedPtr->GetModel()))
+    {
+        // An error has occured.
+        return nullptr;
+    }
     //Cache the model
     a->_models[path] = std::weak_ptr<ModelHandle>(sharedPtr);
     return sharedPtr;

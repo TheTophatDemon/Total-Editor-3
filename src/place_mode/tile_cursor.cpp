@@ -117,10 +117,21 @@ void PlaceMode::TileCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k,
         yaw = underTile.yaw;
         pitch = underTile.pitch;
     } 
-    else if (IsKeyPressed(KEY_T) && !multiSelect && underTile) 
+    else if (!multiSelect && underTile) 
     {
         // Pick the (T)extures from the tile under the cursor.
-        for (int i = 0; i < TEXTURES_PER_TILE; ++i) 
+        int i = TEXTURES_PER_TILE;
+
+        if (IsKeyPressed(KEY_T))
+        {
+            i = 0;
+        }
+        else if (IsKeyPressed(KEY_Y))
+        {
+            // Holding shift assigns secondary texture only.
+            i = 1;
+        }
+        for (; i < TEXTURES_PER_TILE; ++i) 
         {
             fs::path path = mapMan.PathFromTexID(underTile.textures[i]);
             textures[i] = Assets::GetTexture(path);
