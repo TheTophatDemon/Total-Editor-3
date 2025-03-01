@@ -47,9 +47,13 @@ void MenuBar::DisplayStatusMessage(std::string message, float durationSeconds, i
 
 void MenuBar::OpenOpenMapDialog()
 {
-    auto callback = [](fs::path path) 
-    { 
-        App::Get()->TryOpenMap(path); 
+    auto callback = [this](fs::path path) 
+    {
+        _activeDialog.reset(new ConfirmationDialog(
+            "Discard changes?", 
+            "Shall you forsake that which you have created?", 
+            "Discard", "Cancel", 
+            [&](bool proceed){ if (proceed) App::Get()->TryOpenMap(path); }));
     };
     _activeDialog.reset(new FileDialog("Open Map (*.te3, *.ti)", { ".te3", ".ti" }, callback, false));
 }

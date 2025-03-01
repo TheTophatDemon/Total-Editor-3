@@ -151,4 +151,15 @@ protected:
     char _filePathBuffer[TEXT_FIELD_MAX];
 };
 
+class ConfirmationDialog : public Dialog
+{
+public:
+    ConfirmationDialog(const std::string& titleText, const std::string& bodyText, const std::string& confirmText, 
+        const std::string& cancelText, std::function<void(bool)> callback);
+    virtual bool Draw() override;
+protected:
+    std::string _titleText, _bodyText, _confirmText, _cancelText;
+    std::function<void(bool)> _callback;
+};
+
 #endif
