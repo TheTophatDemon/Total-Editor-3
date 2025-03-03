@@ -22,16 +22,18 @@
 
 #include "imgui/imgui.h"
 
+#include <iostream>
 #include <filesystem>
 namespace fs = std::filesystem;
 
 #include "map_man/map_man.hpp"
 
-MenuBar::MenuBar(App::Settings& settings)
-    : _settings(settings),
-    _activeDialog(nullptr),
-    _messageTimer(0.0f),
-    _messagePriority(0)
+MenuBar::MenuBar(App::Settings& settings, MapMan& mapMan): 
+    _settings(settings), 
+    _mapMan(mapMan),
+	_activeDialog(nullptr),
+	_messageTimer(0.0f),
+	_messagePriority(0)
 {
 }
 
@@ -47,15 +49,33 @@ void MenuBar::DisplayStatusMessage(std::string message, float durationSeconds, i
 
 void MenuBar::OpenOpenMapDialog()
 {
-    auto callback = [this](fs::path path) 
-    {
-        _activeDialog.reset(new ConfirmationDialog(
-            "Discard changes?", 
-            "Shall you forsake that which you have created?", 
-            "Discard", "Cancel", 
-            [&](bool proceed){ if (proceed) App::Get()->TryOpenMap(path); }));
+    auto makeFileDialog = [] { 
+        return new FileDialog(
+            "Open Map (*.te3, *.ti)",
+            std::initializer_list<std::string>{ ".te3", ".ti" }, 
+            [](fs::path path){ App::Get()->TryOpenMap(path); }, 
+            false
+        ); 
     };
-    _activeDialog.reset(new FileDialog("Open Map (*.te3, *.ti)", { ".te3", ".ti" }, callback, false));
+    
+    if (_mapMan.HasUnsavedChanges())
+    {
+        _activeDialog.reset(
+            new ConfirmationDialog(
+                "DISCARD CHANGES?", 
+                "Shall you forsake that which you have created?", 
+                "Discard", "Cancel", 
+                [this, makeFileDialog](bool proceed) { 
+                    if (!proceed) return;
+                    _activeDialog.reset(makeFileDialog());
+                }
+            )
+        );
+    }
+    else
+    {
+        _activeDialog.reset(makeFileDialog());
+    }
 }
 
 void MenuBar::OpenSaveMapDialog()
@@ -90,8 +110,8 @@ void MenuBar::Update()
             _messagePriority = 0;
         }
     }
-
-    //Show exit confirmation dialog
+    
+    // Show exit confirmation dialog
     if (WindowShouldClose()) 
     {
         _activeDialog.reset(new CloseDialog());
@@ -136,7 +156,7 @@ void MenuBar::Draw()
             if (ImGui::MenuItem("INSTRUCTIONS"))   _activeDialog.reset(new InstructionsDialog());
             ImGui::EndMenu();
         }
-    
+        
         ImGui::SameLine();
         ImGui::TextUnformatted(" | ");
         if (_messageTimer > 0.0f) 
@@ -144,13 +164,17 @@ void MenuBar::Draw()
             ImGui::SameLine();
             ImGui::TextUnformatted(_statusMessage.c_str());
         }
-
+        
         ImGui::EndMainMenuBar();
     }
-
-    //Draw modal dialogs
-    if (_activeDialog.get())
+    
+    // Draw modal dialogs
+    if (Dialog* dialog = _activeDialog.get(); dialog)
     {
-        if (!_activeDialog->Draw()) _activeDialog.reset(nullptr);
+        // Reset to no active dialog unless it was changed by a callback.
+        if (!dialog->Draw() && _activeDialog.get() == dialog)
+        {
+            _activeDialog.reset(nullptr);
+        }
     }
 }

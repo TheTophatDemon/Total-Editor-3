@@ -56,7 +56,7 @@ Assets::ModelHandle::ModelHandle(fs::path path)
 
 Assets::ModelHandle::~ModelHandle() 
 { 
-    UnloadModel(_model); 
+    if (_model.meshes != Assets::GetMissingModel().meshes) UnloadModel(_model); 
 }
 
 Assets::Assets() 

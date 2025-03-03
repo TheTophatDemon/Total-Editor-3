@@ -30,7 +30,7 @@
 class MenuBar 
 {
 public:
-    MenuBar(App::Settings &settings);
+    MenuBar(App::Settings &settings, MapMan& mapMan);
     void Update();
     void Draw();
     void OpenSaveMapDialog();
@@ -40,6 +40,7 @@ public:
     void DisplayStatusMessage(std::string message, float durationSeconds, int priority);
 protected:
     App::Settings &_settings;
+    MapMan& _mapMan;
 
     std::unique_ptr<Dialog> _activeDialog;
 

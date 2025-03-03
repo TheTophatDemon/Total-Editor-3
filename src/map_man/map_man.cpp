@@ -184,6 +184,9 @@ void MapMan::ShrinkMap()
 
 bool MapMan::SaveTE3Map(fs::path filePath)
 {
+    _undoHistory.clear();
+    _redoHistory.clear();
+    
     using namespace nlohmann;
 
     try

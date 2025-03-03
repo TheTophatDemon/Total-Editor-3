@@ -1,7 +1,5 @@
 # TODO
-- Allow secondary textures on tiles
-  - Add warning for converting old maps
-- Unsaved changes warning before switching maps
+- Add map format conversion warning
 - Add easier to read font for text fields.
 
 - Refactor

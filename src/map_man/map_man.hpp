@@ -132,6 +132,8 @@ public:
 
     void Undo();
     void Redo();
+
+    inline bool HasUnsavedChanges() const { return _undoHistory.size() > 0 || _redoHistory.size() > 0; }
 private:
     void _Execute(std::shared_ptr<Action> action);
 

@@ -60,7 +60,7 @@ App *App::Get()
 App::App()
     : _settings(),
     _mapMan        (std::make_unique<MapMan>()),
-    _menuBar       (std::make_unique<MenuBar>(_settings)),
+    _menuBar       (std::make_unique<MenuBar>(_settings, *_mapMan.get())),
     _tilePlaceMode (std::make_unique<PlaceMode>(*_mapMan.get())),
     _texPickMode   (std::make_unique<TexturePickMode>(_settings)),
     _shapePickMode (std::make_unique<ShapePickMode>(_settings)),
