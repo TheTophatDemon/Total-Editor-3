@@ -63,12 +63,6 @@ protected:
     Direction _direction;
 };
 
-class ShrinkMapDialog: public Dialog
-{
-public:
-    virtual bool Draw() override;
-};
-
 class FileDialog : public Dialog
 {
 public:
@@ -88,15 +82,6 @@ protected:
 
     char _fileNameBuffer[TEXT_FIELD_MAX];
     bool _overwritePromptOpen, _writeMode;
-};
-
-class CloseDialog : public Dialog
-{
-public:
-    CloseDialog();
-    virtual bool Draw() override;
-protected:
-    int _messageIdx;
 };
 
 class AssetPathDialog : public Dialog

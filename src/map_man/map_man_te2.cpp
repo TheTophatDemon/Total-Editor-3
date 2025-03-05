@@ -32,6 +32,7 @@
 
 bool MapMan::LoadTE2Map(fs::path filePath)
 {
+    _willConvert = true;
     _undoHistory.clear();
     _redoHistory.clear();
 
@@ -59,9 +60,9 @@ bool MapMan::LoadTE2Map(fs::path filePath)
         // Parse the text file line by line
         std::string line;
         
-        //TILES (walls)
+        // TILES (walls)
         std::getline(file, line);
-        if (line.compare("TILES") != 0)
+        if (std::string_view(line).substr(0, 5).compare("TILES") != 0)
         {
             std::cerr << TE2_FORMAT_ERR << std::endl;
             return false;
@@ -230,9 +231,9 @@ bool MapMan::LoadTE2Map(fs::path filePath)
             }
         }
 
-        //SECTORS (floors and ceilings)
+        // SECTORS (floors and ceilings)
         std::getline(file, line);
-        if (line.compare("SECTORS") != 0)
+        if (std::string_view(line).substr(0, 7).compare("SECTORS") != 0)
         {
             std::cerr << TE2_FORMAT_ERR << std::endl;
             return false;
@@ -280,7 +281,7 @@ bool MapMan::LoadTE2Map(fs::path filePath)
         // Get & convert entities
         _entGrid = EntGrid(_tileGrid.GetWidth(), _tileGrid.GetHeight(), _tileGrid.GetLength());
         std::getline(file, line);
-        if (line.compare("THINGS") != 0)
+        if (std::string_view(line).substr(0, 6).compare("THINGS") != 0)
         {
             std::cerr << TE2_FORMAT_ERR << std::endl;
             return false;

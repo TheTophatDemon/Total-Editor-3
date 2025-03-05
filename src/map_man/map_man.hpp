@@ -134,6 +134,9 @@ public:
     void Redo();
 
     inline bool HasUnsavedChanges() const { return _undoHistory.size() > 0 || _redoHistory.size() > 0; }
+
+    // Returns true if the currently loaded map is going to be converted to the new format on save.
+    inline bool WillConvert() const { return _willConvert; }
 private:
     void _Execute(std::shared_ptr<Action> action);
 
@@ -145,10 +148,13 @@ private:
     std::vector<std::shared_ptr<Assets::TexHandle>> _textureList;
     std::vector<std::shared_ptr<Assets::ModelHandle>> _modelList;
 
-    //Stores recently executed actions to be undone on command.
+    // Stores recently executed actions to be undone on command.
     std::deque<std::shared_ptr<Action>> _undoHistory;
-    //Stores recently undone actions to be redone on command, unless the history is altered.
+    // Stores recently undone actions to be redone on command, unless the history is altered.
     std::deque<std::shared_ptr<Action>> _redoHistory;
+
+    // True if the currently loaded map is going to be converted to the new format on save.
+    bool _willConvert;
 };
 
 #endif

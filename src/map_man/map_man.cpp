@@ -184,6 +184,7 @@ void MapMan::ShrinkMap()
 
 bool MapMan::SaveTE3Map(fs::path filePath)
 {
+    _willConvert = false;
     _undoHistory.clear();
     _redoHistory.clear();
     
@@ -300,6 +301,11 @@ bool MapMan::LoadTE3Map(fs::path filePath)
             }
             versionMajor = std::stoi(versionStr.substr(0, periodLoc));
             versionMinor = std::stoi(versionStr.substr(periodLoc + 1));
+            _willConvert = false;
+        }
+        else
+        {
+            _willConvert = true;
         }
 
         json tiles = jData["tiles"];

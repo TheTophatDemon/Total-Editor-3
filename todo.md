@@ -1,11 +1,10 @@
 # TODO
-- Add map format conversion warning
 - Add easier to read font for text fields.
+- Add ability to use sprite window on entities only.
+- Color property textbox differently when it hasn't been added yet.
 
 - Refactor
   - Make App not a singleton.
-  - Seperate dialogs into different files.
-  - Put ent_mode files into folder
 
 - Document
   - Hidden file regex
@@ -13,7 +12,6 @@
   - Two texture feature
     - Blender export settings
 
-- Add ability to use sprite window on entities only.
 
 ## Future updates
 

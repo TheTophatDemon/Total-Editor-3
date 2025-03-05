@@ -40,7 +40,7 @@
 #include "menu_bar.hpp"
 #include "place_mode/place_mode.hpp"
 #include "pick_mode/pick_mode.hpp"
-#include "ent_mode.hpp"
+#include "ent_mode/ent_mode.hpp"
 #include "map_man/map_man.hpp"
 
 #define SETTINGS_FILE_PATH "te3_settings.json"

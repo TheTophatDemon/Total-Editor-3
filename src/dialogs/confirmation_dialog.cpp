@@ -21,17 +21,20 @@ bool ConfirmationDialog::Draw()
     {
         ImGui::TextUnformatted(_bodyText.c_str());
         
-        if (ImGui::Button(_confirmText.c_str()))
+        if (!_confirmText.empty())
         {
-            _callback(true);
-            
-            ImGui::EndPopup();
-            return false;
+            if (ImGui::Button(_confirmText.c_str()))
+            {
+                if (_callback) _callback(true);
+                
+                ImGui::EndPopup();
+                return false;
+            }
+            ImGui::SameLine();
         }
-        ImGui::SameLine();
         if (ImGui::Button(_cancelText.c_str()))
         {
-            _callback(false);
+            if (_callback) _callback(false);
             
             ImGui::EndPopup();
             return false;

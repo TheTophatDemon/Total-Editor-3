@@ -20,12 +20,12 @@
 
 #include "ent_mode.hpp"
 
+#include <cstring>
 
-#include "c_helpers.hpp"
 #include "raylib.h"
 #include "imgui/imgui.h"
 
-#include <cstring>
+#include "../c_helpers.hpp"
 
 EntMode::EntMode()
 {

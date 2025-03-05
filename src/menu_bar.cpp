@@ -49,11 +49,24 @@ void MenuBar::DisplayStatusMessage(std::string message, float durationSeconds, i
 
 void MenuBar::OpenOpenMapDialog()
 {
-    auto makeFileDialog = [] { 
+    auto makeFileDialog = [this] { 
         return new FileDialog(
             "Open Map (*.te3, *.ti)",
             std::initializer_list<std::string>{ ".te3", ".ti" }, 
-            [](fs::path path){ App::Get()->TryOpenMap(path); }, 
+            [this](fs::path path)
+            { 
+                App::Get()->TryOpenMap(path);
+                if (_mapMan.WillConvert())
+                {
+                    _activeDialog.reset(new ConfirmationDialog(
+                        "CONVERSION WARNING",
+                        "This map will be converted to the new format upon saving.\n"
+                            "This change cannot be undone.",
+                        "", "Ok",
+                        nullptr
+                    ));
+                }
+            }, 
             false
         ); 
     };
@@ -114,7 +127,32 @@ void MenuBar::Update()
     // Show exit confirmation dialog
     if (WindowShouldClose()) 
     {
-        _activeDialog.reset(new CloseDialog());
+        static const char *QUIT_MESSAGES[] = {
+            "Only winners take stretch breaks.", 
+            "Did I leave the editor on Nightmare difficulty?", 
+            "Remember to eat some clowns.", 
+            "Admiring the *cough* robust C++ architecture?", 
+            "Your SOUL is what needs saving, not this map file!",
+            "Click 'Nah' to meet hot singles in your area!",
+            "Whelp...I'm going to Grillby's...",
+            "100% of people who go outside die!",
+            "Да, я тоже не понимаю это приложение.",
+            "They told me the fancy new UI would make you stay...",
+            "Support me today or I'll edit your face!",
+            "Dame da ne...dame yo...dame na no yo...",
+            "So you've got better things to do, huh?"
+        };
+        int messageIdx = GetRandomValue(0, (sizeof(QUIT_MESSAGES) / sizeof(char *)) - 1);
+
+        _activeDialog.reset(new ConfirmationDialog(
+            "REALLY QUIT?",
+            QUIT_MESSAGES[messageIdx],
+            "Quit", "Nah",
+            [](bool proceed) 
+            {
+                if (proceed) App::Get()->Quit();
+            }
+        ));
     }
 }
 
@@ -130,7 +168,18 @@ void MenuBar::Draw()
             if (ImGui::MenuItem("SAVE AS")) OpenSaveMapDialog();
             if (ImGui::MenuItem("EXPORT")) _activeDialog.reset(new ExportDialog(_settings));
             if (ImGui::MenuItem("EXPAND GRID")) _activeDialog.reset(new ExpandMapDialog());
-            if (ImGui::MenuItem("SHRINK GRID")) _activeDialog.reset(new ShrinkMapDialog());
+            if (ImGui::MenuItem("SHRINK GRID")) 
+            {
+                _activeDialog.reset(new ConfirmationDialog(
+                    "SHRINK GRID",
+                    "Shrink the grid to fit around the existing tiles?",
+                    "Yes", "No",
+                    [](bool proceed)
+                    { 
+                        if (proceed) App::Get()->ShrinkMap(); 
+                    }
+                ));
+            }
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("VIEW"))

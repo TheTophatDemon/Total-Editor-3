@@ -21,9 +21,9 @@
 #ifndef ENT_MODE_HPP
 #define ENT_MODE_HPP
 
-#include "app.hpp"
-#include "ent.hpp"
-#include "dialogs/dialogs.hpp"
+#include "../app.hpp"
+#include "../ent.hpp"
+#include "../dialogs/dialogs.hpp"
 
 #include <memory>
 
