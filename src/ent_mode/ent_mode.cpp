@@ -26,6 +26,7 @@
 #include "imgui/imgui.h"
 
 #include "../c_helpers.hpp"
+#include "../defer.hpp"
 
 EntMode::EntMode()
 {
@@ -184,6 +185,11 @@ void EntMode::Draw()
         ImGui::Text("Entity properties");
         if (ImGui::BeginTable("Entity properties", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersV))
         {
+            DEFER(ImGui::EndTable());
+            
+            ImGui::PushFont(Assets::GetCodeFont());
+            DEFER(ImGui::PopFont());
+
             ImGui::TableSetupColumn("Key");
             ImGui::TableSetupColumn("Value");
             ImGui::TableSetupColumn(" ");
@@ -194,6 +200,8 @@ void EntMode::Draw()
             for (auto [key, val] : _ent.properties)
             {
                 ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(0.0f, 0.0f));
+                DEFER(ImGui::PopStyleVar());
+
                 ImGui::TableNextRow();
                 
                 ImGui::TableNextColumn();
@@ -211,7 +219,6 @@ void EntMode::Draw()
                 {
                     keysToErase.push_back(key);
                 }
-                ImGui::PopStyleVar(1);
             }
 
             // Remove keys
@@ -228,7 +235,8 @@ void EntMode::Draw()
                 _ent.properties[key] = std::string(val);
             }
 
-            ImGui::TableNextRow();
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+            ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
             ImGui::TableNextColumn();
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
             ImGui::InputText("##New key", _newKeyBuffer, TEXT_FIELD_MAX);
@@ -236,6 +244,7 @@ void EntMode::Draw()
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
             ImGui::InputText("##New val", _newValBuffer, TEXT_FIELD_MAX);
             ImGui::TableNextColumn();
+            ImGui::PopStyleVar();
             std::string pButtonStr = std::string("Add##AddKey");
             if (ImGui::Button(pButtonStr.c_str()))
             {
@@ -248,8 +257,6 @@ void EntMode::Draw()
                 memset(_newKeyBuffer, 0, sizeof(char) * TEXT_FIELD_MAX);
                 memset(_newValBuffer, 0, sizeof(char) * TEXT_FIELD_MAX);
             }
-
-            ImGui::EndTable();
         }
         
         ImGui::End();

@@ -26,7 +26,6 @@
 #include "imgui/rlImGui.h"
 #include "imgui/imgui.h"
 
-#include "assets/fonts/softball_gold_ttf.h"
 
 #include <stdlib.h>
 #include <vector>
@@ -210,15 +209,7 @@ int main(int argc, char **argv)
 
     rlImGuiSetup(true);
 
-    // ImGUI styling
-    ImGuiIO& io = ImGui::GetIO();
-    ImFontConfig config;
-    config.FontDataOwnedByAtlas = false;
-    io.FontDefault = io.Fonts->AddFontFromMemoryTTF((void *) Softball_Gold_ttf, Softball_Gold_ttf_len, 24, &config, io.Fonts->GetGlyphRangesCyrillic());
-
-    io.ConfigFlags = ImGuiConfigFlags_NavNoCaptureKeyboard;
-
-    rlImGuiReloadFonts();
+    Assets::Init();
 
 #ifdef DEBUG
     SetTraceLogLevel(LOG_WARNING);

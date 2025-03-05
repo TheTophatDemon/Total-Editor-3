@@ -22,10 +22,13 @@
 
 #include "raymath.h"
 #include "rlgl.h"
+#include "imgui/rlImGui.h"
 
 #include "assets/shaders/map_shader.hpp"
 #include "assets/shaders/sprite_shader.hpp"
 #include "assets/fonts/font_dejavu.h"
+#include "assets/fonts/liberation_mono_ttf.h"
+#include "assets/fonts/softball_gold_ttf.h"
 #include "assets/models/missing_obj.h"
 #include "assets/obj_loader.hpp"
 #include "c_helpers.hpp"
@@ -57,6 +60,11 @@ Assets::ModelHandle::ModelHandle(fs::path path)
 Assets::ModelHandle::~ModelHandle() 
 { 
     if (_model.meshes != Assets::GetMissingModel().meshes) UnloadModel(_model); 
+}
+
+void Assets::Init()
+{
+    _Get();
 }
 
 Assets::Assets() 
@@ -148,11 +156,31 @@ Assets::Assets()
     }
 
     _font = LoadFont_Dejavu();
+
+    // Set up IMGUI fonts
+    ImGuiIO& io = ImGui::GetIO();
+    ImFontConfig config;
+    config.FontDataOwnedByAtlas = false;
+    _uiFont = io.FontDefault = io.Fonts->AddFontFromMemoryTTF((void *) Softball_Gold_ttf, Softball_Gold_ttf_len, 24, &config, io.Fonts->GetGlyphRangesCyrillic());
+    _codeFont = io.Fonts->AddFontFromMemoryTTF((void *) LiberationMono_Regular_ttf, LiberationMono_Regular_ttf_len, 24, &config, io.Fonts->GetGlyphRangesCyrillic());
+    io.ConfigFlags = ImGuiConfigFlags_NavNoCaptureKeyboard;
+
+    rlImGuiReloadFonts();
 }
 
 const Font &Assets::GetFont() 
 {
     return _Get()->_font;
+}
+
+ImFont* Assets::GetUIFont()
+{
+    return _Get()->_uiFont;
+}
+
+ImFont* Assets::GetCodeFont()
+{
+    return _Get()->_codeFont;
 }
 
 const Shader &Assets::GetMapShader(bool instanced) 

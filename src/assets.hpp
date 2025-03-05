@@ -22,6 +22,7 @@
 #define ASSETS_H
 
 #include "raylib.h"
+#include "imgui/imgui.h"
 
 #include <string>
 #include <vector>
@@ -30,13 +31,13 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-//A repository that caches all loaded resources and their file paths.
-//It is implemented as a singleton with a static interface. 
-//(This circumvents certain limitations regarding static members and allows the constructor to be called automatically when the first method is called.)
+// A repository that caches all loaded resources and their file paths.
+// It is implemented as a singleton with a static interface. 
+// (This circumvents certain limitations regarding static members and allows the constructor to be called automatically when the first method is called.)
 class Assets 
 {
 public:
-    //A RAII wrapper for a Raylib Texture (unloads on destruction)
+    // A RAII wrapper for a Raylib Texture (unloads on destruction)
     class TexHandle 
     {
     public:
@@ -49,7 +50,7 @@ public:
         fs::path _path;
     };
 
-    //A RAII wrapper for a Raylib Model (unloads on destruction)
+    // A RAII wrapper for a Raylib Model (unloads on destruction)
     class ModelHandle
     {
     public:
@@ -66,7 +67,12 @@ public:
     static std::shared_ptr<TexHandle>   GetTexture(fs::path path); //Returns a shared pointer to the cached texture at `path`, loading it if it hasn't been loaded.
     static std::shared_ptr<ModelHandle> GetModel(fs::path path);   //Returns a shared pointer to the cached model at `path`, loading it if it hasn't been loaded.
 
+    // Initializes built-in assets.
+    static void Init();
+
     static const Font&   GetFont(); // Returns the default application font (dejavu.fnt)
+    static ImFont* GetUIFont();
+    static ImFont* GetCodeFont();
     static const Shader& GetMapShader(bool instanced); // Returns the shader used to render tiles
     static const Shader& GetSpriteShader(); // Returns the shader used to render billboards
     static const Model&  GetEntSphere(); // Returns the sphere that represents entities visually
@@ -80,6 +86,7 @@ protected:
 
     // Assets that are alive the whole application
     Font _font; // Default application font (dejavu.fnt)
+    ImFont *_uiFont, *_codeFont;
     Texture2D _missingTexture; // Texture to display when the texture file to be loaded isn't found
     Model _entSphere; // The sphere that represents entities visually
     Model _missingModel; // Model to display when a model file to be loaded isn't found

@@ -90,7 +90,9 @@ bool AssetPathDialog::Draw()
 
         #undef FILE_DIALOG_CALLBACK
 
+        ImGui::PushFont(Assets::GetCodeFont());
         ImGui::InputText("Hidden Asset Regex", _hiddenAssetRegexBuffer, TEXT_FIELD_MAX);
+        ImGui::PopFont();
         ImVec4 errorColor = {1.0f, 0.0f, 0.0f, 1.0f};
         ImGui::TextColored(errorColor, _hiddenAssetRegexValid ? "" : "Invalid");
 

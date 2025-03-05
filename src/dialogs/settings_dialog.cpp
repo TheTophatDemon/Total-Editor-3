@@ -5,6 +5,7 @@
 
 #include "../app.hpp"
 #include "../map_man/map_man.hpp"
+#include "../defer.hpp"
 
 SettingsDialog::SettingsDialog(App::Settings &settings)
     : _settingsOriginal(settings),
@@ -20,6 +21,10 @@ bool SettingsDialog::Draw()
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if (ImGui::BeginPopupModal("SETTINGS", &open, ImGuiWindowFlags_AlwaysAutoResize))
     {
+        DEFER(ImGui::EndPopup());
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{8.0f, 8.0f});
+        DEFER(ImGui::PopStyleVar());
+
         int undoMax = (int)_settingsCopy.undoMax;
         ImGui::InputInt("Maximum undo count", &undoMax, 1, 10);
         if (undoMax < 0) undoMax = 0;
@@ -43,17 +48,14 @@ bool SettingsDialog::Draw()
         {
             _settingsOriginal = _settingsCopy;
             App::Get()->SaveSettings();
-            ImGui::EndPopup();
             return false;
         }
         ImGui::SameLine();
         if (ImGui::Button("Cancel"))
         {
-            ImGui::EndPopup();
             return false;
         }
-
-        ImGui::EndPopup();
+        
         return true;
     }
     return open;
