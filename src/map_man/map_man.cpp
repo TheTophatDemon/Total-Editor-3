@@ -32,69 +32,11 @@
 #include "../assets.hpp"
 #include "../text_util.hpp"
 
-// ======================================================================
-// TILE ACTION
-// ======================================================================
-
-MapMan::TileAction::TileAction(size_t i, size_t j, size_t k, TileGrid prevState, TileGrid newState)
-    : _i(i), _j(j), _k(k), 
-    _prevState(prevState), 
-    _newState(newState)
-{}
-
-void MapMan::TileAction::Do(MapMan& map) const
-{
-    map._tileGrid.CopyTiles(_i, _j, _k, _newState);
-}
-
-void MapMan::TileAction::Undo(MapMan& map) const
-{
-    map._tileGrid.CopyTiles(_i, _j, _k, _prevState);
-}
-
-// ======================================================================
-// ENT ACTION
-// ======================================================================
-
-MapMan::EntAction::EntAction(size_t i, size_t j, size_t k, bool overwrite, bool removed, Ent oldEnt, Ent newEnt)
-    : _i(i), _j(j), _k(k), 
-    _overwrite(overwrite), 
-    _removed(removed), 
-    _oldEnt(oldEnt), 
-    _newEnt(newEnt)
-{}
-
-void MapMan::EntAction::Do(MapMan& map) const
-{
-    if (_removed)
-    {
-        map._entGrid.RemoveEnt(_i, _j, _k);
-    }
-    else
-    {
-        map._entGrid.AddEnt(_i, _j, _k, _newEnt);
-    }
-}
-
-void MapMan::EntAction::Undo(MapMan& map) const
-{
-    if (_overwrite || _removed)
-    {
-        map._entGrid.AddEnt(_i, _j, _k, _oldEnt);
-    }
-    else
-    {
-        map._entGrid.RemoveEnt(_i, _j, _k);
-    }
-}
-
-// ======================================================================
-// MAP MAN
-// ======================================================================
-
 MapMan::MapMan()
     : _tileGrid(*this, 0, 0, 0)
-{}
+{
+    _numberOfChanges = 0;
+}
 
 void MapMan::NewMap(int width, int height, int length) 
 {
@@ -184,9 +126,10 @@ void MapMan::ShrinkMap()
 
 bool MapMan::SaveTE3Map(fs::path filePath)
 {
-    _willConvert = false;
     _undoHistory.clear();
     _redoHistory.clear();
+    _willConvert = false;
+    _numberOfChanges = 0;
     
     using namespace nlohmann;
 
@@ -280,7 +223,8 @@ bool MapMan::LoadTE3Map(fs::path filePath)
 {
     _undoHistory.clear();
     _redoHistory.clear();
-    
+    _numberOfChanges = 0;
+
     using namespace nlohmann;
 
     std::ifstream file(filePath);
@@ -381,48 +325,6 @@ bool MapMan::LoadTE3Map(fs::path filePath)
     return true;
 }
 
-void MapMan::ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile)
-{
-    TileGrid prevState = _tileGrid.Subsection(i, j, k, w, h, l);
-    TileGrid newState(*this, w, h, l, _tileGrid.GetSpacing(), newTile);
-
-    _Execute(std::static_pointer_cast<Action>(
-        std::make_shared<TileAction>(i, j, k, prevState, newState)
-    ));
-}
-
-void MapMan::ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, TileGrid brush)
-{
-    const TileGrid prevState = _tileGrid.Subsection(
-            i, j, k, 
-            Min(w, _tileGrid.GetWidth() - i),  //Cut off parts that go beyond map boundaries
-            Min(h, _tileGrid.GetHeight() - j), 
-            Min(l, _tileGrid.GetLength() - k)
-        );
-
-    TileGrid newState = prevState; //Copy the old state and merge the brush into it
-    newState.CopyTiles(0, 0, 0, brush, true);
-
-    _Execute(std::static_pointer_cast<Action>(
-        std::make_shared<TileAction>(i, j, k, prevState, newState)
-    ));
-}
-
-void MapMan::ExecuteEntPlacement(int i, int j, int k, Ent newEnt)
-{
-    Ent prevEnt = _entGrid.HasEnt(i, j, k) ? _entGrid.GetEnt(i, j, k) : Ent();
-    _Execute(std::static_pointer_cast<Action>(
-        std::make_shared<EntAction>(i, j, k, _entGrid.HasEnt(i, j, k), false, prevEnt, newEnt)
-    ));
-}
-
-void MapMan::ExecuteEntRemoval(int i, int j, int k)
-{
-    _Execute(std::static_pointer_cast<Action>(
-        std::make_shared<EntAction>(i, j, k, true, true, _entGrid.GetEnt(i, j, k), Ent())
-    ));
-}
-
 TexID MapMan::GetOrAddTexID(const fs::path &texturePath) 
 {
     //Look for existing ID
@@ -506,6 +408,7 @@ void MapMan::Undo()
         _undoHistory.back()->Undo(*this);
         _redoHistory.push_back(_undoHistory.back());
         _undoHistory.pop_back();
+        --_numberOfChanges;
     }
 }
 
@@ -516,13 +419,18 @@ void MapMan::Redo()
         _redoHistory.back()->Do(*this);
         _undoHistory.push_back(_redoHistory.back());
         _redoHistory.pop_back();
+        ++_numberOfChanges;
     }
 }
 
 void MapMan::_Execute(std::shared_ptr<Action> action)
 {
     _undoHistory.push_back(action);
-    if (_undoHistory.size() > App::Get()->GetUndoMax()) _undoHistory.pop_front();
+    while (_undoHistory.size() > App::Get()->GetUndoMax()) 
+    {
+        _undoHistory.pop_front();
+    }
     _redoHistory.clear();
     _undoHistory.back()->Do(*this);
+    ++_numberOfChanges;
 }

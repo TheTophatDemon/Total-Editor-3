@@ -133,7 +133,7 @@ public:
     void Undo();
     void Redo();
 
-    inline bool HasUnsavedChanges() const { return _undoHistory.size() > 0 || _redoHistory.size() > 0; }
+    inline bool HasUnsavedChanges() const { return _numberOfChanges > 0; }
 
     // Returns true if the currently loaded map is going to be converted to the new format on save.
     inline bool WillConvert() const { return _willConvert; }
@@ -152,6 +152,9 @@ private:
     std::deque<std::shared_ptr<Action>> _undoHistory;
     // Stores recently undone actions to be redone on command, unless the history is altered.
     std::deque<std::shared_ptr<Action>> _redoHistory;
+
+    // Tracks the number of changes made since the last save.
+    int32_t _numberOfChanges;
 
     // True if the currently loaded map is going to be converted to the new format on save.
     bool _willConvert;
