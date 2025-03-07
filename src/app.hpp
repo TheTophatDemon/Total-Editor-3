@@ -50,8 +50,8 @@ public:
         std::string shapesDir;
         size_t undoMax;
         float mouseSensitivity;
-        bool exportSeparateGeometry, cullFaces; //For GLTF export
-        std::string exportFilePath; //For GLTF export
+        bool exportSeparateGeometry, cullFaces; // For GLTF export
+        std::string exportFilePath; // For GLTF export
         std::string defaultTexturePath;
         std::string defaultShapePath;
         std::tuple<uint8_t, uint8_t, uint8_t> backgroundColor;
@@ -62,7 +62,7 @@ public:
     static void to_json(nlohmann::json& json, const App::Settings& settings);
     static void from_json(const nlohmann::json& json, App::Settings& settings);
 
-    //Mode implementation
+    // Mode implementation
     class ModeImpl 
     {
     public:
@@ -77,7 +77,7 @@ public:
 
     static App *Get();
 
-    //Handles transition and data flow from one editor state to the next.
+    // Handles transition and data flow from one editor state to the next.
     void ChangeEditorMode(const Mode newMode);
 
     inline float       GetMouseSensitivity() { return _settings.mouseSensitivity; }
@@ -89,7 +89,7 @@ public:
     inline bool        IsCullingEnabled() { return _settings.cullFaces; }
     inline Color       GetBackgroundColor() { return Color { std::get<0>(_settings.backgroundColor), std::get<1>(_settings.backgroundColor), std::get<2>(_settings.backgroundColor), 255 }; }
 
-    //Indicates if rendering should be done in "preview mode", i.e. without editor widgets being drawn.
+    // Indicates if rendering should be done in "preview mode", i.e. without editor widgets being drawn.
     inline bool IsPreviewing() const { return _previewDraw; }
     inline void SetPreviewing(bool p) { _previewDraw = p; }
     inline void TogglePreviewing() { _previewDraw = !_previewDraw; }
@@ -102,7 +102,7 @@ public:
 
     void Update();
     
-    //General map file operations
+    // General map file operations
     inline const MapMan &GetMapMan() const { return *_mapMan.get(); }
     void ResetEditorCamera();
     void NewMap(int width, int height, int length);
@@ -112,9 +112,9 @@ public:
     void TrySaveMap(fs::path path);
     void TryExportMap(fs::path path, bool separateGeometry);
 
-    //Serializes settings into JSON file and exports.
+    // Serializes settings into JSON file and exports.
     void SaveSettings();
-    //Deserializes settings from JSON file
+    // Deserializes settings from JSON file
     void LoadSettings();
 private:
     App();

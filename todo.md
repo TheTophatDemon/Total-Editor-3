@@ -1,6 +1,6 @@
 # TODO
 - Refactor
-  - Make App not a singleton.
+  - Consider making App a "static" class instead of a singleton.
 
 - Document
   - Hidden file regex
