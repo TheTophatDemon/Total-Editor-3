@@ -247,16 +247,29 @@ std::string TileGrid::GetTileDataBase64() const
         { 
             if (runLength > 0)
             {
+                if (i == _grid.size() - 1)
+                {
+                    // Accounts for the final tile being reached during a run of empty tiles.
+                    ++runLength;
+                }
+
                 // Insert a special value signifying the number of empty tiles preceding this one.
                 // Why the hell does C++ infer an int32 type here unless I specify the type manually???
                 AppendBytes<ModelID>(bin, -runLength);
-                runLength = 0;
+                if (savedTile)
+                {
+                    runLength = 0;
+                }
+                else
+                {
+                    runLength = 1;
+                }
             }
             
             if (savedTile)
             {
-                AppendBytes(bin, savedTile.shape);
-                for (TexID id : savedTile.textures) AppendBytes(bin, id);
+                AppendBytes<ModelID>(bin, savedTile.shape);
+                for (TexID id : savedTile.textures) AppendBytes<TexID>(bin, id);
                 bin.push_back(savedTile.yaw);
                 bin.push_back(savedTile.pitch);
             }

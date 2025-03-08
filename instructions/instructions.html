@@ -342,6 +342,7 @@ struct Tile {
             &emsp;<b>Since version 3.1, blank tiles are represented by "run length encoding"</b>. This means that when parsing a .te3 file,
             encountering a tile with a modelID less than 0 represents multiple successive blank tiles, the number of which is equal to
             the absolute value of the modelID. For the code above to work, t would have to be increased by -modelID when modelID < 0.
+            <b>When modelID < 0, the remaining bytes of the tile data structure are not present.</b>
         </p>
         <h3>Rendering the tiles in-game</h3>
         <p>

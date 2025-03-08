@@ -2,13 +2,6 @@
 - Refactor
   - Consider making App a "static" class instead of a singleton.
 
-- Document
-  - Hidden file regex
-  - New map format
-  - Two texture feature
-    - Blender export settings
-
-
 ## Future updates
 
 - Add image preview in the file picker
