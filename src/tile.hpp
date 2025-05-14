@@ -151,7 +151,7 @@ protected:
     std::map<std::pair<TexID, Mesh*>, std::vector<Matrix>> _drawBatches;
     
     Vector3 _batchPosition;
-    bool _regenBatches;
+    bool _shouldRegenBatches;
     bool _regenModel;
     int _batchFromY;
     int _batchToY;

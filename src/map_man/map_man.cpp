@@ -171,13 +171,16 @@ bool MapMan::SaveTE3Map(fs::path filePath)
             Tile tile = optimizedGrid.GetTile(i);
             for (size_t t = 0; t < usedTexIDs.size(); ++t)
             {
+                bool foundit = false;
                 for (int i = 0; i < TEXTURES_PER_TILE; ++i)
                 {
-                    if (usedTexIDs[t] == tile.textures[i]) {
+                    if (usedTexIDs[t] == tile.textures[i]) 
+                    {
                         tile.textures[i] = (TexID)t;
-                        break;
+                        foundit = true;
                     }
                 }
+                if (foundit) break;
             }
             for (size_t m = 0; m < usedModelIDs.size(); ++m)
             {

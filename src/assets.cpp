@@ -59,7 +59,7 @@ Assets::ModelHandle::ModelHandle(fs::path path)
 
 Assets::ModelHandle::~ModelHandle() 
 { 
-    if (_model.meshes != Assets::GetMissingModel().meshes) UnloadModel(_model); 
+    UnloadModel(_model); 
 }
 
 void Assets::Init()
@@ -69,41 +69,6 @@ void Assets::Init()
 
 Assets::Assets() 
 {
-    // Generate missing texture image (a black-and-magenta checkerboard)
-    Image texImg = { 0 };
-    texImg.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
-    texImg.width = 64;
-    texImg.height = 64;
-    texImg.mipmaps = 1;
-    char *pixels = (char *) malloc(3 * texImg.width * texImg.height);
-    texImg.data = (void *) pixels;
-    const int BLOCK_SIZE = 32;
-    for (int x = 0; x < texImg.width; ++x)
-    {
-        for (int y = 0; y < texImg.height; ++y)
-        {
-            int base = 3 * (x + y * texImg.width);
-            if ((((x / BLOCK_SIZE) % 2) == 0 && ((y / BLOCK_SIZE) % 2) == 0) ||
-                (((x / BLOCK_SIZE) % 2) == 1 && ((y / BLOCK_SIZE) % 2) == 1) )
-            {
-                pixels[base] = char(0xFF);
-                pixels[base + 1] = 0x00;
-                pixels[base + 2] = char(0xFF);
-            }
-            else
-            {
-                pixels[base] = pixels[base + 1] = pixels[base + 2] = 0x00;
-            }
-        }
-    }
-    _missingTexture = LoadTextureFromImage(texImg);
-    free(texImg.data);
-
-    // Load missing model
-    std::string objFile;
-    objFile.assign((const char *)missing_obj, (size_t)missing_obj_len);
-    _missingModel = LoadOBJModelFromString(objFile);
-
     // Initialize instanced shader for map geometry
     _mapShaderInstanced = LoadShaderFromMemory(MAP_SHADER_INSTANCED_V_SRC, MAP_SHADER_F_SRC);
     _mapShaderInstanced.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(_mapShaderInstanced, "mvp");
@@ -203,20 +168,53 @@ const Mesh& Assets::GetSpriteQuad()
     return _Get()->_spriteQuad;
 }
 
-const Model& Assets::GetMissingModel()
+// Loads a placeholder for missing models (a 3D question mark)
+const Model Assets::GetMissingModel()
 {
-    return _Get()->_missingModel;
+    // Load missing model
+    std::string objFile;
+    objFile.assign((const char *)missing_obj, (size_t)missing_obj_len);
+    return LoadOBJModelFromString(objFile);
 }
 
+// Generate a placeholder for missing textures (a black-and-magenta checkerboard)
 Texture Assets::GetMissingTexture()
 {
-    return _Get()->_missingTexture;
+    Image texImg = { 0 };
+    texImg.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
+    texImg.width = 64;
+    texImg.height = 64;
+    texImg.mipmaps = 1;
+    char *pixels = (char *) malloc(3 * texImg.width * texImg.height);
+    texImg.data = (void *) pixels;
+    const int BLOCK_SIZE = 32;
+    for (int x = 0; x < texImg.width; ++x)
+    {
+        for (int y = 0; y < texImg.height; ++y)
+        {
+            int base = 3 * (x + y * texImg.width);
+            if ((((x / BLOCK_SIZE) % 2) == 0 && ((y / BLOCK_SIZE) % 2) == 0) ||
+                (((x / BLOCK_SIZE) % 2) == 1 && ((y / BLOCK_SIZE) % 2) == 1) )
+            {
+                pixels[base] = char(0xFF);
+                pixels[base + 1] = 0x00;
+                pixels[base + 2] = char(0xFF);
+            }
+            else
+            {
+                pixels[base] = pixels[base + 1] = pixels[base + 2] = 0x00;
+            }
+        }
+    }
+    Texture2D missingTexture = LoadTextureFromImage(texImg);
+    UnloadImage(texImg);
+    return missingTexture;
 }
 
 std::shared_ptr<Assets::TexHandle> Assets::GetTexture(fs::path texturePath)
 {
     Assets *a = _Get();
-    //Attempt to find the texture in the cache
+    // Attempt to find the texture in the cache
     if (a->_textures.find(texturePath) != a->_textures.end())
     {
         std::weak_ptr<TexHandle> weakHandle = a->_textures[texturePath];
@@ -226,13 +224,16 @@ std::shared_ptr<Assets::TexHandle> Assets::GetTexture(fs::path texturePath)
         }
     }
 
-    //Load the texture if it is no longer stored in the cache
+    // Load the texture if it is no longer stored in the cache
     Texture2D texture = LoadTexture(texturePath.string().c_str());
-    //Replace with the checkerboard texture if the file didn't load
-    if (texture.width == 0) texture = a->_missingTexture;
+    // Replace with the checkerboard texture if the file didn't load
+    if (texture.width == 0) 
+    {
+        texture = Assets::GetMissingTexture();
+    }
 
     auto sharedPtr = std::make_shared<TexHandle>(texture, texturePath);
-    //Cache the texture
+    // Cache the texture
     a->_textures[texturePath] = std::weak_ptr<TexHandle>(sharedPtr);
     return sharedPtr;
 }

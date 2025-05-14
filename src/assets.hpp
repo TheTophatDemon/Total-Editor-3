@@ -78,7 +78,7 @@ public:
     static const Model&  GetEntSphere(); // Returns the sphere that represents entities visually
     static const Mesh& GetSpriteQuad();
     static Texture GetMissingTexture();
-    static const Model& GetMissingModel(); // Returns the model used when a loading error occurs.
+    static const Model GetMissingModel(); // Returns the model used when a loading error occurs.
 protected:
     // Asset caches that hold weak references to all the loaded textures and models
     std::map<fs::path, std::weak_ptr<TexHandle>>   _textures;
@@ -87,9 +87,7 @@ protected:
     // Assets that are alive the whole application
     Font _font; // Default application font (dejavu.fnt)
     ImFont *_uiFont, *_codeFont;
-    Texture2D _missingTexture; // Texture to display when the texture file to be loaded isn't found
     Model _entSphere; // The sphere that represents entities visually
-    Model _missingModel; // Model to display when a model file to be loaded isn't found
     Shader _mapShader; // The non-instanced version that is used to render tiles outside of the map itself
     Shader _mapShaderInstanced; // The instanced version is used to render the tiles
     Shader _spriteShader;

@@ -44,7 +44,7 @@ TileGrid::TileGrid(MapMan& mapMan, size_t width, size_t height, size_t length, f
     _batchToY = height - 1;
     _batchPosition = Vector3Zero();
     _model = nullptr;
-    _regenBatches = true;
+    _shouldRegenBatches = true;
     _regenModel = true;
     _modelCulled = false;
 }
@@ -62,14 +62,14 @@ Tile TileGrid::GetTile(int flatIndex) const
 void TileGrid::SetTile(int i, int j, int k, const Tile& tile) 
 {
     SetCel(i, j, k, tile);
-    _regenBatches = true;
+    _shouldRegenBatches = true;
     _regenModel = true;
 }
 
 void TileGrid::SetTile(int flatIndex, const Tile& tile)
 {
     _grid[flatIndex] = tile;
-    _regenBatches = true;
+    _shouldRegenBatches = true;
     _regenModel = true;
 }
 
@@ -88,7 +88,7 @@ void TileGrid::SetTileRect(int i, int j, int k, int w, int h, int l, const Tile&
             }
         }
     }
-    _regenBatches = true;
+    _shouldRegenBatches = true;
     _regenModel = true;
 }
 
@@ -114,14 +114,14 @@ void TileGrid::CopyTiles(int i, int j, int k, const TileGrid &src, bool ignoreEm
             }
         }
     }
-    _regenBatches = true;
+    _shouldRegenBatches = true;
     _regenModel = true;
 }
 
 void TileGrid::UnsetTile(int i, int j, int k) 
 {
     _grid[FlatIndex(i, j, k)].shape = NO_MODEL;
-    _regenBatches = true;
+    _shouldRegenBatches = true;
     _regenModel = true;
 }
 
@@ -134,7 +134,7 @@ TileGrid TileGrid::Subsection(int i, int j, int k, int w, int h, int l) const
 
     SubsectionCopy(i, j, k, w, h, l, newGrid);
 
-    newGrid._regenBatches = true;
+    newGrid._shouldRegenBatches = true;
 
     return newGrid;
 }
@@ -145,7 +145,7 @@ void TileGrid::_RegenBatches(Vector3 position, int fromY, int toY)
     _batchFromY = fromY;
     _batchToY = toY;
     _batchPosition = position;
-    _regenBatches = false;
+    _shouldRegenBatches = false;
 
     const size_t layerArea = _width * _length;
     // Create a hash map of dynamic arrays for each combination of texture and mesh
@@ -192,7 +192,7 @@ void TileGrid::Draw(Vector3 position, int fromY, int toY)
     }
     else
     {
-        if (_regenBatches || fromY != _batchFromY || toY != _batchToY || position != _batchPosition)
+        if (_shouldRegenBatches || fromY != _batchFromY || toY != _batchToY || position != _batchPosition)
         {
             _RegenBatches(position, fromY, toY);
         }
@@ -317,6 +317,8 @@ void TileGrid::SetTileDataBase64OldFormat(std::string data)
         _grid[gridIndex] = Tile(modelID, texID, texID, yaw, pitch);
         ++gridIndex;
     }
+
+    _shouldRegenBatches = true;
 }
 
 void TileGrid::SetTileDataBase64(std::string data)
@@ -355,6 +357,8 @@ void TileGrid::SetTileDataBase64(std::string data)
         _grid[gridIndex] = Tile(modelID, tex1ID, tex2ID, yaw, pitch);
         ++gridIndex;
     }
+
+    _shouldRegenBatches = true;
 }
 
 std::pair<std::vector<TexID>, std::vector<ModelID>> TileGrid::GetUsedIDs() const
