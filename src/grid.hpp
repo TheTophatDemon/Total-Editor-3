@@ -27,12 +27,12 @@
 
 #include "math_stuff.hpp"
 
-//Represents a 3 dimensional array of tiles and provides functions for converting coordinates.
+// Represents a 3 dimensional array of tiles and provides functions for converting coordinates.
 template<class Cel>
 class Grid
 {
 public:
-    //Constructs a grid filled with the given cel.
+    // Constructs a grid filled with the given cel.
     inline Grid(size_t width, size_t height, size_t length, float spacing, const Cel &fill)
     {
         _width = width; _height = height; _length = length; _spacing = spacing;
@@ -41,13 +41,13 @@ public:
         for (size_t i = 0; i < _grid.size(); ++i) { _grid[i] = fill; }
     }
 
-    //Constructs a grid full of default-constructed cels.
+    // Constructs a grid full of default-constructed cels.
     inline Grid(size_t width, size_t height, size_t length, float spacing)
         : Grid(width, height, length, spacing, Cel())
     {
     }
 
-    //Constructs a blank grid of zero size.
+    // Constructs a blank grid of zero size.
     inline Grid()
         : Grid(0, 0, 0, 0.0f)
     {
@@ -60,8 +60,8 @@ public:
         return Vector3{ floorf(worldPos.x / _spacing), floorf(worldPos.y / _spacing) , floorf(worldPos.z / _spacing)};
     }
 
-    //Converts (whole number) grid cel coordinates to world coordinates.
-    //If `center` is true, then the world coordinate will be in the center of the cel instead of the corner.
+    // Converts (whole number) grid cel coordinates to world coordinates.
+    // If `center` is true, then the world coordinate will be in the center of the cel instead of the corner.
     inline Vector3 GridToWorldPos(Vector3 gridPos, bool center) const 
     {
         if (center) 
@@ -88,11 +88,13 @@ public:
 
     inline size_t FlatIndex(int i, int j, int k) const 
     {
+        assert(i >= 0 && j >= 0 && k >= 0 && (size_t)i < _width && (size_t)j < _height && (size_t)k < _length);
         return i + (k * _width) + (j * _width * _length);
     }
 
     inline Vector3 UnflattenIndex(size_t idx) const 
     {
+        assert(idx < _grid.size());
         return Vector3{
             (float)(idx % _width),
             (float)(idx / (_width * _length)),
@@ -123,17 +125,19 @@ public:
 protected:
     inline void SetCel(int i, int j, int k, const Cel& cel) 
     {
+        assert(i >= 0 && j >= 0 && k >= 0 && (size_t)i < _width && (size_t)j < _height && (size_t)k < _length);
         _grid[FlatIndex(i, j, k)] = cel;
     }
 
     inline Cel GetCel(int i, int j, int k) const 
     {
+        assert(i >= 0 && j >= 0 && k >= 0 && (size_t)i < _width && (size_t)j < _height && (size_t)k < _length);
         return _grid[FlatIndex(i, j, k)];
     }
 
     inline void CopyCels(int i, int j, int k, const Grid<Cel> &src)
     {
-        assert(i >= 0 && j >= 0 && k >= 0);
+        assert(i >= 0 && j >= 0 && k >= 0 && (size_t)i < _width && (size_t)j < _height && (size_t)k < _length);
         int xEnd = Min(i + src._width, _width); 
         int yEnd = Min(j + src._height, _height);
         int zEnd = Min(k + src._length, _length);
