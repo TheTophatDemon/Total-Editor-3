@@ -292,21 +292,6 @@ void App::TryOpenMap(fs::path path)
             _tilePlaceMode->SetCameraOrientation(_mapMan->GetDefaultCameraPosition(), _mapMan->GetDefaultCameraAngles());
             _tilePlaceMode->ResetGrid();
         }
-        else if (path.extension() == ".ti")
-        {
-            if (_mapMan->LoadTE2Map(path))
-            {
-                _lastSavedPath = "";
-                DisplayStatusMessage("Loaded .ti map '" + path.filename().string() + "'.", 5.0f, 100);
-            }
-            else
-            {
-                DisplayStatusMessage("ERROR: Failed to load .ti map. Check the console.", 5.0f, 100);
-                return;
-            }
-            _tilePlaceMode->ResetCamera();
-            _tilePlaceMode->ResetGrid();
-        }
         else
         {
             DisplayStatusMessage("ERROR: Invalid file extension.", 5.0f, 100);
