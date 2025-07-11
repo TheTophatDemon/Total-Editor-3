@@ -1,3 +1,9 @@
+## Version 3.2.1
+- Fixed bug where multi-textured tiles are assigned the wrong textures after saving sometimes.
+- Entities with non square sprites will now be scaled vertically to maintain aspect ratio.
+- Fixed issue where missing textures are overwritten with other textures after saving and reloading.
+- Removed Total Editor 2 importer.
+
 ## Version 3.2
 - Fixed bug with entities being misplaced after map size is expanded.
 - Made currently open file show up in the window title.

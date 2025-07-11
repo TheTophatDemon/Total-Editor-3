@@ -1,7 +1,4 @@
 # TODO
-- Bug fix
-  - Remove the .ti loader because it's broken and I don't need it anymore.
-  - Add bounds checking to grid operations just in case
 - Refactor
   - Consider making App a "static" class instead of a singleton.
 ## Future updates
