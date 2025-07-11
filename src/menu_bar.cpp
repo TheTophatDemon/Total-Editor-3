@@ -51,8 +51,8 @@ void MenuBar::OpenOpenMapDialog()
 {
     auto makeFileDialog = [this] { 
         return new FileDialog(
-            "Open Map (*.te3, *.ti)",
-            std::initializer_list<std::string>{ ".te3", ".ti" }, 
+            "Open Map (*.te3)",
+            std::initializer_list<std::string>{ ".te3" }, 
             [this](fs::path path)
             { 
                 App::Get()->TryOpenMap(path);
