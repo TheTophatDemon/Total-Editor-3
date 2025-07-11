@@ -166,21 +166,18 @@ bool MapMan::SaveTE3Map(fs::path filePath)
         // Make a copy of the map that reassigns all IDs to match the new lists
         const int tileArea = _tileGrid.GetWidth() * _tileGrid.GetHeight() * _tileGrid.GetLength();
         TileGrid optimizedGrid = _tileGrid.Subsection(0, 0, 0, _tileGrid.GetWidth(), _tileGrid.GetHeight(), _tileGrid.GetLength());
-        for (int i = 0; i < tileArea; ++i)
+        for (int gridIdx = 0; gridIdx < tileArea; ++gridIdx)
         {
-            Tile tile = optimizedGrid.GetTile(i);
+            Tile tile = optimizedGrid.GetTile(gridIdx);
             for (size_t t = 0; t < usedTexIDs.size(); ++t)
             {
-                bool foundit = false;
                 for (int i = 0; i < TEXTURES_PER_TILE; ++i)
                 {
                     if (usedTexIDs[t] == tile.textures[i]) 
                     {
                         tile.textures[i] = (TexID)t;
-                        foundit = true;
                     }
                 }
-                if (foundit) break;
             }
             for (size_t m = 0; m < usedModelIDs.size(); ++m)
             {
@@ -190,7 +187,7 @@ bool MapMan::SaveTE3Map(fs::path filePath)
                     break;
                 }
             }
-            optimizedGrid.SetTile(i, tile);
+            optimizedGrid.SetTile(gridIdx, tile);
         }
 
         // Save the modified tile data
