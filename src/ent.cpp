@@ -106,12 +106,13 @@ void Ent::Draw(const bool drawAxes, const Vector3 position)
     case DisplayMode::SPRITE:
         {
             if (texture == nullptr) break;
+            const float aspectRatio = (float)texture->GetTexture().width / (float)texture->GetTexture().height;
             
             rlDrawRenderBatchActive();
             spriteMaterial.shader = Assets::GetSpriteShader();
             SetMaterialTexture(&spriteMaterial, MATERIAL_MAP_ALBEDO, texture->GetTexture());
             spriteMaterial.maps[MATERIAL_MAP_ALBEDO].color = color;
-            DrawMesh(Assets::GetSpriteQuad(), spriteMaterial, MatrixMultiply(MatrixScale(radius, radius, radius), matrix));
+            DrawMesh(Assets::GetSpriteQuad(), spriteMaterial, MatrixMultiply(MatrixScale(radius, radius / aspectRatio, radius), matrix));
             break;
         }
     }
