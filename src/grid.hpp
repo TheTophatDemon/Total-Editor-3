@@ -125,19 +125,27 @@ public:
 protected:
     inline void SetCel(int i, int j, int k, const Cel& cel) 
     {
-        assert(i >= 0 && j >= 0 && k >= 0 && (size_t)i < _width && (size_t)j < _height && (size_t)k < _length);
-        _grid[FlatIndex(i, j, k)] = cel;
+        if (i >= 0 && j >= 0 && k >= 0 && (size_t)i < _width && (size_t)j < _height && (size_t)k < _length) 
+        {
+            _grid[FlatIndex(i, j, k)] = cel;
+        }
     }
 
     inline Cel GetCel(int i, int j, int k) const 
     {
-        assert(i >= 0 && j >= 0 && k >= 0 && (size_t)i < _width && (size_t)j < _height && (size_t)k < _length);
-        return _grid[FlatIndex(i, j, k)];
+        if (i >= 0 && j >= 0 && k >= 0 && (size_t)i < _width && (size_t)j < _height && (size_t)k < _length) 
+        {
+            return _grid[FlatIndex(i, j, k)];
+        } 
+        else 
+        {
+            return Cel();
+        }
     }
 
     inline void CopyCels(int i, int j, int k, const Grid<Cel> &src)
     {
-        assert(i >= 0 && j >= 0 && k >= 0 && (size_t)i < _width && (size_t)j < _height && (size_t)k < _length);
+        if (!(i >= 0 && j >= 0 && k >= 0 && (size_t)i < _width && (size_t)j < _height && (size_t)k < _length)) return;
         int xEnd = Min(i + src._width, _width); 
         int yEnd = Min(j + src._height, _height);
         int zEnd = Min(k + src._length, _length);

@@ -130,14 +130,15 @@ void PlaceMode::SetCameraOrientation(Vector3 position, Vector3 angles)
 
 void PlaceMode::ResetGrid()
 {
-    //Editor grid and plane
+    // Editor grid and plane
     _planeGridPos = Vector3{ (float)_mapMan.Tiles().GetWidth() / 2.0f, 0, (float)_mapMan.Tiles().GetLength() / 2.0f };
     _planeWorldPos = _mapMan.Tiles().GridToWorldPos(_planeGridPos, false);
     _layerViewMin = 0;
     _layerViewMax = _mapMan.Tiles().GetHeight() - 1;
-    //Cursor
-    _cursor->position = _tileCursor.endPosition = Vector3Zero();
-    _cursor = &_tileCursor;
+    // Cursor
+    _tileCursor.position = _tileCursor.endPosition = Vector3Zero();
+    _entCursor.position = _entCursor.endPosition = Vector3Zero();
+    _brushCursor.position = _brushCursor.endPosition = Vector3Zero();
 }
 
 void PlaceMode::MoveCamera() 

@@ -1,4 +1,7 @@
 # TODO
+- Add command line parameter to launch straight into map
+- Make pressing tab key work to switch fields in entity editor
+- Use slash-only file paths when saving entities
 - Refactor
   - Consider making App a "static" class instead of a singleton.
 ## Future updates
