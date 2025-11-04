@@ -67,6 +67,7 @@ App::App()
     _editorMode    (_tilePlaceMode.get()),
     _lastSavedPath (),
     _previewDraw   (false),
+    _didSave       (false),
     _quit          (false)
 {
     std::filesystem::directory_entry entry { SETTINGS_FILE_PATH };
@@ -196,6 +197,12 @@ void App::Update()
 
 int main(int argc, char **argv)
 {
+    if (argc > 2) 
+    {
+        std::cerr << "Too many arguments supplied. Expected 1 argument: A path to a TE3 file." << std::endl;
+        return 1;
+    }
+
     // Window stuff
 	InitWindow(1280, 720, BASE_WINDOW_TITLE);
     SetWindowMinSize(640, 480);
@@ -218,7 +225,17 @@ int main(int argc, char **argv)
 #endif
 
     App::Get()->ChangeEditorMode(App::Mode::PLACE_TILE);
-    App::Get()->NewMap(100, 5, 100);
+
+    fs::path commandLineOpenedMap = fs::path(argv[1]);
+
+    if (argc <= 1) 
+    {
+        App::Get()->NewMap(100, 5, 100);
+    }
+    else
+    {
+        App::Get()->TryOpenMap(commandLineOpenedMap);
+    }
 
     // Main loop
 	SetTargetFPS(60);
@@ -231,6 +248,10 @@ int main(int argc, char **argv)
 
 	CloseWindow();
 
+    if (App::Get()->GetLastSavedPath() == commandLineOpenedMap && App::Get()->DidSave()) 
+    {
+        return 100;
+    }
 	return 0;
 }
 
@@ -272,6 +293,7 @@ void App::ShrinkMap()
 
 void App::TryOpenMap(fs::path path)
 {
+    _didSave = false;
     fs::directory_entry entry {path};
     if (entry.exists() && entry.is_regular_file())
     {
@@ -344,6 +366,7 @@ void App::TrySaveMap(fs::path path)
     std::string newWindowTitle(BASE_WINDOW_TITLE " - Editing ");
     newWindowTitle += path.filename().string();
     SetWindowTitle(newWindowTitle.c_str());
+    _didSave = true;
 }
 
 void App::TryExportMap(fs::path path, bool separateGeometry)

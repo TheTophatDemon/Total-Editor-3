@@ -93,7 +93,9 @@ public:
     inline bool IsPreviewing() const { return _previewDraw; }
     inline void SetPreviewing(bool p) { _previewDraw = p; }
     inline void TogglePreviewing() { _previewDraw = !_previewDraw; }
+
     inline fs::path GetLastSavedPath() const { return _lastSavedPath; }
+    inline bool DidSave() const { return _didSave; }
 
     inline bool IsQuitting() const { return _quit; }
     inline void Quit() { _quit = true; }
@@ -134,6 +136,7 @@ private:
     fs::path _lastSavedPath;
     bool _previewDraw;
 
+    bool _didSave;
     bool _quit;
 };
 
