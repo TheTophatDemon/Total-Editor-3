@@ -239,14 +239,16 @@ void EntMode::Draw()
             ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
             ImGui::TableNextColumn();
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-            ImGui::InputText("##New key", _newKeyBuffer, TEXT_FIELD_MAX);
+            bool wannaAdd = ImGui::InputText("##New key", _newKeyBuffer, TEXT_FIELD_MAX, ImGuiInputTextFlags_EnterReturnsTrue);
             ImGui::TableNextColumn();
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-            ImGui::InputText("##New val", _newValBuffer, TEXT_FIELD_MAX);
+            wannaAdd = wannaAdd || ImGui::InputText("##New val", _newValBuffer, TEXT_FIELD_MAX, ImGuiInputTextFlags_EnterReturnsTrue);
+            ImGui::IsItemDeactivatedAfterEdit();
             ImGui::TableNextColumn();
             ImGui::PopStyleVar();
             std::string pButtonStr = std::string("Add##AddKey");
-            if (ImGui::Button(pButtonStr.c_str()))
+            wannaAdd = wannaAdd || ImGui::Button(pButtonStr.c_str());
+            if (wannaAdd)
             {
                 std::string key = std::string(_newKeyBuffer);
                 _ent.properties[key] = std::string(_newValBuffer);
