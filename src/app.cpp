@@ -151,7 +151,7 @@ void App::Update()
         if (IsKeyDown(KEY_LEFT_SHIFT))
         {
             if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::PICK_SHAPE);
-            else ChangeEditorMode(Mode::PLACE_TILE);
+            else if (_editorMode == _shapePickMode.get()) ChangeEditorMode(Mode::PLACE_TILE);
         }
         else if (IsKeyDown(KEY_LEFT_CONTROL))
         {
@@ -161,7 +161,7 @@ void App::Update()
         else
         {
             if (_editorMode == _tilePlaceMode.get()) ChangeEditorMode(Mode::PICK_TEXTURE);
-            else ChangeEditorMode(Mode::PLACE_TILE);
+            else if (_editorMode == _texPickMode.get()) ChangeEditorMode(Mode::PLACE_TILE);
         }
     }
 
@@ -226,7 +226,7 @@ int main(int argc, char **argv)
 
     App::Get()->ChangeEditorMode(App::Mode::PLACE_TILE);
 
-    fs::path commandLineOpenedMap = fs::path(argv[1]);
+    fs::path commandLineOpenedMap = {};
 
     if (argc <= 1) 
     {
@@ -234,6 +234,7 @@ int main(int argc, char **argv)
     }
     else
     {
+        commandLineOpenedMap = fs::path(argv[1]);
         App::Get()->TryOpenMap(commandLineOpenedMap);
     }
 
@@ -248,7 +249,7 @@ int main(int argc, char **argv)
 
 	CloseWindow();
 
-    if (App::Get()->GetLastSavedPath() == commandLineOpenedMap && App::Get()->DidSave()) 
+    if (argc > 1 && App::Get()->GetLastSavedPath() == commandLineOpenedMap && App::Get()->DidSave()) 
     {
         return 100;
     }
