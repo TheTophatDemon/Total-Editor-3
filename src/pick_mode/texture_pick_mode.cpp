@@ -80,7 +80,7 @@ bool TexturePickMode::IsFrameSelected(const fs::path& filePath)
 {
     for (const std::shared_ptr<Assets::TexHandle>& tex : _selectedTextures)
     {
-        if (tex->GetPath() == filePath) return true;
+        if (tex && tex->GetPath() == filePath) return true;
     }
     return false;
 }
