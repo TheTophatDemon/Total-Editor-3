@@ -95,6 +95,7 @@ void ShapePickMode::SelectFrame(const Frame frame)
 
 bool ShapePickMode::IsFrameSelected(const fs::path& filePath)
 {
+    if (!_selectedShape) return false;
     return _selectedShape->GetPath() == filePath;
 }
 
