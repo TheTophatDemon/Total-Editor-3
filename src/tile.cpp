@@ -56,6 +56,7 @@ Tile TileGrid::GetTile(int i, int j, int k) const
 
 Tile TileGrid::GetTile(int flatIndex) const
 {
+    if (flatIndex < 0 || (size_t)(flatIndex) >= _grid.size()) return Tile();
     return _grid[flatIndex];
 }
 
@@ -153,7 +154,7 @@ void TileGrid::_RegenBatches(Vector3 position, int fromY, int toY)
     {
         for (size_t t = y * layerArea; t < (y + 1) * layerArea; ++t) 
         {
-            const Tile& tile = _grid[t];
+            const Tile tile = GetTile(t);
             if (tile)
             {
                 // Calculate world space matrix for the tile

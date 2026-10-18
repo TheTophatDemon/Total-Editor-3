@@ -155,7 +155,11 @@ void from_json(const nlohmann::json& j, Ent &ent)
     ent.lastRenderedPosition = Vector3 { j.at("position").at(0), j.at("position").at(1), j.at("position").at(2) };
     ent.pitch = j.at("angles").at(0);
     ent.yaw = j.at("angles").at(1);
-    ent.properties = j.at("properties");
+
+    for (const auto& [key, value] : j.at("properties").items()) {
+        if (value.is_null()) continue;
+        ent.properties[std::string(key)] = std::string(value);
+    }
 
     if (j.contains("display"))
     {
@@ -197,7 +201,7 @@ void EntGrid::Draw(Camera &camera, int fromY, int toY)
 
     for (size_t i = fromY * _width * _length; i < (toY + 1) * _width * _length; ++i)
     {
-        if (!_grid[i].active) continue;
+        if (!GetEnt(i).active) continue;
 
         // Do frustum culling check
         Vector3 ndc = GetWorldToNDC(_grid[i].lastRenderedPosition, camera);

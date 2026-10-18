@@ -96,8 +96,14 @@ public:
 
     inline Ent GetEnt(int i, int j, int k) const
     {
-        assert(HasEnt(i, j, k));
+        if (!HasEnt(i, j, k)) return Ent();
         return GetCel(i, j, k);
+    }
+
+    inline Ent GetEnt(int flatIndex) const
+    {
+        if (flatIndex < 0 || (size_t)(flatIndex) >= _grid.size()) return Ent();
+        return _grid[flatIndex];
     }
 
     inline void CopyEnts(int i, int j, int k, const EntGrid &src)
