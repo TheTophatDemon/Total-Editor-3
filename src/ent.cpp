@@ -107,12 +107,20 @@ void Ent::Draw(const bool drawAxes, const Vector3 position)
         {
             if (texture == nullptr) break;
             const float aspectRatio = (float)texture->GetTexture().width / (float)texture->GetTexture().height;
-            
+            Matrix scaleMatrix = MatrixIdentity();
+            if (aspectRatio > 1.0f) {
+                // For wide sprites, we want to size it so that the width is 1 tile wide.
+                scaleMatrix = MatrixScale(radius, radius / aspectRatio, radius);
+            } else if (aspectRatio < 1.0f) {
+                // For tall sprites, we want to size it so that the height is 1 tile high.
+                scaleMatrix = MatrixScale(radius * aspectRatio, radius, radius * aspectRatio);
+            }
+
             rlDrawRenderBatchActive();
             spriteMaterial.shader = Assets::GetSpriteShader();
             SetMaterialTexture(&spriteMaterial, MATERIAL_MAP_ALBEDO, texture->GetTexture());
             spriteMaterial.maps[MATERIAL_MAP_ALBEDO].color = color;
-            DrawMesh(Assets::GetSpriteQuad(), spriteMaterial, MatrixMultiply(MatrixScale(radius, radius / aspectRatio, radius), matrix));
+            DrawMesh(Assets::GetSpriteQuad(), spriteMaterial, MatrixMultiply(scaleMatrix, matrix));
             break;
         }
     }
