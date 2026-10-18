@@ -108,7 +108,7 @@ void EntMode::Draw()
     {
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 32.0f));
         // Entity display mode
-        ImGui::Combo("Display mode", (int*)(&_ent.display), "Sphere\0Model\0Sprite\0");
+        ImGui::Combo("Display mode", (int*)(&_ent.display), "Sphere\0Model\0Sprite\0Wireframe Sphere\0");
         ImGui::Separator();
 
         ImGui::PopStyleVar(1);
@@ -130,6 +130,7 @@ void EntMode::Draw()
         switch (_ent.display)
         {
         case Ent::DisplayMode::SPHERE:
+        case Ent::DisplayMode::WIRE_SPHERE:
             {
                 // Radius box
                 ImGui::TextUnformatted("Radius");

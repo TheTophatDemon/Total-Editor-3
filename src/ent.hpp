@@ -42,6 +42,7 @@ struct Ent
         SPHERE,
         MODEL,
         SPRITE,
+        WIRE_SPHERE,
     };
 
     bool active;

@@ -30,6 +30,7 @@
 #include "text_util.hpp"
 #include "assets.hpp"
 #include "map_man/map_man.hpp"
+#include "math_stuff.hpp"
 
 #define DISPLAY_NAME_THRESHOLD 0.9995f
 
@@ -77,10 +78,16 @@ void Ent::Draw(const bool drawAxes, const Vector3 position)
     {
     case DisplayMode::SPHERE:
         {
+            // We have a special model for this so that it gets shaded correctly.
             DrawModel(Assets::GetEntSphere(), position, radius, color);
             break;
         }
-
+    case DisplayMode::WIRE_SPHERE:
+        {
+            float detailLevel = Minf(radius, 20.0f);
+            DrawSphereWires(position, radius, (int)(detailLevel * 4.0f), (int)(detailLevel * 8.0f), color);
+            break;
+        }
     case DisplayMode::MODEL:
         {
             if (model == nullptr) break;

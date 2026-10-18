@@ -1,8 +1,6 @@
 # TODO
-- Add wireframe display modes for entities
-- Use slash-only file paths when saving entities
-- Refactor
-  - Consider making App a "static" class instead of a singleton.
+- Add box / wireframe box display mode for entities
+- Normalize saved file paths to use forward slashes
 ## Future updates
 
 - Add image preview in the file picker
