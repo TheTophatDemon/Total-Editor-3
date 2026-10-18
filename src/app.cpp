@@ -106,19 +106,13 @@ void App::ChangeEditorMode(const App::Mode newMode)
     {
         case App::Mode::PICK_SHAPE: 
         {
-            if (_editorMode == _tilePlaceMode.get()) 
-            {
-                _shapePickMode->SetPickedShape(_tilePlaceMode->GetCursorShape());
-            }
+            _shapePickMode->SetPickedShape(_tilePlaceMode->GetCursorShape());
             _editorMode = _shapePickMode.get(); 
         }
         break;
         case App::Mode::PICK_TEXTURE: 
         {
-            if (_editorMode == _tilePlaceMode.get()) 
-            {
-                _texPickMode->SetPickedTextures(_tilePlaceMode->GetCursorTextures());
-            }
+            _texPickMode->SetPickedTextures(_tilePlaceMode->GetCursorTextures());
             _editorMode = _texPickMode.get(); 
         }
         break;
