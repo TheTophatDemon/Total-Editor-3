@@ -367,7 +367,7 @@ void PlaceMode::Draw()
                 fabs(_cursor->endPosition.z - _cursor->position.z) + _mapMan.Tiles().GetSpacing() * _outlineScale, 
                 MAGENTA);
 
-            DrawAxes3D(Vector3{ 1.0f, 1.0f, 1.0f }, 10.0f);
+            DrawAxes3D(Vector3{ 1.0f, 1.0f, 1.0f }, Vector3{10.0f, 10.0f, 10.0f});
             rlDrawRenderBatchActive();
             rlEnableDepthTest();
         }

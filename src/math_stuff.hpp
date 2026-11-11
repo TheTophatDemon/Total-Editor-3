@@ -3,6 +3,7 @@
 #ifndef MATH_STUFF_H
 #define MATH_STUFF_H
 
+#include <tuple>
 #include "raylib.h"
 #include "rlgl.h"
 #include "raymath.h"
@@ -64,6 +65,14 @@ inline int OffsetDegrees(int base, int add)
 inline Matrix MatrixRotYDeg(float degrees)
 {
     return MatrixRotateY(ToRadians(degrees));
+}
+
+inline std::tuple<Vector3, float> EulerToAxisAngle(Vector3 eulerAngles) {
+    Quaternion quat = QuaternionFromEuler(eulerAngles.x, eulerAngles.y, eulerAngles.z);
+    Vector3 axis;
+    float angle;
+    QuaternionToAxisAngle(quat, &axis, &angle);
+    return std::tuple<Vector3, float>{axis, angle};
 }
 
 // Modified version of Raylib's GetWorldToScreen(), but returns the NDC coordinates so that the program can tell what's behind the camera.

@@ -1,10 +1,11 @@
 ## Version 3.3.0
 - Added ability to open a map from a command line and return code 100 if that map is saved.
 - Enabled tab navigation on the entity editor
-- Added wireframe sphere display mode for entities
+- Added wireframe sphere, box, and wireframe box display mode for entities
 - Fixed crash that may occur when opening a smaller map while on a larger map
 - Fixed crash when switching directly between texture picker and file picker  (thanks https://github.com/irolup)
-
+- Fixed aspect ratios of entity sprites so that they fit in a tile when radius = 1
+- Display handles for spheres of radius 0
 ## Version 3.2.1
 - Fixed bug where multi-textured tiles are assigned the wrong textures after saving sometimes.
 - Entities with non square sprites will now be scaled vertically to maintain aspect ratio.

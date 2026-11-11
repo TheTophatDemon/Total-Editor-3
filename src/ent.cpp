@@ -46,6 +46,7 @@ Ent::Ent()
     properties = std::map<std::string, std::string>();
     model = nullptr;
     texture = nullptr;
+    extents = Vector3Zero();
 }
 
 Ent::Ent(float radius)
@@ -54,6 +55,7 @@ Ent::Ent(float radius)
     display = DisplayMode::SPHERE;
     color = WHITE;
     this->radius = radius;
+    extents = Vector3 { radius, radius, radius };
     lastRenderedPosition = Vector3Zero();
     yaw = pitch = 0;
     properties = std::map<std::string, std::string>();
@@ -67,12 +69,19 @@ void Ent::Draw(const bool drawAxes, const Vector3 position)
     // All sprites share the same material, and the texture is changed for each one
     static Material spriteMaterial = LoadMaterialDefault();
 
+    Vector3 eulerAngles = Vector3{ToRadians((float) pitch), ToRadians((float) yaw), 0.0f};
+
+    Matrix rotationMatrix = MatrixMultiply(
+        MatrixRotateX(eulerAngles.x), 
+        MatrixRotateY(eulerAngles.y)
+    );
+
     Matrix matrix = MatrixMultiply(
-        MatrixMultiply(
-            MatrixRotateX(ToRadians((float) pitch)), 
-            MatrixRotateY(ToRadians((float) yaw))
-        ),
-        MatrixTranslate(position.x, position.y, position.z));
+        rotationMatrix,
+        MatrixTranslate(position.x, position.y, position.z)
+    );
+
+    Vector3 axesExtents = Vector3{Maxf(1.0f, radius), Maxf(1.0f, radius), Maxf(1.0f, radius)};
 
     switch (display)
     {
@@ -86,6 +95,20 @@ void Ent::Draw(const bool drawAxes, const Vector3 position)
         {
             float detailLevel = Minf(radius, 20.0f);
             DrawSphereWires(position, radius, (int)(detailLevel * 4.0f), (int)(detailLevel * 8.0f), color);
+            break;
+        }
+    case DisplayMode::BOX:
+        {
+            auto [axis, angle] = EulerToAxisAngle(eulerAngles);
+            axesExtents = Vector3{Maxf(1.0f, extents.x), Maxf(1.0f, extents.y), Maxf(1.0f, extents.z)};
+            DrawModelEx(Assets::GetEntBox(), position, axis, ToDegrees(angle), extents, color);
+            break;
+        }
+    case DisplayMode::WIRE_BOX:
+        {
+            auto [axis, angle] = EulerToAxisAngle(eulerAngles);
+            axesExtents = Vector3{Maxf(1.0f, extents.x), Maxf(1.0f, extents.y), Maxf(1.0f, extents.z)};
+            DrawModelWiresEx(Assets::GetEntBox(), position, axis, ToDegrees(angle), extents, color);
             break;
         }
     case DisplayMode::MODEL:
@@ -109,7 +132,6 @@ void Ent::Draw(const bool drawAxes, const Vector3 position)
             RL_FREE(mat.maps);
             break;
         }
-
     case DisplayMode::SPRITE:
         {
             if (texture == nullptr) break;
@@ -137,7 +159,7 @@ void Ent::Draw(const bool drawAxes, const Vector3 position)
         // Draw axes to show orientation
         rlPushMatrix();
         rlMultMatrixf(MatrixToFloat(matrix));
-        DrawAxes3D(Vector3Zero(), radius);
+        DrawAxes3D(Vector3Zero(), axesExtents);
         rlPopMatrix();
     }
 }
@@ -145,6 +167,7 @@ void Ent::Draw(const bool drawAxes, const Vector3 position)
 void to_json(nlohmann::json& j, const Ent &ent)
 {
     j["radius"] = ent.radius;
+    if (ent.extents != Vector3Zero()) j["extents"] = nlohmann::json::array({ent.extents.x, ent.extents.y, ent.extents.z});
     j["color"] = nlohmann::json::array({ent.color.r, ent.color.g, ent.color.b});
     j["position"] = nlohmann::json::array({ent.lastRenderedPosition.x, ent.lastRenderedPosition.y, ent.lastRenderedPosition.z});
     j["angles"] = nlohmann::json::array({ent.pitch, ent.yaw, 0.0f});
@@ -158,6 +181,10 @@ void from_json(const nlohmann::json& j, Ent &ent)
 {
     ent.active = true;
     ent.radius = j.at("radius");
+    if (j.contains("extents")) 
+    {
+        ent.extents = Vector3 { j.at("extents").at(0), j.at("extents").at(1), j.at("extents").at(2) };
+    }
     ent.color = Color { j.at("color").at(0), j.at("color").at(1), j.at("color").at(2), 255 };
     ent.lastRenderedPosition = Vector3 { j.at("position").at(0), j.at("position").at(1), j.at("position").at(2) };
     ent.pitch = j.at("angles").at(0);

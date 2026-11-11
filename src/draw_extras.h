@@ -68,33 +68,38 @@ inline void DrawGridEx(Vector3 position, int slicesX, int slicesZ, float spacing
     rlEnd();
 }
 
-inline void DrawAxes3D(Vector3 position, float scale)
+inline void DrawAxes3D(Vector3 position, Vector3 scale)
 {
+    float letterScale = Minf(scale.x, Minf(scale.y, scale.z));
+
     //Draw axes
     rlBegin(RL_LINES);
     
     rlColor3f(1.0f, 0.0f, 0.0f); 
     //Line X
-    rlVertex3f(position.x, position.y, position.z); rlVertex3f(position.x + scale, position.y, position.z);
+    rlVertex3f(position.x, position.y, position.z); rlVertex3f(position.x + (scale.x * 1.0f) - 0.25f, position.y, position.z);
     //X
-    rlVertex3f(position.x + scale * 1.0f, position.y + scale * 0.25f, position.z); rlVertex3f(position.x + scale * 1.5f, position.y + scale * -0.25f, position.z); 
-    rlVertex3f(position.x + scale * 1.5f, position.y + scale * 0.25f, position.z); rlVertex3f(position.x + scale * 1.0f, position.y + scale * -0.25f, position.z);
+    float xOffset = position.x + (scale.x * 1.0f);
+    rlVertex3f(xOffset, position.y + (letterScale * 0.25f), position.z); rlVertex3f(xOffset + (letterScale * 0.5f), position.y + (letterScale * -0.25f), position.z); 
+    rlVertex3f(xOffset + (letterScale * 0.5f), position.y + (letterScale * 0.25f), position.z); rlVertex3f(xOffset, position.y + (letterScale * -0.25f), position.z);
     
     rlColor3f(0.0f, 1.0f, 0.0f); 
     //Line Y
-    rlVertex3f(position.x, position.y, position.z); rlVertex3f(position.x, position.y + scale, position.z);
+    rlVertex3f(position.x, position.y, position.z); rlVertex3f(position.x, position.y + (scale.y * 1.25f) - 0.25f, position.z);
     //Y
-    rlVertex3f(position.x, position.y + scale * 1.25f,position.z); rlVertex3f(position.x + scale * 0.0f,  position.y + scale * 1.5f,  position.z);
-    rlVertex3f(position.x, position.y + scale * 1.5f, position.z); rlVertex3f(position.x + scale * 0.25f, position.y + scale *  1.75f,position.z);
-    rlVertex3f(position.x, position.y + scale * 1.5f, position.z); rlVertex3f(position.x + scale *-0.25f, position.y + scale *  1.75f,position.z);
+    float yOffset = position.y + (scale.y * 1.25f);
+    rlVertex3f(position.x, yOffset, position.z); rlVertex3f(position.x + letterScale * 0.0f, yOffset + (letterScale * 0.25), position.z);
+    rlVertex3f(position.x, yOffset + (letterScale * 0.25f), position.z); rlVertex3f(position.x + letterScale * 0.25f, yOffset + (letterScale * 0.5), position.z);
+    rlVertex3f(position.x, yOffset + (letterScale * 0.25f), position.z); rlVertex3f(position.x + letterScale * -0.25f, yOffset + (letterScale * 0.5), position.z);
 
     rlColor3f(0.0f, 0.0f, 1.0f); 
     //Line Z
-    rlVertex3f(position.x, position.y, position.z); rlVertex3f(position.x, position.y, position.z + scale);
+    rlVertex3f(position.x, position.y, position.z); rlVertex3f(position.x, position.y, position.z + (scale.z * 1.25f) - 0.25f);
     //Z
-    rlVertex3f(position.x, position.y + scale * -0.25f,position.z +  scale * 1.25f); rlVertex3f(position.x, position.y + scale * -0.25f,position.z +  scale * 1.75f);
-    rlVertex3f(position.x, position.y + scale * -0.25f,position.z +  scale * 1.75f); rlVertex3f(position.x, position.y + scale * 0.25f, position.z + scale * 1.25f);
-    rlVertex3f(position.x, position.y + scale * 0.25f, position.z + scale * 1.25f); rlVertex3f( position.x, position.y + scale * 0.25f, position.z + scale * 1.75f);
+    float zOffset = position.z + (scale.z * 1.25f);
+    rlVertex3f(position.x, position.y + (letterScale * -0.25f), zOffset); rlVertex3f(position.x, position.y + (letterScale * -0.25f), zOffset + (letterScale * 0.5f));
+    rlVertex3f(position.x, position.y + (letterScale * -0.25f), zOffset + (letterScale * 0.5f)); rlVertex3f(position.x, position.y + (letterScale * 0.25f), zOffset);
+    rlVertex3f(position.x, position.y + (letterScale * 0.25f), zOffset); rlVertex3f(position.x, position.y + (letterScale * 0.25f), zOffset + (letterScale * 0.5f));
 
     rlSetLineWidth(2.0f);
     rlEnd();

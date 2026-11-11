@@ -43,6 +43,8 @@ struct Ent
         MODEL,
         SPRITE,
         WIRE_SPHERE,
+        BOX,
+        WIRE_BOX,
     };
 
     bool active;
@@ -50,6 +52,7 @@ struct Ent
     DisplayMode display;
     Color color;
     float radius;
+    Vector3 extents;
     Vector3 lastRenderedPosition;
     int yaw, pitch; // Degrees angle orientation
 

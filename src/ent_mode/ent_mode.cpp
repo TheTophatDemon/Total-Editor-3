@@ -108,7 +108,7 @@ void EntMode::Draw()
     {
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 32.0f));
         // Entity display mode
-        ImGui::Combo("Display mode", (int*)(&_ent.display), "Sphere\0Model\0Sprite\0Wireframe Sphere\0");
+        ImGui::Combo("Display mode", (int*)(&_ent.display), "Sphere\0Model\0Sprite\0Wireframe Sphere\0Box\0Wireframe Box\0");
         ImGui::Separator();
 
         ImGui::PopStyleVar(1);
@@ -132,10 +132,25 @@ void EntMode::Draw()
         case Ent::DisplayMode::SPHERE:
         case Ent::DisplayMode::WIRE_SPHERE:
             {
-                // Radius box
+                // Radius input
                 ImGui::TextUnformatted("Radius");
                 ImGui::SetNextItemWidth(256.0f);
                 ImGui::InputFloat("##Radius", &_ent.radius, 0.1f, 0.1f, "%.1f");
+                break;
+            }
+        case Ent::DisplayMode::BOX:
+        case Ent::DisplayMode::WIRE_BOX:
+            {
+                ImGui::TextUnformatted("Extents");
+                ImGui::SetNextItemWidth(256.0f);
+                float values[3];
+                values[0] = _ent.extents.x;
+                values[1] = _ent.extents.y;
+                values[2] = _ent.extents.z;
+                ImGui::InputFloat3("##Extents", values);
+                _ent.extents.x = values[0];
+                _ent.extents.y = values[1];
+                _ent.extents.z = values[2];
                 break;
             }
         case Ent::DisplayMode::MODEL:
@@ -154,7 +169,7 @@ void EntMode::Draw()
                 ImGui::SameLine();
                 ImGui::InputText("##Model path", _modelPathBuffer, TEXT_FIELD_MAX);
                 
-                // Intentional fallthrough
+                [[fallthrough]];
             }
         case Ent::DisplayMode::SPRITE:
             {
