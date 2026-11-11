@@ -354,22 +354,25 @@ void PlaceMode::Draw()
         if (!App::Get()->IsPreviewing())
         {
             //Draw cursor
-            _cursor->Draw();
+            _cursor->Draw(_mapMan);
 
-            // Draw pink border around the cursor
-            rlDrawRenderBatchActive();
-            rlDisableDepthTest();
-            rlSetLineWidth(2.0f);
-            DrawCubeWires(
-                (_cursor->position + _cursor->endPosition) * 0.5f, 
-                fabs(_cursor->endPosition.x - _cursor->position.x) + _mapMan.Tiles().GetSpacing() * _outlineScale, 
-                fabs(_cursor->endPosition.y - _cursor->position.y) + _mapMan.Tiles().GetSpacing() * _outlineScale, 
-                fabs(_cursor->endPosition.z - _cursor->position.z) + _mapMan.Tiles().GetSpacing() * _outlineScale, 
-                MAGENTA);
-
-            DrawAxes3D(Vector3{ 1.0f, 1.0f, 1.0f }, Vector3{10.0f, 10.0f, 10.0f});
-            rlDrawRenderBatchActive();
-            rlEnableDepthTest();
+            if (!_cursor->disableBorder)
+            {
+                // Draw pink border around the cursor
+                rlDrawRenderBatchActive();
+                rlDisableDepthTest();
+                rlSetLineWidth(2.0f);
+                DrawCubeWires(
+                    (_cursor->position + _cursor->endPosition) * 0.5f, 
+                    fabs(_cursor->endPosition.x - _cursor->position.x) + _mapMan.Tiles().GetSpacing() * _outlineScale, 
+                    fabs(_cursor->endPosition.y - _cursor->position.y) + _mapMan.Tiles().GetSpacing() * _outlineScale, 
+                    fabs(_cursor->endPosition.z - _cursor->position.z) + _mapMan.Tiles().GetSpacing() * _outlineScale, 
+                    MAGENTA);
+    
+                DrawAxes3D(Vector3{ 1.0f, 1.0f, 1.0f }, Vector3{10.0f, 10.0f, 10.0f});
+                rlDrawRenderBatchActive();
+                rlEnableDepthTest();
+            }
         }
     }
     EndMode3D();

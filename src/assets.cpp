@@ -120,12 +120,6 @@ Assets::Assets()
         _entSphere.materials[m].shader = _mapShader;
     }
 
-    // Generate entity box
-    _entBox = LoadModelFromMesh(GenMeshCube(2.0f, 2.0f, 2.0f));
-    for (int m = 0; m < _entBox.materialCount; ++m) {
-        _entBox.materials[m].shader = _mapShader;
-    }
-
     _font = LoadFont_Dejavu();
 
     // Set up IMGUI fonts
@@ -167,11 +161,6 @@ const Shader &Assets::GetSpriteShader()
 const Model &Assets::GetEntSphere()
 {
     return _Get()->_entSphere;
-}
-
-const Model& Assets::GetEntBox()
-{
-    return _Get()->_entBox;
 }
 
 const Mesh& Assets::GetSpriteQuad()

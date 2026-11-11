@@ -39,7 +39,7 @@ void PlaceMode::BrushCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k
     }
 }
 
-void PlaceMode::BrushCursor::Draw()
+void PlaceMode::BrushCursor::Draw(MapMan& mapMan)
 {
     // Draw the tile grid within the brush
     Vector3 brushOffset = Vector3Min(position, endPosition);

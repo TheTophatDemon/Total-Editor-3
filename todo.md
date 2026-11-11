@@ -1,9 +1,12 @@
 # TODO
+- Replace boxes with zones
+  - Animated lines
+  - Update docs
+- Upgrade to Raylib 6?
 - Make sprites without textures display as blank squares
-- Add scale origin property to box entities
 - Make sprites scale again using radius
-- Remove shading from wireframe boxes
 - Normalize saved file paths to use forward slashes
+- Take camera position & orientation on the command line
 ## Considered future updates
 
 - Add image preview in the file picker

@@ -24,6 +24,7 @@
 #include "rlgl.h"
 
 #include <iostream>
+#include <array>
 
 #include "app.hpp"
 #include "draw_extras.h"
@@ -46,7 +47,7 @@ Ent::Ent()
     properties = std::map<std::string, std::string>();
     model = nullptr;
     texture = nullptr;
-    extents = Vector3Zero();
+    lengths = Vector3Zero();
 }
 
 Ent::Ent(float radius)
@@ -55,15 +56,92 @@ Ent::Ent(float radius)
     display = DisplayMode::SPHERE;
     color = WHITE;
     this->radius = radius;
-    extents = Vector3 { radius, radius, radius };
+    lengths = Vector3Zero();
     lastRenderedPosition = Vector3Zero();
     yaw = pitch = 0;
     properties = std::map<std::string, std::string>();
     model = nullptr;
     texture = nullptr;
+    lengths = Vector3{1.0f, 1.0f, 1.0f};
 }
 
-void Ent::Draw(const bool drawAxes, const Vector3 position)
+bool Ent::RadiusAvailable() const 
+{
+    switch (display) 
+    {
+    case DisplayMode::SPHERE:
+    case DisplayMode::WIRE_SPHERE:
+    case DisplayMode::MODEL:
+    case DisplayMode::SPRITE:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool Ent::LengthsAvailable() const 
+{
+    switch (display) 
+    {
+    case DisplayMode::AREA:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool Ent::TextureAvailable() const 
+{
+    switch (display) 
+    {
+    case DisplayMode::MODEL:
+    case DisplayMode::SPRITE:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool Ent::ModelAvailable() const 
+{
+    return display == DisplayMode::MODEL;
+}
+
+BoundingBox Ent::Bounds(const float gridSpacing) const
+{
+    switch (display) 
+    {
+    case DisplayMode::AREA:
+        {
+            const float HALF_GRID = gridSpacing / 2.0f;
+            return BoundingBox{
+                .min = Vector3{
+                    ((lengths.x < 0.0f) ? (lengths.x * gridSpacing) : 0) - HALF_GRID,
+                    ((lengths.y < 0.0f) ? (lengths.y * gridSpacing) : 0) - HALF_GRID,
+                    ((lengths.z < 0.0f) ? (lengths.z * gridSpacing) : 0) - HALF_GRID,
+                },
+                .max = Vector3{
+                    ((lengths.x > 0.0f) ? (lengths.x * gridSpacing) : 0) + HALF_GRID,
+                    ((lengths.y > 0.0f) ? (lengths.y * gridSpacing) : 0) + HALF_GRID,
+                    ((lengths.z > 0.0f) ? (lengths.z * gridSpacing) : 0) + HALF_GRID,
+                },
+            };
+        }
+    case DisplayMode::SPHERE:
+    case DisplayMode::SPRITE:
+    case DisplayMode::WIRE_SPHERE:
+    case DisplayMode::MODEL:
+    default:
+        {
+            return BoundingBox{
+                .min = Vector3{-radius, -radius, -radius},
+                .max = Vector3{radius, radius, radius},
+            };
+        }
+    }
+}
+
+void Ent::Draw(const bool drawAxes, const Vector3 position, const float gridSpacing)
 {
     lastRenderedPosition = position;
     // All sprites share the same material, and the texture is changed for each one
@@ -97,18 +175,19 @@ void Ent::Draw(const bool drawAxes, const Vector3 position)
             DrawSphereWires(position, radius, (int)(detailLevel * 4.0f), (int)(detailLevel * 8.0f), color);
             break;
         }
-    case DisplayMode::BOX:
+    case DisplayMode::AREA:
         {
-            auto [axis, angle] = EulerToAxisAngle(eulerAngles);
-            axesExtents = Vector3{Maxf(1.0f, extents.x), Maxf(1.0f, extents.y), Maxf(1.0f, extents.z)};
-            DrawModelEx(Assets::GetEntBox(), position, axis, ToDegrees(angle), extents, color);
-            break;
-        }
-    case DisplayMode::WIRE_BOX:
-        {
-            auto [axis, angle] = EulerToAxisAngle(eulerAngles);
-            axesExtents = Vector3{Maxf(1.0f, extents.x), Maxf(1.0f, extents.y), Maxf(1.0f, extents.z)};
-            DrawModelWiresEx(Assets::GetEntBox(), position, axis, ToDegrees(angle), extents, color);
+            const float HALF_GRID = gridSpacing / 2.0f;
+            Vector3 offset = Vector3{
+                -HALF_GRID * Signf(lengths.x),
+                -HALF_GRID * Signf(lengths.y),
+                -HALF_GRID * Signf(lengths.z),
+            };
+            DrawCubeWiresV(
+                Vector3Add(position, Vector3Add(offset, Vector3Scale(lengths, HALF_GRID))),
+                Vector3Scale(lengths, gridSpacing), 
+                color
+            );
             break;
         }
     case DisplayMode::MODEL:
@@ -166,25 +245,20 @@ void Ent::Draw(const bool drawAxes, const Vector3 position)
 
 void to_json(nlohmann::json& j, const Ent &ent)
 {
-    j["radius"] = ent.radius;
-    if (ent.extents != Vector3Zero()) j["extents"] = nlohmann::json::array({ent.extents.x, ent.extents.y, ent.extents.z});
+    if (ent.RadiusAvailable()) j["radius"] = ent.radius;
+    if (ent.LengthsAvailable()) j["lengths"] = nlohmann::json::array({ent.lengths.x, ent.lengths.y, ent.lengths.z});
     j["color"] = nlohmann::json::array({ent.color.r, ent.color.g, ent.color.b});
     j["position"] = nlohmann::json::array({ent.lastRenderedPosition.x, ent.lastRenderedPosition.y, ent.lastRenderedPosition.z});
     j["angles"] = nlohmann::json::array({ent.pitch, ent.yaw, 0.0f});
     j["display"] = ent.display;
-    if (ent.model != nullptr) j["model"] = ent.model->GetPath();
-    if (ent.texture != nullptr) j["texture"] = ent.texture->GetPath();
+    if (ent.ModelAvailable() && ent.model != nullptr) j["model"] = ent.model->GetPath();
+    if (ent.TextureAvailable() && ent.texture != nullptr) j["texture"] = ent.texture->GetPath();
     j["properties"] = ent.properties;
 }
 
 void from_json(const nlohmann::json& j, Ent &ent)
 {
     ent.active = true;
-    ent.radius = j.at("radius");
-    if (j.contains("extents")) 
-    {
-        ent.extents = Vector3 { j.at("extents").at(0), j.at("extents").at(1), j.at("extents").at(2) };
-    }
     ent.color = Color { j.at("color").at(0), j.at("color").at(1), j.at("color").at(2), 255 };
     ent.lastRenderedPosition = Vector3 { j.at("position").at(0), j.at("position").at(1), j.at("position").at(2) };
     ent.pitch = j.at("angles").at(0);
@@ -203,17 +277,22 @@ void from_json(const nlohmann::json& j, Ent &ent)
     {
         ent.display = Ent::DisplayMode::SPHERE;
     }
-    
-    switch (ent.display)
+
+    if (ent.RadiusAvailable() && j.contains("radius"))
     {
-    case Ent::DisplayMode::MODEL:
-        if (j.contains("model")) ent.model = Assets::GetModel(j.at("model"));
-        [[fallthrough]];
-    case Ent::DisplayMode::SPRITE:
-        if (j.contains("texture")) ent.texture = Assets::GetTexture(j.at("texture"));
-        break;
-    default:
-        break;
+        ent.radius = j.at("radius");
+    }
+    if (ent.LengthsAvailable() && j.contains("lengths")) 
+    {
+        ent.lengths = Vector3 { j.at("lengths").at(0), j.at("lengths").at(1), j.at("lengths").at(2) };
+    }
+    if (ent.ModelAvailable() && j.contains("model")) 
+    {
+        ent.model = Assets::GetModel(j.at("model"));
+    }
+    if (ent.TextureAvailable() && j.contains("texture"))
+    {
+        ent.texture = Assets::GetTexture(j.at("texture"));
     }
 }
 
@@ -237,18 +316,41 @@ void EntGrid::Draw(Camera &camera, int fromY, int toY)
     {
         if (!GetEnt(i).active) continue;
 
-        // Do frustum culling check
-        Vector3 ndc = GetWorldToNDC(_grid[i].lastRenderedPosition, camera);
-        if (ndc.z < 1.0f && ndc.x > -1.0f && ndc.x < 1.0f && ndc.y > -1.0f && ndc.y < 1.0f)
+        // Do frustum culling check against all bounding box corners
+        BoundingBox bbox = _grid[i].Bounds(_spacing);
+        auto points = std::array<Vector3, 8>
         {
-            bool drawExtras = (ndc.z < DISPLAY_NAME_THRESHOLD);
-
+            bbox.min,
+            Vector3{bbox.max.x, bbox.min.y, bbox.min.z},
+            Vector3{bbox.min.x, bbox.max.y, bbox.min.z},
+            Vector3{bbox.min.x, bbox.min.y, bbox.max.z},
+            bbox.max,
+            Vector3{bbox.min.x, bbox.max.y, bbox.max.z},
+            Vector3{bbox.max.x, bbox.min.y, bbox.max.z},
+            Vector3{bbox.max.x, bbox.max.y, bbox.min.z},
+        };
+        bool visible = false;
+        bool drawExtras = false;
+        for (const Vector3 point : points)
+        {
+            Vector3 ndc = GetWorldToNDC(Vector3Add(_grid[i].lastRenderedPosition, point), camera);
+            if (ndc.z < 1.0f && ndc.x > -1.0f && ndc.x < 1.0f && ndc.y > -1.0f && ndc.y < 1.0f)
+            {
+                visible = true;
+            }
+            if (ndc.z < DISPLAY_NAME_THRESHOLD)
+            {
+                drawExtras = true;
+            }
+        }
+        if (visible)
+        {
             if (drawExtras && _grid[i].properties.find("name") != _grid[i].properties.end()) 
             {
-                _labelsToDraw.push_back(std::make_pair(ndc, _grid[i].properties["name"]));
+                _labelsToDraw.push_back(std::make_pair(GetWorldToNDC(_grid[i].lastRenderedPosition, camera), _grid[i].properties["name"]));
             }
             
-            _grid[i].Draw(drawExtras && !App::Get()->IsPreviewing(), GridToWorldPos(UnflattenIndex(i), true));
+            _grid[i].Draw(drawExtras && !App::Get()->IsPreviewing(), GridToWorldPos(UnflattenIndex(i), true), _spacing);
         }
     }
 }
@@ -256,7 +358,9 @@ void EntGrid::Draw(Camera &camera, int fromY, int toY)
 void EntGrid::DrawLabels(Camera &camera, int fromY, int toY)
 {
     if (App::Get()->IsPreviewing()) return;
-    
+    std::stringstream msg;
+    msg << "Displayed entities: " << _labelsToDraw.size();
+    App::Get()->DisplayStatusMessage(msg.str(), 0.2f, 1);    
     for (const auto& [ndc, name] : _labelsToDraw)
     {
         float fontSize = Assets::GetFont().baseSize;

@@ -139,7 +139,7 @@ void PlaceMode::TileCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k,
     }
 }
 
-void PlaceMode::TileCursor::Draw()
+void PlaceMode::TileCursor::Draw(MapMan& mapMan)
 {
     if (!IsKeyDown(KEY_LEFT_SHIFT))
     {

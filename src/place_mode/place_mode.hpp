@@ -59,9 +59,10 @@ protected:
     {
         Vector3 position;
         Vector3 endPosition;
+        bool disableBorder;
 
         virtual void Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l) = 0;
-        virtual void Draw() = 0;
+        virtual void Draw(MapMan& mapMan) = 0;
     };
 
     struct TileCursor : public Cursor
@@ -74,7 +75,7 @@ protected:
         TileCursor();
         ~TileCursor();
         void Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l) override;
-        void Draw() override;
+        void Draw(MapMan& mapMan) override;
     };
 
     struct BrushCursor : public Cursor
@@ -83,7 +84,7 @@ protected:
 
         BrushCursor(MapMan& mapMan);
         void Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l) override;
-        void Draw() override;
+        void Draw(MapMan& mapMan) override;
     };
 
     struct EntCursor : public Cursor
@@ -92,7 +93,7 @@ protected:
 
         EntCursor();
         void Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l) override;
-        void Draw() override;
+        void Draw(MapMan& mapMan) override;
     };
 
     void MoveCamera();

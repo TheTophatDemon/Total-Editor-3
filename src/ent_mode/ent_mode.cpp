@@ -108,7 +108,31 @@ void EntMode::Draw()
     {
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 32.0f));
         // Entity display mode
-        ImGui::Combo("Display mode", (int*)(&_ent.display), "Sphere\0Model\0Sprite\0Wireframe Sphere\0Box\0Wireframe Box\0");
+        const auto oldDisplay = _ent.display;
+        ImGui::Combo("Display mode", (int*)(&_ent.display), "Sphere\0Model\0Sprite\0Wireframe Sphere\0Area\0");
+        if (oldDisplay != _ent.display)
+        {
+            // Reset parameters for display modes
+            if (_ent.RadiusAvailable())
+            {
+                _ent.radius = 1.0f;
+            }
+            if (_ent.ModelAvailable())
+            {
+                _ent.model = nullptr;
+                memset(_modelPathBuffer, 0, TEXT_FIELD_MAX * sizeof(char));
+            }
+            if (_ent.TextureAvailable())
+            {
+                _ent.texture = nullptr;
+                memset(_texturePathBuffer, 0, TEXT_FIELD_MAX * sizeof(char));
+            }
+            if (_ent.LengthsAvailable())
+            {
+                _ent.lengths = Vector3{1.0f, 1.0f, 1.0f};
+            }
+        }
+
         ImGui::Separator();
 
         ImGui::PopStyleVar(1);
@@ -126,73 +150,45 @@ void EntMode::Draw()
 
         ImGui::SameLine();
         ImGui::BeginGroup();
-        // Display mode configuration
-        switch (_ent.display)
+        
+        // Display mode specific configuration
+        if (_ent.RadiusAvailable())
         {
-        case Ent::DisplayMode::SPHERE:
-        case Ent::DisplayMode::WIRE_SPHERE:
+            ImGui::TextUnformatted("Radius");
+            ImGui::SetNextItemWidth(256.0f);
+            ImGui::InputFloat("##Radius", &_ent.radius, 0.1f, 0.1f, "%.1f");
+        }
+        if (_ent.ModelAvailable())
+        {
+            ImGui::TextUnformatted("Model path");
+            if (ImGui::Button("Browse##Model"))
             {
-                // Radius input
-                ImGui::TextUnformatted("Radius");
-                ImGui::SetNextItemWidth(256.0f);
-                ImGui::InputFloat("##Radius", &_ent.radius, 0.1f, 0.1f, "%.1f");
-                break;
+                _fileDialog.reset(new FileDialog("Select model", { std::string(".obj") }, 
+                    [&](fs::path path) 
+                    {
+                        fs::path relativePath = fs::relative(path);
+                        strcpy(_modelPathBuffer, relativePath.string().c_str());
+                    }, 
+                false));
             }
-        case Ent::DisplayMode::BOX:
-        case Ent::DisplayMode::WIRE_BOX:
+            ImGui::SameLine();
+            ImGui::InputText("##Model path", _modelPathBuffer, TEXT_FIELD_MAX);
+        }
+        if (_ent.TextureAvailable())
+        {
+            ImGui::TextUnformatted("Texture path");
+            if (ImGui::Button("Browse##Sprite"))
             {
-                ImGui::TextUnformatted("Extents");
-                ImGui::SetNextItemWidth(256.0f);
-                float values[3];
-                values[0] = _ent.extents.x;
-                values[1] = _ent.extents.y;
-                values[2] = _ent.extents.z;
-                ImGui::InputFloat3("##Extents", values);
-                _ent.extents.x = values[0];
-                _ent.extents.y = values[1];
-                _ent.extents.z = values[2];
-                break;
+                _fileDialog.reset(new FileDialog("Select texture", { std::string(".png") }, 
+                    [&](fs::path path) 
+                    {
+                        fs::path relativePath = fs::relative(path);
+                        strcpy(_texturePathBuffer, relativePath.string().c_str());
+                    },
+                false));
             }
-        case Ent::DisplayMode::MODEL:
-            {
-                ImGui::TextUnformatted("Model path");
-                if (ImGui::Button("Browse##Model"))
-                {
-                    _fileDialog.reset(new FileDialog("Select model", { std::string(".obj") }, 
-                        [&](fs::path path) 
-                        {
-                            fs::path relativePath = fs::relative(path);
-                            strcpy(_modelPathBuffer, relativePath.string().c_str());
-                        }, 
-                    false));
-                }
-                ImGui::SameLine();
-                ImGui::InputText("##Model path", _modelPathBuffer, TEXT_FIELD_MAX);
-                
-                [[fallthrough]];
-            }
-        case Ent::DisplayMode::SPRITE:
-            {
-                ImGui::TextUnformatted("Texture path");
-                if (ImGui::Button("Browse##Sprite"))
-                {
-                    _fileDialog.reset(new FileDialog("Select texture", { std::string(".png") }, 
-                        [&](fs::path path) 
-                        {
-                            fs::path relativePath = fs::relative(path);
-                            strcpy(_texturePathBuffer, relativePath.string().c_str());
-                        },
-                    false));
-                }
-                ImGui::SameLine();
-                ImGui::InputText("##Texture path", _texturePathBuffer, TEXT_FIELD_MAX);
-
-                ImGui::TextUnformatted("Scale");
-                ImGui::SetNextItemWidth(256.0f);
-                ImGui::InputFloat("##Scale", &_ent.radius, 0.1f, 0.1f, "%.1f");
-
-                break;
-            }
+            ImGui::SameLine();
+            ImGui::InputText("##Texture path", _texturePathBuffer, TEXT_FIELD_MAX);
         }
         ImGui::EndGroup();
         ImGui::Separator();

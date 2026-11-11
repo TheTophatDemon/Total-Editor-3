@@ -4,6 +4,7 @@
 #define MATH_STUFF_H
 
 #include <tuple>
+#include <math.h>
 #include "raylib.h"
 #include "rlgl.h"
 #include "raymath.h"
@@ -36,9 +37,17 @@ inline float Maxf(float a, float b)
 }
 
 // Returns -1 if `a` is negative, 1 if `a` is positive, and 0 otherwise.
-inline int Sign(int a) {
+inline int Sign(int a) 
+{
     if (a == 0) return 0;
     return a < 0 ? -1 : 1;
+}
+
+// Returns -1 if `a` is negative, 1 if `a` is positive, and 0 otherwise.
+inline float Signf(float a) 
+{
+    if (a == 0 || isnan(a)) return 0;
+    return a / fabs(a);
 }
 
 inline Rectangle CenteredRect(float x, float y, float w, float h)
