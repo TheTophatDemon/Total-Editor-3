@@ -273,27 +273,57 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
         nodes.push_back(mapNode);
 
         // Add entities as nodes
-        for (const Ent &ent : _entGrid.GetEntList())
+        for (Ent &ent : _entGrid.GetEntList())
         {
             Quaternion rot = QuaternionFromEuler(ToRadians((float)ent.pitch), ToRadians((float)ent.yaw), 0.0f);
             
             json entNode = {
                 {"translation", { ent.lastRenderedPosition.x, ent.lastRenderedPosition.y, ent.lastRenderedPosition.z }},
                 {"scale", { ent.radius, ent.radius, ent.radius }},
-                {"rotation", { rot.x, rot.y, rot.z, rot.w }},
-                {"extras", ent.properties}
+                {"rotation", { rot.x, rot.y, rot.z, rot.w }}
             };
 
             if (ent.properties.find("name") != ent.properties.end())
-                entNode["name"] = ent.properties.at("name");
+            {
+                entNode["name"] = ent.properties["name"];
+            }
 
-            if (ent.model != nullptr)
-                entNode["extras"]["modelPath"] = ent.model->GetPath().generic_string();
-            
-            if (ent.texture != nullptr)
-                entNode["extras"]["texturePath"] = ent.texture->GetPath().generic_string();
+            entNode["extras"] = json{
+                {"color", json::array({ ent.color.r, ent.color.g, ent.color.b })},
+                {"display", ent.DisplayModeName()}
+            };
 
-            entNode["extras"]["color"] = json::array({ ent.color.r, ent.color.g, ent.color.b });
+            if (ent.ModelAvailable())
+            {
+                if (ent.model != nullptr)
+                {
+                    entNode["extras"]["modelPath"] = ent.model->GetPath().generic_string();
+                }
+                else
+                {
+                    entNode["extras"]["modelPath"] = nullptr;
+                }
+            }
+            if (ent.TextureAvailable())
+            {
+                if (ent.texture != nullptr)
+                {
+                    entNode["extras"]["texturePath"] = ent.texture->GetPath().generic_string();
+                }
+                else
+                {
+                    entNode["extras"]["texturePath"] = nullptr;
+                }
+            }
+            if (ent.AreaAvailable())
+            {
+                entNode["extras"]["area"] = ent.area;
+            }
+
+            for (const auto& [key, value] : ent.properties)
+            {
+                entNode[key] = value;
+            }
             
             rootNodes.push_back(nodes.size());
             nodes.push_back(entNode);
@@ -308,7 +338,7 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
         json jsonData = {
             {"asset", {
                 {"version", "2.0"},
-                {"generator", "Total Editor 3"}
+                {"generator", "Total Editor " APP_VERSION}
             }},
             {"nodes", nodes},
             {"meshes", meshes},
@@ -366,7 +396,9 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
         {
             // Pad with spaces to align chunk with 4 byte boundary
             for (int p = 0; p < jsonPadding; ++p) 
+            {
                 WRITE_BIN(SPACE);
+            }
             
             // Write BIN chunk header
             uint32_t binDataLength = bufferSize + binPadding;
@@ -378,7 +410,9 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
             
             // Pad with zeroes to align with 4 byte boundary
             for (int p = 0; p < binPadding; ++p)
+            {
                 WRITE_BIN(ZERO);
+            }
         }
         
         if (file.fail()) error = true;

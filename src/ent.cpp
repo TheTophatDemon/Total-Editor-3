@@ -47,7 +47,7 @@ Ent::Ent()
     properties = std::map<std::string, std::string>();
     model = nullptr;
     texture = nullptr;
-    lengths = Vector3Zero();
+    area = BoundingBox{};
 }
 
 Ent::Ent(float radius)
@@ -56,13 +56,15 @@ Ent::Ent(float radius)
     display = DisplayMode::SPHERE;
     color = WHITE;
     this->radius = radius;
-    lengths = Vector3Zero();
     lastRenderedPosition = Vector3Zero();
     yaw = pitch = 0;
     properties = std::map<std::string, std::string>();
     model = nullptr;
     texture = nullptr;
-    lengths = Vector3{1.0f, 1.0f, 1.0f};
+    area = BoundingBox{
+        .min = Vector3{-1.0f, -1.0f, -1.0f},
+        .max = Vector3{1.0f, 1.0f, 1.0f}
+    };
 }
 
 bool Ent::RadiusAvailable() const 
@@ -79,7 +81,7 @@ bool Ent::RadiusAvailable() const
     }
 }
 
-bool Ent::LengthsAvailable() const 
+bool Ent::AreaAvailable() const 
 {
     switch (display) 
     {
@@ -107,25 +109,13 @@ bool Ent::ModelAvailable() const
     return display == DisplayMode::MODEL;
 }
 
-BoundingBox Ent::Bounds(const float gridSpacing) const
+BoundingBox Ent::Bounds() const
 {
     switch (display) 
     {
     case DisplayMode::AREA:
         {
-            const float HALF_GRID = gridSpacing / 2.0f;
-            return BoundingBox{
-                .min = Vector3{
-                    ((lengths.x < 0.0f) ? (lengths.x * gridSpacing) : 0) - HALF_GRID,
-                    ((lengths.y < 0.0f) ? (lengths.y * gridSpacing) : 0) - HALF_GRID,
-                    ((lengths.z < 0.0f) ? (lengths.z * gridSpacing) : 0) - HALF_GRID,
-                },
-                .max = Vector3{
-                    ((lengths.x > 0.0f) ? (lengths.x * gridSpacing) : 0) + HALF_GRID,
-                    ((lengths.y > 0.0f) ? (lengths.y * gridSpacing) : 0) + HALF_GRID,
-                    ((lengths.z > 0.0f) ? (lengths.z * gridSpacing) : 0) + HALF_GRID,
-                },
-            };
+            return area;
         }
     case DisplayMode::SPHERE:
     case DisplayMode::SPRITE:
@@ -141,7 +131,20 @@ BoundingBox Ent::Bounds(const float gridSpacing) const
     }
 }
 
-void Ent::Draw(const bool drawAxes, const Vector3 position, const float gridSpacing)
+std::string Ent::DisplayModeName() const
+{
+    switch (display) 
+    {
+        case DisplayMode::AREA: return "area";
+        case DisplayMode::SPHERE: return "sphere";
+        case DisplayMode::SPRITE: return "sprite";
+        case DisplayMode::WIRE_SPHERE: return "wireSphere";
+        case DisplayMode::MODEL: return "model";
+        default: return "unknown";
+    }
+}
+
+void Ent::Draw(const bool drawAxes, const Vector3 position)
 {
     lastRenderedPosition = position;
     // All sprites share the same material, and the texture is changed for each one
@@ -171,23 +174,30 @@ void Ent::Draw(const bool drawAxes, const Vector3 position, const float gridSpac
         }
     case DisplayMode::WIRE_SPHERE:
         {
+            if (App::Get()->IsPreviewing()) break;
+
             float detailLevel = Minf(radius, 20.0f);
             DrawSphereWires(position, radius, (int)(detailLevel * 4.0f), (int)(detailLevel * 8.0f), color);
             break;
         }
     case DisplayMode::AREA:
         {
-            const float HALF_GRID = gridSpacing / 2.0f;
-            Vector3 offset = Vector3{
-                -HALF_GRID * Signf(lengths.x),
-                -HALF_GRID * Signf(lengths.y),
-                -HALF_GRID * Signf(lengths.z),
-            };
-            DrawCubeWiresV(
-                Vector3Add(position, Vector3Add(offset, Vector3Scale(lengths, HALF_GRID))),
-                Vector3Scale(lengths, gridSpacing), 
+            if (App::Get()->IsPreviewing()) break;
+
+            BoundingBox worldBB = area;
+            worldBB.min = Vector3Add(worldBB.min, position);
+            worldBB.max = Vector3Add(worldBB.max, position);
+
+            rlDisableBackfaceCulling();
+            DrawModelEx(
+                Assets::GetAreaModel(), 
+                Vector3Scale(Vector3Add(worldBB.max, worldBB.min), 0.5f),
+                Vector3Zero(),
+                0.0f,
+                Vector3Subtract(worldBB.max, worldBB.min),
                 color
             );
+            rlEnableBackfaceCulling();
             break;
         }
     case DisplayMode::MODEL:
@@ -246,7 +256,7 @@ void Ent::Draw(const bool drawAxes, const Vector3 position, const float gridSpac
 void to_json(nlohmann::json& j, const Ent &ent)
 {
     if (ent.RadiusAvailable()) j["radius"] = ent.radius;
-    if (ent.LengthsAvailable()) j["lengths"] = nlohmann::json::array({ent.lengths.x, ent.lengths.y, ent.lengths.z});
+    if (ent.AreaAvailable())  j["area"] = ent.area;
     j["color"] = nlohmann::json::array({ent.color.r, ent.color.g, ent.color.b});
     j["position"] = nlohmann::json::array({ent.lastRenderedPosition.x, ent.lastRenderedPosition.y, ent.lastRenderedPosition.z});
     j["angles"] = nlohmann::json::array({ent.pitch, ent.yaw, 0.0f});
@@ -282,9 +292,9 @@ void from_json(const nlohmann::json& j, Ent &ent)
     {
         ent.radius = j.at("radius");
     }
-    if (ent.LengthsAvailable() && j.contains("lengths")) 
+    if (ent.AreaAvailable() && j.contains("area")) 
     {
-        ent.lengths = Vector3 { j.at("lengths").at(0), j.at("lengths").at(1), j.at("lengths").at(2) };
+        ent.area = j["area"].get<BoundingBox>();
     }
     if (ent.ModelAvailable() && j.contains("model")) 
     {
@@ -317,7 +327,7 @@ void EntGrid::Draw(Camera &camera, int fromY, int toY)
         if (!GetEnt(i).active) continue;
 
         // Do frustum culling check against all bounding box corners
-        BoundingBox bbox = _grid[i].Bounds(_spacing);
+        BoundingBox bbox = _grid[i].Bounds();
         auto points = std::array<Vector3, 8>
         {
             bbox.min,
@@ -350,17 +360,14 @@ void EntGrid::Draw(Camera &camera, int fromY, int toY)
                 _labelsToDraw.push_back(std::make_pair(GetWorldToNDC(_grid[i].lastRenderedPosition, camera), _grid[i].properties["name"]));
             }
             
-            _grid[i].Draw(drawExtras && !App::Get()->IsPreviewing(), GridToWorldPos(UnflattenIndex(i), true), _spacing);
+            _grid[i].Draw(drawExtras && !App::Get()->IsPreviewing(), GridToWorldPos(UnflattenIndex(i), true));
         }
     }
 }
 
 void EntGrid::DrawLabels(Camera &camera, int fromY, int toY)
 {
-    if (App::Get()->IsPreviewing()) return;
-    std::stringstream msg;
-    msg << "Displayed entities: " << _labelsToDraw.size();
-    App::Get()->DisplayStatusMessage(msg.str(), 0.2f, 1);    
+    if (App::Get()->IsPreviewing()) return; 
     for (const auto& [ndc, name] : _labelsToDraw)
     {
         float fontSize = Assets::GetFont().baseSize;

@@ -127,9 +127,12 @@ void EntMode::Draw()
                 _ent.texture = nullptr;
                 memset(_texturePathBuffer, 0, TEXT_FIELD_MAX * sizeof(char));
             }
-            if (_ent.LengthsAvailable())
+            if (_ent.AreaAvailable())
             {
-                _ent.lengths = Vector3{1.0f, 1.0f, 1.0f};
+                _ent.area = BoundingBox{
+                    .min = Vector3{-1.0f, -1.0f, -1.0f},
+                    .max = Vector3{1.0f, 1.0f, 1.0f}
+                };
             }
         }
 

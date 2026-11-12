@@ -40,6 +40,7 @@ class MenuBar;
 class MapMan;
 
 #define TEXT_FIELD_MAX 512
+#define APP_VERSION "3.3.0"
 
 class App
 {
@@ -135,6 +136,8 @@ private:
 
     fs::path _lastSavedPath;
     bool _previewDraw;
+
+    float _globalTime;
 
     bool _didSave;
     bool _quit;

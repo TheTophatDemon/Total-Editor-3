@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022 Alexander Lunsford
+ * Copyright (c) 2022-present Alexander Lunsford
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -41,8 +41,6 @@ out vec2 fragTexCoord;
 out vec4 fragColor;
 out vec3 fragNormal;
 
-// NOTE: Add here your custom variables
-
 void main()
 {
     // Compute MVP for current instance
@@ -78,8 +76,6 @@ uniform mat4 matModel;
 out vec2 fragTexCoord;
 out vec4 fragColor;
 out vec3 fragNormal;
-
-// NOTE: Add here your custom variables
 
 void main()
 {

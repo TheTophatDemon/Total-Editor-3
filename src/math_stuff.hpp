@@ -8,6 +8,7 @@
 #include "raylib.h"
 #include "rlgl.h"
 #include "raymath.h"
+#include "json.hpp"
 
 const Vector3 VEC3_UP = Vector3 { 0.0f, 1.0f, 0.0f };
 const Vector3 VEC3_FORWARD = Vector3 { 0.0f, 0.0f, -1.0f };
@@ -127,5 +128,11 @@ inline Vector3 GetWorldToNDC(Vector3 position, Camera camera)
 
     return ndcPos;
 }
+
+// Serialization function for BoundingBox
+void to_json(nlohmann::json& j, const BoundingBox& bbox);
+
+// Deserialization function for BoundingBox
+void from_json(const nlohmann::json& j, BoundingBox& bbox);
 
 #endif

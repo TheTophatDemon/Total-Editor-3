@@ -31,6 +31,8 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
+#define SHADER_LOC_TIME 29
+
 // A repository that caches all loaded resources and their file paths.
 // It is implemented as a singleton with a static interface. 
 // (This circumvents certain limitations regarding static members and allows the constructor to be called automatically when the first method is called.)
@@ -75,11 +77,13 @@ public:
     static ImFont* GetCodeFont();
     static const Shader& GetMapShader(bool instanced); // Returns the shader used to render tiles
     static const Shader& GetSpriteShader(); // Returns the shader used to render billboards
+    static const Shader& GetAreaShader(); // Returns the shader used to render area entities
     static const Model&  GetEntSphere(); // Returns the sphere that represents entities visually
-    static const Mesh& GetBoxMesh(); // Returns the model used for entities rendered as a solid box
+    static const Model& GetAreaModel(); // Returns the model used for entities rendered as an area
     static const Mesh& GetSpriteQuad();
     static Texture GetMissingTexture();
     static const Model GetMissingModel(); // Returns the model used when a loading error occurs.
+    static void SetShaderTime(float time);
 protected:
     // Asset caches that hold weak references to all the loaded textures and models
     std::map<fs::path, std::weak_ptr<TexHandle>>   _textures;
@@ -89,9 +93,11 @@ protected:
     Font _font; // Default application font (dejavu.fnt)
     ImFont *_uiFont, *_codeFont;
     Model _entSphere; // The sphere that represents entities visually
+    Model _areaModel;
     Shader _mapShader; // The non-instanced version that is used to render tiles outside of the map itself
     Shader _mapShaderInstanced; // The instanced version is used to render the tiles
     Shader _spriteShader;
+    Shader _areaShader;
     Mesh _spriteQuad;
 private:
     Assets();

@@ -67,6 +67,7 @@ App::App()
     _editorMode    (_tilePlaceMode.get()),
     _lastSavedPath (),
     _previewDraw   (false),
+    _globalTime    (0.0f),
     _didSave       (false),
     _quit          (false)
 {
@@ -173,6 +174,9 @@ void App::Update()
     }
 
     _editorMode->Update();
+
+    _globalTime += GetFrameTime();
+    Assets::SetShaderTime(_globalTime);
 
     //Draw
     BeginDrawing();

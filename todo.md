@@ -1,11 +1,9 @@
 # TODO
 - Replace boxes with zones
-  - Animated lines
   - Update docs
 - Upgrade to Raylib 6?
 - Make sprites without textures display as blank squares
 - Make sprites scale again using radius
-- Normalize saved file paths to use forward slashes
 - Take camera position & orientation on the command line
 ## Considered future updates
 

@@ -2,11 +2,13 @@
 - Added ability to open a map from a command line and return code 100 if that map is saved.
 - Enabled tab navigation on the entity editor
 - Added wireframe sphere and area display modes for entities.
-- Spheres of radius 0 will still display their handles. This could be used as a 'point' entity.
+- Spheres of radius 0 will still display their handles.
+- Entity display properties included in "extras" for GLTF export.
 - Fixed crash that may occur when opening a smaller map while on a larger map
 - Fixed crash when switching directly between texture picker and file picker  (thanks https://github.com/irolup)
 - Fixed aspect ratios of entity sprites so that they fit in a tile when radius = 1
 - Entities are no longer culled from the view if they straddle the edge of the camera frustum.
+- Fixed opening maps with Windows file paths on Linux.
 ## Version 3.2.1
 - Fixed bug where multi-textured tiles are assigned the wrong textures after saving sometimes.
 - Entities with non square sprites will now be scaled vertically to maintain aspect ratio.

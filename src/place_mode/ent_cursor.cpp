@@ -30,30 +30,32 @@ PlaceMode::EntCursor::EntCursor()
 
 void PlaceMode::EntCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l)
 {
-    disableBorder = ent.LengthsAvailable();
-    bool multiSelect = ent.LengthsAvailable() && (IsMouseButtonDown(MOUSE_BUTTON_LEFT) || IsMouseButtonReleased(MOUSE_BUTTON_LEFT));
+    disableBorder = ent.AreaAvailable();
+    bool multiSelect = ent.AreaAvailable() && (IsMouseButtonDown(MOUSE_BUTTON_LEFT) || IsMouseButtonReleased(MOUSE_BUTTON_LEFT));
     if (!multiSelect)
     {
-        ent.lengths = Vector3{1.0f, 1.0f, 1.0f};
+        ent.area = BoundingBox{
+            .min = Vector3{-1.0f, -1.0f, -1.0f},
+            .max = Vector3{1.0f, 1.0f, 1.0f},
+        };
         endPosition = position;
     }
     else
     {
-        ent.lengths = Vector3{(float)w, (float)h, (float)l};
-        
-        // Ensure the origin of the entity is in the tile where the mouse drag started.
-        if (position.x < endPosition.x) 
-        {
-            ent.lengths.x *= -1;
-        }
-        if (position.y < endPosition.y) 
-        {
-            ent.lengths.y *= -1;
-        }
-        if (position.z < endPosition.z) 
-        {
-            ent.lengths.z *= -1;
-        }
+        const float GRID_SPACING = mapMan.Ents().GetSpacing();
+        const float HALF_GRID = GRID_SPACING / 2.0f;
+        ent.area = BoundingBox{
+            .min = Vector3{
+                ((position.x < endPosition.x) ? ((float)(w - 1) * -GRID_SPACING) : 0) - HALF_GRID,
+                ((position.y < endPosition.y) ? ((float)(h - 1) * -GRID_SPACING) : 0) - HALF_GRID,
+                ((position.z < endPosition.z) ? ((float)(l - 1) * -GRID_SPACING) : 0) - HALF_GRID,
+            },
+            .max = Vector3{
+                ((position.x > endPosition.x) ? ((float)(w - 1) * GRID_SPACING) : 0) + HALF_GRID,
+                ((position.y > endPosition.y) ? ((float)(h - 1) * GRID_SPACING) : 0) + HALF_GRID,
+                ((position.z > endPosition.z) ? ((float)(l - 1) * GRID_SPACING) : 0) + HALF_GRID,
+            },
+        };
     }
 
     // Turn entity
@@ -84,7 +86,6 @@ void PlaceMode::EntCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !IsKeyDown(KEY_LEFT_ALT) && !multiSelect)
     {
         // Placement
-        if (ent.LengthsAvailable()) ent.lengths = Vector3{1.0f, 1.0f, 1.0f};
         mapMan.ExecuteEntPlacement(i, j, k, ent);
     }
     else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && multiSelect)
@@ -124,6 +125,6 @@ void PlaceMode::EntCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, 
 void PlaceMode::EntCursor::Draw(MapMan& mapMan)
 {
     Vector3 positionToUse = position;
-    if (ent.LengthsAvailable()) positionToUse = endPosition;
-    ent.Draw(true, positionToUse, mapMan.Ents().GetSpacing());
+    if (ent.AreaAvailable()) positionToUse = endPosition;
+    ent.Draw(true, positionToUse);
 }

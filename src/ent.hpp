@@ -51,7 +51,10 @@ struct Ent
     DisplayMode display;
     Color color;
     float radius;
-    Vector3 lengths; // Number of tiles wide an 'area' entity is in each dimension.
+    
+    // Extent of an area entity's boundaries relative to the entity's origin.
+    BoundingBox area;
+    
     Vector3 lastRenderedPosition;
     int yaw, pitch; // Degrees angle orientation
 
@@ -64,13 +67,14 @@ struct Ent
     Ent();
     Ent(float radius);
     bool RadiusAvailable() const;
-    bool LengthsAvailable() const;
+    bool AreaAvailable() const;
     bool TextureAvailable() const;
     bool ModelAvailable() const;
+    std::string DisplayModeName() const;
     // Returns the bounding box of the entity relative to its origin.
-    BoundingBox Bounds(const float gridSpacing) const;
+    BoundingBox Bounds() const;
 
-    void Draw(const bool drawAxes, const Vector3 position, const float gridSpacing);
+    void Draw(const bool drawAxes, const Vector3 position);
 };
 
 void to_json(nlohmann::json& j, const Ent &ent);

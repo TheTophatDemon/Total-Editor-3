@@ -26,6 +26,7 @@
 
 #include "assets/shaders/map_shader.hpp"
 #include "assets/shaders/sprite_shader.hpp"
+#include "assets/shaders/area_shader.hpp"
 #include "assets/fonts/font_dejavu.h"
 #include "assets/fonts/liberation_mono_ttf.h"
 #include "assets/fonts/softball_gold_ttf.h"
@@ -81,11 +82,15 @@ Assets::Assets()
 
     // Sprite shader
     _spriteShader = LoadShaderFromMemory(SPRITE_SHADER_V_SRC, SPRITE_SHADER_F_SRC);
-    _mapShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(_mapShader, "mvp");
-    _mapShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(_mapShader, "viewPos");
     _spriteShader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(_spriteShader, "matModel");
     _spriteShader.locs[SHADER_LOC_MATRIX_VIEW] = GetShaderLocation(_spriteShader, "matView");
     _spriteShader.locs[SHADER_LOC_MATRIX_PROJECTION] = GetShaderLocation(_spriteShader, "matProj");
+
+    // Area shader
+    _areaShader = LoadShaderFromMemory(AREA_SHADER_V_SRC, AREA_SHADER_F_SRC);
+    _areaShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(_areaShader, "mvp");
+    _areaShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(_areaShader, "viewPos");
+    _areaShader.locs[SHADER_LOC_TIME] = GetShaderLocation(_areaShader, "time");
 
     // Initialize the sprite's quad model
     {
@@ -118,6 +123,11 @@ Assets::Assets()
     for (int m = 0; m < _entSphere.materialCount; ++m)
     {
         _entSphere.materials[m].shader = _mapShader;
+    }
+    _areaModel = LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f));
+    for (int m = 0; m < _areaModel.materialCount; ++m)
+    {
+        _areaModel.materials[m].shader = _areaShader;
     }
 
     _font = LoadFont_Dejavu();
@@ -158,6 +168,11 @@ const Shader &Assets::GetSpriteShader()
     return _Get()->_spriteShader;
 }
 
+const Shader &Assets::GetAreaShader()
+{
+    return _Get()->_areaShader;
+}
+
 const Model &Assets::GetEntSphere()
 {
     return _Get()->_entSphere;
@@ -166,6 +181,11 @@ const Model &Assets::GetEntSphere()
 const Mesh& Assets::GetSpriteQuad()
 {
     return _Get()->_spriteQuad;
+}
+
+const Model& Assets::GetAreaModel()
+{
+    return _Get()->_areaModel;
 }
 
 // Loads a placeholder for missing models (a 3D question mark)
@@ -214,6 +234,8 @@ Texture Assets::GetMissingTexture()
 std::shared_ptr<Assets::TexHandle> Assets::GetTexture(fs::path texturePath)
 {
     Assets *a = _Get();
+
+    texturePath.make_preferred();
     // Attempt to find the texture in the cache
     if (a->_textures.find(texturePath) != a->_textures.end())
     {
@@ -241,6 +263,8 @@ std::shared_ptr<Assets::TexHandle> Assets::GetTexture(fs::path texturePath)
 std::shared_ptr<Assets::ModelHandle> Assets::GetModel(fs::path path)
 {
     Assets *a = _Get();
+    
+    path.make_preferred();
     //Attempt to find the model in the cache
     if (a->_models.find(path) != a->_models.end())
     {
@@ -261,4 +285,10 @@ std::shared_ptr<Assets::ModelHandle> Assets::GetModel(fs::path path)
     //Cache the model
     a->_models[path] = std::weak_ptr<ModelHandle>(sharedPtr);
     return sharedPtr;
+}
+
+void Assets::SetShaderTime(float time)
+{
+    Shader& areaShader = _Get()->_areaShader;
+    SetShaderValue(areaShader, areaShader.locs[SHADER_LOC_TIME], (void *)(&time), SHADER_UNIFORM_FLOAT);
 }

@@ -138,7 +138,7 @@ bool MapMan::SaveTE3Map(fs::path filePath)
         json jData;
 
         // Version information
-        jData["meta"] = {{"editor", "Total Editor"}, {"version", "3.2"}};
+        jData["meta"] = {{"editor", "Total Editor"}, {"version", APP_VERSION}};
 
         jData["tiles"] = json::object();
         jData["tiles"]["width"] = _tileGrid.GetWidth();
