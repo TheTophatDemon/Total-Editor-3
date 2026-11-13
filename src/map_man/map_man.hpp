@@ -81,33 +81,35 @@ public:
     void DrawMap(Camera &camera, int fromY, int toY);
     void Draw2DElements(Camera &camera, int fromY, int toY);
 
-    //Regenerates the map, extending one of the grid's dimensions on the given axis. Returns false if the change would result in an invalid map size.
+    // Regenerates the map, extending one of the grid's dimensions on the given axis. Returns false if the change would result in an invalid map size.
     void ExpandMap(Direction axis, int amount);
 
-    //Reduces the size of the grid until it fits perfectly around all the non-empty cels in the map.
+    // Reduces the size of the grid until it fits perfectly around all the non-empty cels in the map.
     void ShrinkMap();
 
-    //Saves the map as a .te3 file at the given path. Returns false if there was an error.
+    // Saves the map as a .te3 file at the given path. Returns false if there was an error.
     bool SaveTE3Map(fs::path filePath);
 
-    //Loads a .te3 map from the given path. Returns false if there was an error.
+    // Loads a .te3 map from the given path. Returns false if there was an error.
     bool LoadTE3Map(fs::path filePath);
 
-    //Loads and converts a Total Invasion II .ti map from the given path. Returns false on error.
+    // Loads and converts a Total Invasion II .ti map from the given path. Returns false on error.
     bool LoadTE2Map(fs::path filePath);
 
-    //Exports the map as a .gltf file, returning false on error.
-    //If separateGeometry is true, then the geometry will be put into separate
-    //GLTF nodes according to their tile texture.
+    // Exports the map as a .gltf file, returning false on error.
+    // If separateGeometry is true, then the geometry will be put into separate
+    // GLTF nodes according to their tile texture.
     bool ExportGLTFScene(fs::path filePath, bool separateGeometry);
 
-    //Executes a undoable tile action for filling an area with one tile
+    // Executes an undoable tile action for filling an area with one tile
     void ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, Tile newTile);
-    //Executes a undoable tile action for filling an area using a brush
-    void ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, TileGrid brush);
-    //Executes an undoable entity action for placing an entity
+    // Executes an undoable tile action for filling an area using a brush
+    void ExecuteBrushAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, TileGrid brush);
+    // Executes an undoable tile action for erasing tiles occupied by a brush.
+    void ExecuteBrushEraseAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, TileGrid brush);
+    // Executes an undoable entity action for placing an entity
     void ExecuteEntPlacement(int i, int j, int k, Ent newEnt);
-    //Executes an undoable entity action for removing an entity.
+    // Executes an undoable entity action for removing an entity.
     void ExecuteEntRemoval(int i, int j, int k);
 
     TexID GetOrAddTexID(const fs::path &texturePath);

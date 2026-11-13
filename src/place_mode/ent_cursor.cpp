@@ -18,17 +18,18 @@
  * 3. This notice may not be removed or altered from any source distribution.
  **/
 
-#include "place_mode.hpp"
+#include "ent_cursor.hpp"
 
 #include "../math_stuff.hpp"
 
-PlaceMode::EntCursor::EntCursor() 
+EntCursor::EntCursor() 
     : ent(1.0f)
 {
     ent.properties["name"] = "entity";
+    disableBorder = false;
 }
 
-void PlaceMode::EntCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l)
+void EntCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l)
 {
     disableBorder = ent.AreaAvailable();
     bool multiSelect = ent.AreaAvailable() && (IsMouseButtonDown(MOUSE_BUTTON_LEFT) || IsMouseButtonReleased(MOUSE_BUTTON_LEFT));
@@ -122,7 +123,7 @@ void PlaceMode::EntCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, 
     }
 }
 
-void PlaceMode::EntCursor::Draw(MapMan& mapMan)
+void EntCursor::Draw(MapMan& mapMan)
 {
     Vector3 positionToUse = position;
     if (ent.AreaAvailable()) positionToUse = endPosition;

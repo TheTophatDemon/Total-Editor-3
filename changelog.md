@@ -2,6 +2,7 @@
 - Added ability to open a map from a command line and return code 100 if that map is saved.
 - Enabled tab navigation on the entity editor
 - Added wireframe sphere and area display modes for entities.
+- Erasing with a brush cursor now cuts out the shape of the brush
 - Spheres of radius 0 will still display their handles.
 - Sprites with no textures will render as colored squares instead of not appearing.
 - Entity display properties included in "extras" for GLTF export.

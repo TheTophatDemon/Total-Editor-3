@@ -18,13 +18,15 @@
  * 3. This notice may not be removed or altered from any source distribution.
  **/
 
-#include "place_mode.hpp"
+#include "brush_cursor.hpp"
 
-PlaceMode::BrushCursor::BrushCursor(MapMan& mapMan)
+BrushCursor::BrushCursor(MapMan& mapMan)
     : brush(mapMan, 1, 1, 1)
-{}
+{
+    disableBorder = false;
+}
 
-void PlaceMode::BrushCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l)
+void BrushCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l)
 {
     // Put the end position at the other extent of the bounding box so that a border can be drawn later
     endPosition = Vector3 {
@@ -35,11 +37,15 @@ void PlaceMode::BrushCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !IsKeyDown(KEY_LEFT_ALT))
     {
-        mapMan.ExecuteTileAction(i, j, k, w, h, l, brush);
+        mapMan.ExecuteBrushAction(i, j, k, w, h, l, brush);
     }
+    else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) 
+    {
+        mapMan.ExecuteBrushEraseAction(i, j, k, w, h, l, brush);
+    } 
 }
 
-void PlaceMode::BrushCursor::Draw(MapMan& mapMan)
+void BrushCursor::Draw(MapMan& mapMan)
 {
     // Draw the tile grid within the brush
     Vector3 brushOffset = Vector3Min(position, endPosition);

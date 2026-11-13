@@ -32,6 +32,9 @@
 #include "../app.hpp"
 #include "../menu_bar.hpp"
 #include "../map_man/map_man.hpp"
+#include "brush_cursor.hpp"
+#include "tile_cursor.hpp"
+#include "ent_cursor.hpp"
 
 class PlaceMode : public App::ModeImpl {
 public:
@@ -55,47 +58,6 @@ public:
     void SetCameraOrientation(Vector3 position, Vector3 angles);
     void ResetGrid();
 protected:
-    struct Cursor 
-    {
-        Vector3 position;
-        Vector3 endPosition;
-        bool disableBorder;
-
-        virtual void Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l) = 0;
-        virtual void Draw(MapMan& mapMan) = 0;
-    };
-
-    struct TileCursor : public Cursor
-    {
-        std::shared_ptr<Assets::ModelHandle> model;
-        std::array<std::shared_ptr<Assets::TexHandle>, TEXTURES_PER_TILE> textures;
-        std::array<Material, TEXTURES_PER_TILE> materials;
-        uint8_t yaw, pitch;
-
-        TileCursor();
-        ~TileCursor();
-        void Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l) override;
-        void Draw(MapMan& mapMan) override;
-    };
-
-    struct BrushCursor : public Cursor
-    {
-        TileGrid brush;
-
-        BrushCursor(MapMan& mapMan);
-        void Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l) override;
-        void Draw(MapMan& mapMan) override;
-    };
-
-    struct EntCursor : public Cursor
-    {
-        Ent ent;
-
-        EntCursor();
-        void Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l) override;
-        void Draw(MapMan& mapMan) override;
-    };
-
     void MoveCamera();
     void UpdateCursor();
 

@@ -5,11 +5,11 @@
 - Add hotkey for toggle preview
 ## Considered future updates
 
-- Add image preview in the file picker
+- Rotate from brush cursor
 
 - Mechanism to only show a region of an entity's sprite
 
-- Rotate / erase from brush cursor
+- Add image preview in the file picker
 
 - Use instancing when rendering entity spheres
 

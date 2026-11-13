@@ -18,16 +18,16 @@
  * 3. This notice may not be removed or altered from any source distribution.
  **/
 
-#include "place_mode.hpp"
+#include "tile_cursor.hpp"
 
-#include "../assets.hpp"
 #include "../math_stuff.hpp"
 
-PlaceMode::TileCursor::TileCursor() 
+TileCursor::TileCursor() 
 {
     model = nullptr;
     for (auto& tex : textures) tex = nullptr;
     yaw = pitch = 0;
+    disableBorder = false;
     for (auto& material : materials) 
     {
         material = LoadMaterialDefault();
@@ -35,7 +35,7 @@ PlaceMode::TileCursor::TileCursor()
     }
 }
 
-PlaceMode::TileCursor::~TileCursor()
+TileCursor::~TileCursor()
 {
     for (Material& mat : materials) 
     {
@@ -45,7 +45,7 @@ PlaceMode::TileCursor::~TileCursor()
     }
 }
 
-void PlaceMode::TileCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l)
+void TileCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l)
 {
     bool multiSelect = IsKeyDown(KEY_LEFT_SHIFT);
     if (!multiSelect)
@@ -139,7 +139,7 @@ void PlaceMode::TileCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k,
     }
 }
 
-void PlaceMode::TileCursor::Draw(MapMan& mapMan)
+void TileCursor::Draw(MapMan& mapMan)
 {
     if (!IsKeyDown(KEY_LEFT_SHIFT))
     {

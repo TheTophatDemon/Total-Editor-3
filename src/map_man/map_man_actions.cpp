@@ -50,7 +50,7 @@ void MapMan::ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h,
     ));
 }
 
-void MapMan::ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, TileGrid brush)
+void MapMan::ExecuteBrushAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, TileGrid brush)
 {
     const TileGrid prevState = _tileGrid.Subsection(
             i, j, k, 
@@ -62,6 +62,36 @@ void MapMan::ExecuteTileAction(size_t i, size_t j, size_t k, size_t w, size_t h,
     TileGrid newState = prevState; //Copy the old state and merge the brush into it
     newState.CopyTiles(0, 0, 0, brush, true);
 
+    _Execute(std::static_pointer_cast<Action>(
+        std::make_shared<TileAction>(i, j, k, prevState, newState)
+    ));
+}
+
+void MapMan::ExecuteBrushEraseAction(size_t i, size_t j, size_t k, size_t w, size_t h, size_t l, TileGrid brush)
+{
+    const TileGrid prevState = _tileGrid.Subsection(
+        i, j, k, 
+        Min(w, _tileGrid.GetWidth() - i),  //Cut off parts that go beyond map boundaries
+        Min(h, _tileGrid.GetHeight() - j), 
+        Min(l, _tileGrid.GetLength() - k)
+    );
+
+    TileGrid newState = prevState;
+
+    for (size_t ii = 0; ii < w; ++ii)
+    {
+        for (size_t jj = 0; jj < h; ++jj)
+        {
+            for (size_t kk = 0; kk < l; ++kk)
+            {
+                if (brush.GetTile(ii, jj, kk))
+                {
+                    newState.SetTile(ii, jj, kk, Tile());
+                }
+            }
+        }
+    }
+    
     _Execute(std::static_pointer_cast<Action>(
         std::make_shared<TileAction>(i, j, k, prevState, newState)
     ));
