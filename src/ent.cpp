@@ -201,16 +201,22 @@ void Ent::Draw(const bool drawAxes, const Vector3 position)
             break;
         }
     case DisplayMode::MODEL:
-        {
-            if (model == nullptr) break;
-            
+        {            
             // Set up material
             Material mat = LoadMaterialDefault();
             if (texture != nullptr) SetMaterialTexture(&mat, MATERIAL_MAP_ALBEDO, texture->GetTexture());
             mat.shader = Assets::GetMapShader(false);
             mat.maps[MATERIAL_MAP_ALBEDO].color = color;
             
-            Model mod = model->GetModel();
+            Model mod;
+            if (model != nullptr)
+            {
+                mod = model->GetModel();
+            }
+            else
+            {
+                mod = Assets::GetMissingModel();
+            }
             mod.transform = MatrixMultiply(mod.transform, 
                 MatrixMultiply(MatrixScale(radius, radius, radius), matrix));
             for (int m = 0; m < mod.meshCount; ++m)
@@ -223,20 +229,34 @@ void Ent::Draw(const bool drawAxes, const Vector3 position)
         }
     case DisplayMode::SPRITE:
         {
-            if (texture == nullptr) break;
-            const float aspectRatio = (float)texture->GetTexture().width / (float)texture->GetTexture().height;
-            Matrix scaleMatrix = MatrixIdentity();
-            if (aspectRatio > 1.0f) {
+            Matrix scaleMatrix;
+            float aspectRatio = 1.0f;
+            if (texture != nullptr)
+            {
+                aspectRatio = (float)texture->GetTexture().width / (float)texture->GetTexture().height;
+            }
+            if (aspectRatio > 1.0f) 
+            {
                 // For wide sprites, we want to size it so that the width is 1 tile wide.
                 scaleMatrix = MatrixScale(radius, radius / aspectRatio, radius);
-            } else if (aspectRatio < 1.0f) {
+            } 
+            else 
+            {
                 // For tall sprites, we want to size it so that the height is 1 tile high.
                 scaleMatrix = MatrixScale(radius * aspectRatio, radius, radius * aspectRatio);
             }
 
             rlDrawRenderBatchActive();
             spriteMaterial.shader = Assets::GetSpriteShader();
-            SetMaterialTexture(&spriteMaterial, MATERIAL_MAP_ALBEDO, texture->GetTexture());
+            if (texture != nullptr)
+            {
+                SetMaterialTexture(&spriteMaterial, MATERIAL_MAP_ALBEDO, texture->GetTexture());
+            }
+            else
+            {
+                // Use white square texture for sprites without one
+                SetMaterialTexture(&spriteMaterial, MATERIAL_MAP_ALBEDO, Texture2D{ rlGetTextureIdDefault(), 1, 1, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 });
+            }
             spriteMaterial.maps[MATERIAL_MAP_ALBEDO].color = color;
             DrawMesh(Assets::GetSpriteQuad(), spriteMaterial, MatrixMultiply(scaleMatrix, matrix));
             break;

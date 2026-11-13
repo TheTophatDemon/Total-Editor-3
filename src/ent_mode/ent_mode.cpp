@@ -42,8 +42,22 @@ EntMode::~EntMode()
 
 void EntMode::OnEnter() 
 {
-    if (_ent.texture) strcpy(_texturePathBuffer, _ent.texture->GetPath().string().c_str());
-    if (_ent.model) strcpy(_modelPathBuffer, _ent.model->GetPath().string().c_str());
+    if (_ent.texture) 
+    {
+        strcpy(_texturePathBuffer, _ent.texture->GetPath().string().c_str());
+    }
+    else
+    {
+        strcpy(_texturePathBuffer, "\0");
+    }
+    if (_ent.model) 
+    {
+        strcpy(_modelPathBuffer, _ent.model->GetPath().string().c_str());
+    }
+    else
+    {
+        strcpy(_modelPathBuffer, "\0");
+    }
     memset(_newKeyBuffer, 0, TEXT_FIELD_MAX * sizeof(char));
     memset(_newValBuffer, 0, TEXT_FIELD_MAX * sizeof(char));
 

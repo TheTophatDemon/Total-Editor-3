@@ -1,10 +1,8 @@
 # TODO
-- Replace boxes with zones
-  - Update docs
+- Update docs
 - Upgrade to Raylib 6?
-- Make sprites without textures display as blank squares
-- Make sprites scale again using radius
 - Take camera position & orientation on the command line
+- Add hotkey for toggle preview
 ## Considered future updates
 
 - Add image preview in the file picker
