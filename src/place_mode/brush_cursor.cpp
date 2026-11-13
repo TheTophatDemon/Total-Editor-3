@@ -21,13 +21,52 @@
 #include "brush_cursor.hpp"
 
 BrushCursor::BrushCursor(MapMan& mapMan)
-    : brush(mapMan, 1, 1, 1)
+    : brush(mapMan, 1, 1, 1),
+      originalBrush(mapMan, 1, 1, 1)
+
 {
     disableBorder = false;
 }
 
+void BrushCursor::RotateY(MapMan& mapMan, int increments)
+{
+    increments %= 4;
+    if (increments < 0) increments += 4;
+    if (increments == 0) return;
+
+    for (int times = 0; times < increments; ++times)
+    {
+        TileGrid newBrush = TileGrid(mapMan, brush.GetLength(), brush.GetHeight(), brush.GetWidth());
+        for (size_t i = 0; i < newBrush.GetWidth(); ++i)
+        {
+            for (size_t j = 0; j < newBrush.GetHeight(); ++j)
+            {
+                for (size_t k = 0; k < newBrush.GetLength(); ++k)
+                {
+                    newBrush.SetTile(i, j, newBrush.GetLength() - 1 - k, brush.GetTile(k, j, i));
+                }
+            }
+        }
+        brush = newBrush;
+    }
+}
+
 void BrushCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l)
 {
+    if (IsKeyPressed(KEY_Q))
+    {
+        RotateY(mapMan, 1);
+    }
+    else if (!IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E))
+    {
+        RotateY(mapMan, -1);
+    }
+    else if (IsKeyPressed(KEY_R))
+    {
+        // Reset to original orientation.
+        brush = originalBrush;
+    }
+
     // Put the end position at the other extent of the bounding box so that a border can be drawn later
     endPosition = Vector3 {
         position.x + ((brush.GetWidth() - 1) * brush.GetSpacing()),

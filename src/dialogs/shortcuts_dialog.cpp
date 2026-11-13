@@ -29,7 +29,7 @@ bool ShortcutsDialog::Draw()
         "Hold Middle click or LEFT ALT+LEFT CLICK", "Look around",
         "Scroll wheel", "Move grid up/down",
         "Left click", "Place tile/entity/brush",
-        "Right click", "Remove tile/entity (Does not work in brush mode)",
+        "Right click", "Remove tile(s)/entity under cursor",
         "TAB", "Switch between texture picker and map editor.",
         "LEFT SHIFT+TAB", "Switch between shape picker and map editor.",
         "T (Tile mode)", "Select textures of tile under cursor",

@@ -261,6 +261,7 @@ void PlaceMode::UpdateCursor()
     {
         _cursor = &_brushCursor;
         _brushCursor.brush = _mapMan.Tiles().Subsection(i, j, k, w, h, l);
+        _brushCursor.originalBrush = _brushCursor.brush;
         _brushCursor.position = _tileCursor.position;
         _brushCursor.endPosition = _tileCursor.endPosition;
     }
