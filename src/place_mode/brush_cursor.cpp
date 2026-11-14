@@ -22,7 +22,8 @@
 
 BrushCursor::BrushCursor(MapMan& mapMan)
     : brush(mapMan, 1, 1, 1),
-      originalBrush(mapMan, 1, 1, 1)
+      originalBrush(mapMan, 1, 1, 1),
+      yawIncrements(0)
 
 {
     disableBorder = false;
@@ -33,6 +34,7 @@ void BrushCursor::RotateY(MapMan& mapMan, int increments)
     increments %= 4;
     if (increments < 0) increments += 4;
     if (increments == 0) return;
+    yawIncrements = (yawIncrements + increments) % 4;
 
     for (int times = 0; times < increments; ++times)
     {
@@ -51,6 +53,47 @@ void BrushCursor::RotateY(MapMan& mapMan, int increments)
     }
 }
 
+void BrushCursor::RotateX(MapMan& mapMan, int increments)
+{
+    increments %= 4;
+    if (increments < 0) increments += 4;
+    if (increments == 0) return;
+
+    for (int times = 0; times < increments; ++times)
+    {
+        if ((yawIncrements % 2) == 1)
+        {
+            TileGrid newBrush = TileGrid(mapMan, brush.GetWidth(), brush.GetLength(), brush.GetHeight());
+            for (size_t i = 0; i < newBrush.GetWidth(); ++i)
+            {
+                for (size_t j = 0; j < newBrush.GetHeight(); ++j)
+                {
+                    for (size_t k = 0; k < newBrush.GetLength(); ++k)
+                    {
+                        newBrush.SetTile(i, j, newBrush.GetLength() - 1 - k, brush.GetTile(i, k, j));
+                    }
+                }
+            }
+            brush = newBrush;
+        }
+        else
+        {
+            TileGrid newBrush = TileGrid(mapMan, brush.GetHeight(), brush.GetWidth(), brush.GetLength());
+            for (size_t i = 0; i < newBrush.GetWidth(); ++i)
+            {
+                for (size_t j = 0; j < newBrush.GetHeight(); ++j)
+                {
+                    for (size_t k = 0; k < newBrush.GetLength(); ++k)
+                    {
+                        newBrush.SetTile(newBrush.GetWidth() - 1 - i, j, k, brush.GetTile(j, i, k));
+                    }
+                }
+            }
+            brush = newBrush;
+        }
+    }
+}
+
 void BrushCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l)
 {
     if (IsKeyPressed(KEY_Q))
@@ -61,10 +104,70 @@ void BrushCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w,
     {
         RotateY(mapMan, -1);
     }
+    else if (IsKeyPressed(KEY_F))
+    {
+        RotateX(mapMan, 1);
+    }
+    else if (IsKeyPressed(KEY_V))
+    {
+        RotateX(mapMan, -1);
+    }
+    else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_X))
+    {
+        // Flip on the X axis
+        for (size_t i = 0; i < brush.GetWidth() / 2; ++i)
+        {
+            for (size_t j = 0; j < brush.GetHeight(); ++j)
+            {
+                for (size_t k = 0; k < brush.GetLength(); ++k)
+                {
+                    Tile swapTile = brush.GetTile(i, j, k);
+                    size_t otherI = brush.GetWidth() - 1 - i;
+                    brush.SetTile(i, j, k, brush.GetTile(otherI, j, k));
+                    brush.SetTile(otherI, j, k, swapTile);
+                }
+            }
+        }
+    }
+    else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_Y))
+    {
+        // Flip on the Y axis
+        for (size_t i = 0; i < brush.GetWidth(); ++i)
+        {
+            for (size_t j = 0; j < brush.GetHeight() / 2; ++j)
+            {
+                for (size_t k = 0; k < brush.GetLength(); ++k)
+                {
+                    Tile swapTile = brush.GetTile(i, j, k);
+                    size_t otherJ = brush.GetHeight() - 1 - j;
+                    brush.SetTile(i, j, k, brush.GetTile(i, otherJ, k));
+                    brush.SetTile(i, otherJ, k, swapTile);
+                }
+            }
+        }
+    }
+    else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_Z))
+    {
+        // Flip on the Z axis
+        for (size_t i = 0; i < brush.GetWidth(); ++i)
+        {
+            for (size_t j = 0; j < brush.GetHeight(); ++j)
+            {
+                for (size_t k = 0; k < brush.GetLength() / 2; ++k)
+                {
+                    Tile swapTile = brush.GetTile(i, j, k);
+                    size_t otherK = brush.GetLength() - 1 - k;
+                    brush.SetTile(i, j, k, brush.GetTile(i, j, otherK));
+                    brush.SetTile(i, j, otherK, swapTile);
+                }
+            }
+        }
+    }
     else if (IsKeyPressed(KEY_R))
     {
         // Reset to original orientation.
         brush = originalBrush;
+        yawIncrements = 0;
     }
 
     // Put the end position at the other extent of the bounding box so that a border can be drawn later
