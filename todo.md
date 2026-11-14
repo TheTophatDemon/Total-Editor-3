@@ -1,7 +1,6 @@
 # TODO
 - Update docs
 - Take camera position & orientation on the command line
-- Add hotkey for toggle preview
 - Upgrade to Raylib 6?
 ## Considered future updates
 

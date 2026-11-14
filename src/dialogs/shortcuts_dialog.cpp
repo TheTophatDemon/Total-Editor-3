@@ -46,6 +46,7 @@ bool ShortcutsDialog::Draw()
         "LEFT SHIFT+Z", "Mirror brush cursor on the Z axis",
         "H", "Isolate the layer of tiles the grid is on.",
         "H (when layers are isolated)", "Unhide hidden layers.",
+        "P", "Toggle preview mode.",
         "Hold H while using scrollwheel", "Select multiple layers to isolate.",
         "LEFT SHIFT+B", "Capture tiles under cursor as a brush.",
         "ESCAPE/BACKSPACE", "Return cursor to tile mode.",

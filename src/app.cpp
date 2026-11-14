@@ -140,7 +140,7 @@ void App::Update()
 {
     _menuBar->Update();
 
-    //Mode switching hotkeys
+    // Mode switching hotkeys
     if (IsKeyPressed(KEY_TAB))
     {
         if (IsKeyDown(KEY_LEFT_SHIFT))
@@ -160,7 +160,7 @@ void App::Update()
         }
     }
 
-    //Save hotkey
+    // Save hotkey
     if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S))
     {
         if (!GetLastSavedPath().empty())
@@ -171,6 +171,12 @@ void App::Update()
         {
             _menuBar->OpenSaveMapDialog();
         }
+    }
+
+    // Preview hotkey
+    if (IsKeyPressed(KEY_P))
+    {
+        _previewDraw = !_previewDraw;
     }
 
     _editorMode->Update();
@@ -332,7 +338,7 @@ void App::TryOpenMap(fs::path path)
 
 void App::TrySaveMap(fs::path path)
 {
-    //Add correct extension if no extension is given.
+    // Add correct extension if no extension is given.
     if (path.extension().empty())
     {
         path += ".te3";
@@ -370,7 +376,7 @@ void App::TrySaveMap(fs::path path)
 
 void App::TryExportMap(fs::path path, bool separateGeometry)
 {
-    //Add correct extension if no extension is given.
+    // Add correct extension if no extension is given.
     if (path.extension().empty())
     {
         path += ".gltf";
