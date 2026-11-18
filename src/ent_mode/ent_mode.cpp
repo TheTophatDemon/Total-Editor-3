@@ -34,6 +34,7 @@ EntMode::EntMode()
     memset(_modelPathBuffer, 0, TEXT_FIELD_MAX * sizeof(char));
     memset(_newKeyBuffer, 0, TEXT_FIELD_MAX * sizeof(char));
     memset(_newValBuffer, 0, TEXT_FIELD_MAX * sizeof(char));
+    _justAddedProperty = false;
 }
 
 EntMode::~EntMode()
@@ -264,11 +265,17 @@ void EntMode::Draw()
                 _ent.properties[key] = std::string(val);
             }
 
+            // Section for adding new key/value pairs
             ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
             ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
             ImGui::TableNextColumn();
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
             bool wannaAdd = ImGui::InputText("##New key", _newKeyBuffer, TEXT_FIELD_MAX, ImGuiInputTextFlags_EnterReturnsTrue);
+            // Focus the new property key field after pressing enter to add a property.
+            if (IsKeyDown(KEY_ENTER) && _justAddedProperty)
+            {
+                ImGui::SetKeyboardFocusHere(-1);
+            }
             ImGui::TableNextColumn();
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
             wannaAdd = wannaAdd || ImGui::InputText("##New val", _newValBuffer, TEXT_FIELD_MAX, ImGuiInputTextFlags_EnterReturnsTrue);
@@ -287,6 +294,11 @@ void EntMode::Draw()
 
                 memset(_newKeyBuffer, 0, sizeof(char) * TEXT_FIELD_MAX);
                 memset(_newValBuffer, 0, sizeof(char) * TEXT_FIELD_MAX);
+                _justAddedProperty = true;
+            }
+            else
+            {
+                _justAddedProperty = false;
             }
         }
         

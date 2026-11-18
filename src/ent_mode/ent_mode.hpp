@@ -45,6 +45,8 @@ protected:
     std::unique_ptr<FileDialog> _fileDialog;
 
     Ent _ent;
+
+    bool _justAddedProperty;
     
     char _texturePathBuffer[TEXT_FIELD_MAX];
     char _modelPathBuffer[TEXT_FIELD_MAX];

@@ -1,5 +1,4 @@
 # TODO
-- Have keyboard focus move to next property name after adding property in entity editor
 - Mechanism to only show a region of an entity's sprite
   - Have checkbox that toggles a field of 4 floats that stay the same between entities.
 - Add extra example map
