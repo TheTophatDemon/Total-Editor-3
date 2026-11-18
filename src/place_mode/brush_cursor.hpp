@@ -13,8 +13,11 @@ struct BrushCursor : public Cursor
 	void Draw(MapMan& mapMan) override;
 	// Rotates the brush by increments of 90 degrees on the Y axis.
 	void RotateY(MapMan& mapMan, int increments);
+
 	// Rotates the brush by increments of 90 degrees on the local X axis.
-	void RotateX(MapMan& mapMan, int increments);
+	// TODO: This doesn't quite work because it requires rotating the tiles on their local z,
+	// which is not supported yet.
+	// void RotateX(MapMan& mapMan, int increments);
 
 	TileGrid brush;
 	// The brush selected when the brush mode was first entered.

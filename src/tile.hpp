@@ -33,6 +33,7 @@
 #include <memory>
 #include <functional>
 #include <array>
+#include <type_traits>
 
 #include "grid.hpp"
 #include "math_stuff.hpp"
@@ -50,6 +51,16 @@ typedef int16_t ModelID;
 #define NO_TEX (int16_t)(-1)
 #define NO_MODEL (int16_t)(-1)
 #define TEXTURES_PER_TILE 2
+
+// Takes a number of 90 degree increments and normalizes it to the range [0-3] by wrapping.
+template <typename Number>
+inline Number NormalizeTileRotation(Number increments)
+{
+    static_assert(std::is_integral<Number>::value, "Type must be an integer.");
+    increments %= 4;
+    if (increments < 0) increments += 4;
+    return increments;
+}
 
 struct Tile 
 {
@@ -69,6 +80,16 @@ struct Tile
     inline operator bool() const
     {
         return shape != NO_MODEL;
+    }
+
+    inline void RotateY(int increments)
+    {
+        yaw = (uint8_t)NormalizeTileRotation<int>((int)yaw + increments);
+    }
+
+    inline void RotateX(int increments)
+    {
+        pitch = (uint8_t)NormalizeTileRotation<int>((int)pitch + increments);
     }
 };
 

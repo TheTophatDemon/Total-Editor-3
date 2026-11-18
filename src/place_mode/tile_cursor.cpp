@@ -58,19 +58,19 @@ void TileCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, 
     // Rotate cursor
     if (IsKeyPressed(KEY_Q))
     {
-        yaw = (yaw + 3) % 4;
+        yaw = NormalizeTileRotation(yaw - 1);
     }
     else if (!IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E))
     {
-        yaw = (yaw + 1) % 4;
+        yaw = NormalizeTileRotation(yaw + 1);
     }
     if (IsKeyPressed(KEY_F))
     {
-        pitch = (pitch + 1) % 4;
+        pitch = NormalizeTileRotation(pitch + 1);
     }
     else if (IsKeyPressed(KEY_V))
     {
-        pitch = (pitch + 3) % 4;
+        pitch = NormalizeTileRotation(pitch - 1);
     }
     // Reset tile orientation
     if (IsKeyPressed(KEY_R))

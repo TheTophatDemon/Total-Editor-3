@@ -31,10 +31,9 @@ BrushCursor::BrushCursor(MapMan& mapMan)
 
 void BrushCursor::RotateY(MapMan& mapMan, int increments)
 {
-    increments %= 4;
-    if (increments < 0) increments += 4;
+    increments = NormalizeTileRotation(increments);
     if (increments == 0) return;
-    yawIncrements = (yawIncrements + increments) % 4;
+    yawIncrements = NormalizeTileRotation(yawIncrements + increments);
 
     for (int times = 0; times < increments; ++times)
     {
@@ -45,7 +44,9 @@ void BrushCursor::RotateY(MapMan& mapMan, int increments)
             {
                 for (size_t k = 0; k < newBrush.GetLength(); ++k)
                 {
-                    newBrush.SetTile(i, j, newBrush.GetLength() - 1 - k, brush.GetTile(k, j, i));
+                    Tile newTile = brush.GetTile(k, j, i);
+                    newTile.RotateY(-1);
+                    newBrush.SetTile(i, j, newBrush.GetLength() - 1 - k, newTile);
                 }
             }
         }
@@ -53,46 +54,49 @@ void BrushCursor::RotateY(MapMan& mapMan, int increments)
     }
 }
 
-void BrushCursor::RotateX(MapMan& mapMan, int increments)
-{
-    increments %= 4;
-    if (increments < 0) increments += 4;
-    if (increments == 0) return;
+// void BrushCursor::RotateX(MapMan& mapMan, int increments)
+// {
+//     increments = NormalizeTileRotation(increments);
+//     if (increments == 0) return;
 
-    for (int times = 0; times < increments; ++times)
-    {
-        if ((yawIncrements % 2) == 1)
-        {
-            TileGrid newBrush = TileGrid(mapMan, brush.GetWidth(), brush.GetLength(), brush.GetHeight());
-            for (size_t i = 0; i < newBrush.GetWidth(); ++i)
-            {
-                for (size_t j = 0; j < newBrush.GetHeight(); ++j)
-                {
-                    for (size_t k = 0; k < newBrush.GetLength(); ++k)
-                    {
-                        newBrush.SetTile(i, j, newBrush.GetLength() - 1 - k, brush.GetTile(i, k, j));
-                    }
-                }
-            }
-            brush = newBrush;
-        }
-        else
-        {
-            TileGrid newBrush = TileGrid(mapMan, brush.GetHeight(), brush.GetWidth(), brush.GetLength());
-            for (size_t i = 0; i < newBrush.GetWidth(); ++i)
-            {
-                for (size_t j = 0; j < newBrush.GetHeight(); ++j)
-                {
-                    for (size_t k = 0; k < newBrush.GetLength(); ++k)
-                    {
-                        newBrush.SetTile(newBrush.GetWidth() - 1 - i, j, k, brush.GetTile(j, i, k));
-                    }
-                }
-            }
-            brush = newBrush;
-        }
-    }
-}
+//     for (int times = 0; times < increments; ++times)
+//     {
+//         if ((yawIncrements % 2) == 1)
+//         {
+//             TileGrid newBrush = TileGrid(mapMan, brush.GetWidth(), brush.GetLength(), brush.GetHeight());
+//             for (size_t i = 0; i < newBrush.GetWidth(); ++i)
+//             {
+//                 for (size_t j = 0; j < newBrush.GetHeight(); ++j)
+//                 {
+//                     for (size_t k = 0; k < newBrush.GetLength(); ++k)
+//                     {
+//                         Tile newTile = brush.GetTile(i, k, j);
+//                         newTile.RotateX(-1);
+//                         newBrush.SetTile(i, j, newBrush.GetLength() - 1 - k, newTile);
+//                     }
+//                 }
+//             }
+//             brush = newBrush;
+//         }
+//         else
+//         {
+//             TileGrid newBrush = TileGrid(mapMan, brush.GetHeight(), brush.GetWidth(), brush.GetLength());
+//             for (size_t i = 0; i < newBrush.GetWidth(); ++i)
+//             {
+//                 for (size_t j = 0; j < newBrush.GetHeight(); ++j)
+//                 {
+//                     for (size_t k = 0; k < newBrush.GetLength(); ++k)
+//                     {
+//                         Tile newTile = brush.GetTile(j, i, k);
+//                         newTile.RotateX(-1);
+//                         newBrush.SetTile(newBrush.GetWidth() - 1 - i, j, k, newTile);
+//                     }
+//                 }
+//             }
+//             brush = newBrush;
+//         }
+//     }
+// }
 
 void BrushCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w, size_t h, size_t l)
 {
@@ -104,65 +108,80 @@ void BrushCursor::Update(MapMan& mapMan, size_t i, size_t j, size_t k, size_t w,
     {
         RotateY(mapMan, -1);
     }
-    else if (IsKeyPressed(KEY_F))
-    {
-        RotateX(mapMan, 1);
-    }
-    else if (IsKeyPressed(KEY_V))
-    {
-        RotateX(mapMan, -1);
-    }
-    else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_X))
-    {
-        // Flip on the X axis
-        for (size_t i = 0; i < brush.GetWidth() / 2; ++i)
-        {
-            for (size_t j = 0; j < brush.GetHeight(); ++j)
-            {
-                for (size_t k = 0; k < brush.GetLength(); ++k)
-                {
-                    Tile swapTile = brush.GetTile(i, j, k);
-                    size_t otherI = brush.GetWidth() - 1 - i;
-                    brush.SetTile(i, j, k, brush.GetTile(otherI, j, k));
-                    brush.SetTile(otherI, j, k, swapTile);
-                }
-            }
-        }
-    }
-    else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_Y))
-    {
-        // Flip on the Y axis
-        for (size_t i = 0; i < brush.GetWidth(); ++i)
-        {
-            for (size_t j = 0; j < brush.GetHeight() / 2; ++j)
-            {
-                for (size_t k = 0; k < brush.GetLength(); ++k)
-                {
-                    Tile swapTile = brush.GetTile(i, j, k);
-                    size_t otherJ = brush.GetHeight() - 1 - j;
-                    brush.SetTile(i, j, k, brush.GetTile(i, otherJ, k));
-                    brush.SetTile(i, otherJ, k, swapTile);
-                }
-            }
-        }
-    }
-    else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_Z))
-    {
-        // Flip on the Z axis
-        for (size_t i = 0; i < brush.GetWidth(); ++i)
-        {
-            for (size_t j = 0; j < brush.GetHeight(); ++j)
-            {
-                for (size_t k = 0; k < brush.GetLength() / 2; ++k)
-                {
-                    Tile swapTile = brush.GetTile(i, j, k);
-                    size_t otherK = brush.GetLength() - 1 - k;
-                    brush.SetTile(i, j, k, brush.GetTile(i, j, otherK));
-                    brush.SetTile(i, j, otherK, swapTile);
-                }
-            }
-        }
-    }
+    // else if (IsKeyPressed(KEY_F))
+    // {
+    //     RotateX(mapMan, 1);
+    // }
+    // else if (IsKeyPressed(KEY_V))
+    // {
+    //     RotateX(mapMan, -1);
+    // }
+    // TODO: In order to preserve tile orientations correctly,
+    // we either have to support flipping on the tile level,
+    // or come up with a method to determine which tiles should
+    // rotate when flipping the brush.
+    // else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_X))
+    // {
+    //     // Flip on the X axis
+    //     for (size_t i = 0; i < brush.GetWidth() / 2; ++i)
+    //     {
+    //         for (size_t j = 0; j < brush.GetHeight(); ++j)
+    //         {
+    //             for (size_t k = 0; k < brush.GetLength(); ++k)
+    //             {
+    //                 Tile swapTile = brush.GetTile(i, j, k);
+    //                 swapTile.RotateY(2);
+    //                 size_t otherI = brush.GetWidth() - 1 - i;
+    //                 Tile otherTile = brush.GetTile(otherI, j, k);
+    //                 otherTile.RotateY(2);
+    //                 brush.SetTile(i, j, k, otherTile);
+    //                 brush.SetTile(otherI, j, k, swapTile);
+    //             }
+    //         }
+    //     }
+    // }
+    // else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_Y))
+    // {
+    //     // Flip on the Y axis
+    //     for (size_t i = 0; i < brush.GetWidth(); ++i)
+    //     {
+    //         for (size_t j = 0; j < brush.GetHeight() / 2; ++j)
+    //         {
+    //             for (size_t k = 0; k < brush.GetLength(); ++k)
+    //             {
+    //                 Tile swapTile = brush.GetTile(i, j, k);
+    //                 swapTile.RotateY(2);
+    //                 swapTile.RotateX(2);
+    //                 size_t otherJ = brush.GetHeight() - 1 - j;
+    //                 Tile otherTile = brush.GetTile(i, otherJ, k);
+    //                 otherTile.RotateY(2);
+    //                 otherTile.RotateX(2);
+    //                 brush.SetTile(i, j, k, otherTile);
+    //                 brush.SetTile(i, otherJ, k, swapTile);
+    //             }
+    //         }
+    //     }
+    // }
+    // else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_Z))
+    // {
+    //     // Flip on the Z axis
+    //     for (size_t i = 0; i < brush.GetWidth(); ++i)
+    //     {
+    //         for (size_t j = 0; j < brush.GetHeight(); ++j)
+    //         {
+    //             for (size_t k = 0; k < brush.GetLength() / 2; ++k)
+    //             {
+    //                 Tile swapTile = brush.GetTile(i, j, k);
+    //                 swapTile.RotateY(2);
+    //                 size_t otherK = brush.GetLength() - 1 - k;
+    //                 Tile otherTile = brush.GetTile(i, j, otherK);
+    //                 otherTile.RotateY(2);
+    //                 brush.SetTile(i, j, k, otherTile);
+    //                 brush.SetTile(i, j, otherK, swapTile);
+    //             }
+    //         }
+    //     }
+    // }
     else if (IsKeyPressed(KEY_R))
     {
         // Reset to original orientation.
