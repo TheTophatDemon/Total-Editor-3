@@ -232,7 +232,7 @@ void PlaceMode::UpdateCursor()
     Vector2 currentMousePosition = GetMousePosition();
     if (Vector2LengthSqr(currentMousePosition - _previousMousePosition) > 1.0f) 
     {
-        Ray pickRay = GetMouseRay(currentMousePosition, _camera);
+        Ray pickRay = GetScreenToWorldRay(currentMousePosition, _camera);
         Vector3 gridMin = _mapMan.Tiles().GetMinCorner();
         Vector3 gridMax = _mapMan.Tiles().GetMaxCorner();
         RayCollision col = GetRayCollisionQuad(pickRay, 

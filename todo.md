@@ -1,9 +1,11 @@
 # TODO
 - Update docs
-- Upgrade to Raylib 6?
+- Fix orientation of individual tiles when rotating brush
+- Have keyboard focus move to next property name after adding property in entity editor
 ## Considered future updates
 
 - Mechanism to only show a region of an entity's sprite
+  - Have checkbox that toggles a field of 4 floats that stay the same between entities.
 
 - Add image preview in the file picker
 

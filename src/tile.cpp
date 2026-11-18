@@ -558,7 +558,7 @@ Model* TileGrid::_GenerateModel(bool culling)
     }
 
     // Create Raylib mesh
-    Model *model = SAFE_MALLOC(Model, 1);
+    Model *model = SAFE_CALLOC(Model, 1);
 
     // Count the number of meshes (that aren't empty.)
     int numMeshes = 0;
@@ -576,9 +576,6 @@ Model* TileGrid::_GenerateModel(bool culling)
     model->meshMaterial = SAFE_MALLOC(int, model->meshCount);
 
     model->transform = MatrixIdentity();
-    model->bindPose = NULL;
-    model->boneCount = 0;
-    model->bones = NULL;
 
     // Initialize materials
     for (int m = 0; m < model->materialCount; ++m)

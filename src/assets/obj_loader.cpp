@@ -169,10 +169,7 @@ static Model LoadOBJModelFromStream(std::istream& stream)
     }
 
     // Initialize the model with the meshes
-    Model model = {}; 
-    model.bindPose = nullptr;
-    model.boneCount = 0;
-    model.bones = nullptr;
+    Model model = {};
     model.materialCount = objMeshes.size();
     model.materials = SAFE_MALLOC(Material, model.materialCount);
     model.meshCount = model.materialCount;
@@ -193,8 +190,6 @@ static Model LoadOBJModelFromStream(std::istream& stream)
         mesh.vertices = SAFE_MALLOC(float, meshVerts.size() * 3);
         mesh.vertexCount = meshVerts.size();
         mesh.texcoords = SAFE_MALLOC(float, meshVerts.size() * 2);
-        mesh.texcoords2 = mesh.animNormals = mesh.animVertices = mesh.boneWeights = mesh.tangents = nullptr;
-        mesh.boneIds = mesh.colors = nullptr;
         mesh.normals = SAFE_MALLOC(float, meshVerts.size() * 3);
         mesh.indices = SAFE_MALLOC(uint16_t, meshInds.size());
         mesh.triangleCount = meshInds.size() / 3;
