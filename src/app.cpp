@@ -41,6 +41,7 @@
 #include "pick_mode/pick_mode.hpp"
 #include "ent_mode/ent_mode.hpp"
 #include "map_man/map_man.hpp"
+#include "text_util.hpp"
 
 #define SETTINGS_FILE_PATH "te3_settings.json"
 #define BASE_WINDOW_TITLE "Total Editor 3"
@@ -199,14 +200,32 @@ void App::Update()
 	EndDrawing();
 }
 
+static bool parseCommandLineVector(const std::string &name, const std::string &arg, Vector3& result)
+{
+    if (arg.find(name + "=") == 0)
+    {
+        std::vector<std::string> tokens = SplitString(std::string(arg.begin() + name.size() + 1, arg.end()), ",");
+        if (tokens.size() != 3) return false;
+        result.x = atof(tokens[0].c_str());
+        result.y = atof(tokens[1].c_str());
+        result.z = atof(tokens[2].c_str());
+        return true;
+    }
+    return false;
+}
+
+static bool parseCommandLineFloat(const std::string &name, const std::string &arg, float& result)
+{
+    if (arg.find(name + "=") == 0)
+    {
+        result = atof(std::string(arg.begin() + name.size() + 1, arg.end()).c_str());
+        return true;
+    }
+    return false;
+}
+
 int main(int argc, char **argv)
 {
-    if (argc > 2) 
-    {
-        std::cerr << "Too many arguments supplied. Expected 1 argument: A path to a TE3 file." << std::endl;
-        return 1;
-    }
-
     // Window stuff
 	InitWindow(1280, 720, BASE_WINDOW_TITLE);
     SetWindowMinSize(640, 480);
@@ -242,6 +261,32 @@ int main(int argc, char **argv)
         App::Get()->TryOpenMap(commandLineOpenedMap);
     }
 
+    // Parse command line arguments for camera
+    for (int a = 2; a < argc; ++a)
+    {
+        Vector3 cameraPosition;
+        float cameraYaw;
+        float cameraPitch;
+        std::string arg(argv[a]);
+        if (parseCommandLineVector("--camera-position", arg, cameraPosition))
+        {
+            App::Get()->SetCameraPosition(cameraPosition);
+        }
+        else if (parseCommandLineFloat("--camera-yaw-degrees", arg, cameraYaw))
+        {
+            App::Get()->SetCameraYaw(cameraYaw * DEG2RAD);
+        }
+        else if (parseCommandLineFloat("--camera-pitch-degrees", arg, cameraPitch))
+        {
+            App::Get()->SetCameraPitch(cameraPitch * DEG2RAD);
+        }
+        else
+        {
+            std::cerr << "Usage: " << argv[0] << " ./path/to/map.te3 --camera-position=\"1.5, 2.3, 3.7\" --camera-yaw-degrees=90.0 --camera-pitch-degrees=43.2" << std::endl;
+            return 1;
+        }
+    }
+    
     // Main loop
 	SetTargetFPS(60);
 	while (!App::Get()->IsQuitting())
@@ -273,6 +318,27 @@ void App::ResetEditorCamera()
         _tilePlaceMode->ResetGrid();
     }
 }
+
+void App::SetCameraOrientation(Vector3 position, Vector3 angles)
+{
+    _tilePlaceMode->SetCameraOrientation(position, angles);
+}
+
+void App::SetCameraPosition(Vector3 position)
+{
+    _tilePlaceMode->SetCameraPosition(position);
+}
+
+void App::SetCameraYaw(float yaw)
+{
+    _tilePlaceMode->SetCameraYaw(yaw);
+}
+
+void App::SetCameraPitch(float pitch)
+{
+    _tilePlaceMode->SetCameraPitch(pitch);
+}
+
 
 void App::NewMap(int width, int height, int length)
 {

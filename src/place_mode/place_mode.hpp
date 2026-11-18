@@ -55,7 +55,14 @@ public:
     void ResetCamera();
     Vector3 GetCameraPosition() const;
     Vector3 GetCameraAngles() const;
+    // Sets the tile place mode camera's position and rotation (in radians).
     void SetCameraOrientation(Vector3 position, Vector3 angles);
+    // Sets the tile place mode camera's position.
+    void SetCameraPosition(Vector3 position);
+    // Sets the tile place mode camera's yaw angle in radians.
+    void SetCameraYaw(float yaw);
+    // Sets the tile place mode camera's pitch angle in radians.
+    void SetCameraPitch(float pitch);
     void ResetGrid();
 protected:
     void MoveCamera();
@@ -64,8 +71,8 @@ protected:
     MapMan& _mapMan;
 
     Camera _camera;
-    float _cameraYaw;
-    float _cameraPitch;
+    float _cameraYaw; // Radians
+    float _cameraPitch; // Radians
     float _cameraMoveSpeed;
 
     TileCursor _tileCursor;

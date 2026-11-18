@@ -108,6 +108,16 @@ public:
     // General map file operations
     inline const MapMan &GetMapMan() const { return *_mapMan.get(); }
     void ResetEditorCamera();
+
+    // Sets the tile place mode camera's position and rotation (in radians).
+    void SetCameraOrientation(Vector3 position, Vector3 angles);
+    // Sets the tile place mode camera's position.
+    void SetCameraPosition(Vector3 position);
+    // Sets the tile place mode camera's yaw angle in radians.
+    void SetCameraYaw(float yaw);
+    // Sets the tile place mode camera's pitch angle in radians.
+    void SetCameraPitch(float pitch);
+
     void NewMap(int width, int height, int length);
     void ExpandMap(Direction axis, int amount);
     void ShrinkMap();

@@ -1,6 +1,5 @@
 # TODO
 - Update docs
-- Take camera position & orientation on the command line
 - Upgrade to Raylib 6?
 ## Considered future updates
 

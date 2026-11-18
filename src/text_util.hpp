@@ -25,6 +25,7 @@
 #include "math_stuff.hpp"
 
 #include <string>
+#include <string_view>
 #include <cctype>
 #include <algorithm>
 #include <initializer_list>
@@ -95,6 +96,55 @@ inline std::vector<std::string> SplitString(const std::string& input, const std:
     
     return result;
 }
+
+#define WHITESPACE_CHARS " \t"
+
+// An iterator that goes over tokens in a string view separated by a delimiter.
+// Can also optionally trim whitespace.
+class Spliterator {
+private:
+    const std::string_view& _stringView;
+    const std::string _delimiter;
+    bool _trim;
+public:
+    struct Iterator {
+    private:
+        std::string_view _stringView;
+        const std::string& _delimiter;
+        bool _atEnd;
+        bool _trim;
+
+        std::string_view getCurrentToken() const;
+    public:
+        Iterator(const std::string_view& stringView, const std::string& delimiter, bool atEnd, bool trim) 
+            : _stringView(stringView), _delimiter(delimiter), _atEnd(atEnd), _trim(trim)
+        {
+        }
+
+        std::string_view operator*() const;
+        Iterator& operator++();
+
+        friend bool operator== (const Iterator& a, const Iterator& b) {
+            return a._stringView == b._stringView && a._atEnd == b._atEnd;
+        }
+        friend bool operator!= (const Iterator& a, const Iterator& b) {
+            return a._stringView != b._stringView || a._atEnd != b._atEnd;
+        }
+    };
+    
+    Spliterator(const std::string_view& stringView, const std::string &delimeter, bool trim = false) 
+        : _stringView(stringView), _delimiter(delimeter), _trim(trim)
+    {
+    }
+
+    Iterator begin() const {
+        return Iterator(_stringView, _delimiter, false, _trim);
+    }
+
+    Iterator end() const {
+        return Iterator(std::string_view(_stringView.end(), 0), _delimiter, true, _trim);
+    }
+};
 
 // Returns the lower case version of the given string.
 inline std::string StringToLower(std::string str) {

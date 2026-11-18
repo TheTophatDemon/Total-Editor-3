@@ -123,10 +123,26 @@ Vector3 PlaceMode::GetCameraAngles() const
 
 void PlaceMode::SetCameraOrientation(Vector3 position, Vector3 angles)
 {
-    _camera.position = position;
-    _cameraPitch = angles.x;
-    _cameraYaw = angles.y;
+    SetCameraPosition(position);
+    SetCameraYaw(angles.y);
+    SetCameraPitch(angles.x);
 }
+
+void PlaceMode::SetCameraPosition(Vector3 position)
+{
+    _camera.position = position;
+}
+
+void PlaceMode::SetCameraYaw(float yaw)
+{
+    _cameraYaw = yaw;
+}
+
+void PlaceMode::SetCameraPitch(float pitch)
+{
+    _cameraPitch = Clamp(pitch, -CAMERA_PITCH_LIMIT, CAMERA_PITCH_LIMIT);
+}
+
 
 void PlaceMode::ResetGrid()
 {
