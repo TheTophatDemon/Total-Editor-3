@@ -85,6 +85,7 @@ Assets::Assets()
     _spriteShader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(_spriteShader, "matModel");
     _spriteShader.locs[SHADER_LOC_MATRIX_VIEW] = GetShaderLocation(_spriteShader, "matView");
     _spriteShader.locs[SHADER_LOC_MATRIX_PROJECTION] = GetShaderLocation(_spriteShader, "matProj");
+    _spriteShader.locs[SHADER_LOC_MASK] = GetShaderLocation(_spriteShader, "mask");
 
     // Area shader
     _areaShader = LoadShaderFromMemory(AREA_SHADER_V_SRC, AREA_SHADER_F_SRC);

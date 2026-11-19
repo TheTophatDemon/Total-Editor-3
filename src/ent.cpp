@@ -48,6 +48,7 @@ Ent::Ent()
     model = nullptr;
     texture = nullptr;
     area = BoundingBox{};
+    mask = Rectangle{};
 }
 
 Ent::Ent(float radius)
@@ -65,6 +66,7 @@ Ent::Ent(float radius)
         .min = Vector3{-1.0f, -1.0f, -1.0f},
         .max = Vector3{1.0f, 1.0f, 1.0f}
     };
+    mask = Rectangle{};
 }
 
 bool Ent::RadiusAvailable() const 
@@ -107,6 +109,13 @@ bool Ent::TextureAvailable() const
 bool Ent::ModelAvailable() const 
 {
     return display == DisplayMode::MODEL;
+}
+
+bool Ent::HasMask() const
+{
+    return display == DisplayMode::SPRITE && (
+        mask.x != 0 || mask.y != 0 || mask.width != 0 || mask.height != 0
+    );
 }
 
 BoundingBox Ent::Bounds() const
@@ -233,7 +242,14 @@ void Ent::Draw(const bool drawAxes, const Vector3 position)
             float aspectRatio = 1.0f;
             if (texture != nullptr)
             {
-                aspectRatio = (float)texture->GetTexture().width / (float)texture->GetTexture().height;
+                if (HasMask())
+                {
+                    aspectRatio = mask.width / mask.height;
+                }
+                else
+                {
+                    aspectRatio = (float)texture->GetTexture().width / (float)texture->GetTexture().height;
+                }
             }
             if (aspectRatio > 1.0f) 
             {
@@ -248,6 +264,16 @@ void Ent::Draw(const bool drawAxes, const Vector3 position)
 
             rlDrawRenderBatchActive();
             spriteMaterial.shader = Assets::GetSpriteShader();
+            if (texture != nullptr)
+            {
+                std::array<float, 4> maskUVs = {
+                    mask.x / texture->GetTexture().width,
+                    mask.y / texture->GetTexture().height,
+                    mask.width / texture->GetTexture().width,
+                    mask.height / texture->GetTexture().height,
+                };
+                SetShaderValue(spriteMaterial.shader, spriteMaterial.shader.locs[SHADER_LOC_MASK], (void *)(maskUVs.data()), SHADER_UNIFORM_VEC4);
+            }
             if (texture != nullptr)
             {
                 SetMaterialTexture(&spriteMaterial, MATERIAL_MAP_ALBEDO, texture->GetTexture());
@@ -283,6 +309,7 @@ void to_json(nlohmann::json& j, const Ent &ent)
     j["display"] = ent.display;
     if (ent.ModelAvailable() && ent.model != nullptr) j["model"] = ent.model->GetPath();
     if (ent.TextureAvailable() && ent.texture != nullptr) j["texture"] = ent.texture->GetPath();
+    if (ent.HasMask()) j["mask"] = ent.mask;
     j["properties"] = ent.properties;
 }
 
@@ -323,6 +350,14 @@ void from_json(const nlohmann::json& j, Ent &ent)
     if (ent.TextureAvailable() && j.contains("texture"))
     {
         ent.texture = Assets::GetTexture(j.at("texture"));
+    }
+    if (ent.display == Ent::DisplayMode::SPRITE && j.contains("mask"))
+    {
+        ent.mask = j["mask"].get<Rectangle>();
+    }
+    else
+    {
+        ent.mask = Rectangle{};
     }
 }
 

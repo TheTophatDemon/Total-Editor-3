@@ -27,6 +27,7 @@
 #include <iostream>
 #include <limits>
 #include <vector>
+#include <algorithm>
 
 #include "../app.hpp"
 #include "../assets.hpp"
@@ -170,19 +171,20 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
             if (separateGeometry)
             {
                 // When separate geometry is enabled, each material gets its own node containing its portion of the map geometry
-                std::string nodeName = fs::relative(fs::current_path() / imagePath, fs::current_path() / App::Get()->GetTexturesDir()).generic_string();
-                
-                // The compiler thinks this is necessary, apparently... 9_9
-                char nodeNameBuffer[nodeName.length() + 1];
-                memcpy(nodeNameBuffer, nodeName.data(), nodeName.length() + 1);
-                // Replace slashes from the path with underscores. This makes sure the names are imported into Godot without modification.
-                char* newNodeName = TextReplace(nodeNameBuffer, "/", "_");
-                char* finalNodeName = TextReplace(newNodeName, ".", "_");
+                // Clean the file path by replacing slashes and dots with underscores.
+                // This is mainly so that Godot node names aren't screwed up.
+                std::string nodeName = {};
+                for (fs::path segment : fs::relative(fs::current_path() / imagePath, fs::current_path() / App::Get()->GetTexturesDir()))
+                {
+                    std::string segmentStr = segment.string();
+                    std::replace_if(segmentStr.begin(), segmentStr.end(), [&](char c){ return c == '.'; }, '_');
+                    nodeName.append(segmentStr);
+                    nodeName.append("_");
+                }
+                // Remove trailing _
+                nodeName.erase(nodeName.size() - 1);
 
-                json materialNode = {{"name", std::string(finalNodeName)}};
-
-                free(newNodeName);
-                free(finalNodeName);
+                json materialNode = {{"name", nodeName}};
 
                 json mesh = {
                     {"primitives", {mapPrims[m]}}
@@ -318,6 +320,10 @@ bool MapMan::ExportGLTFScene(fs::path filePath, bool separateGeometry)
             if (ent.AreaAvailable())
             {
                 entNode["extras"]["area"] = ent.area;
+            }
+            if (ent.HasMask())
+            {
+                entNode["extras"]["mask"] = ent.mask;
             }
 
             for (const auto& [key, value] : ent.properties)

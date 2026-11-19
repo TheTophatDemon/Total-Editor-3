@@ -135,4 +135,10 @@ void to_json(nlohmann::json& j, const BoundingBox& bbox);
 // Deserialization function for BoundingBox
 void from_json(const nlohmann::json& j, BoundingBox& bbox);
 
+// Serialization function for Rectangle
+void to_json(nlohmann::json& j, const Rectangle& rect);
+
+// Deserialization function for Rectangle
+void from_json(const nlohmann::json& j, Rectangle& rect);
+
 #endif

@@ -51,6 +51,7 @@ struct Ent
     DisplayMode display;
     Color color;
     float radius;
+    Rectangle mask;
     
     // Extent of an area entity's boundaries relative to the entity's origin.
     BoundingBox area;
@@ -70,6 +71,7 @@ struct Ent
     bool AreaAvailable() const;
     bool TextureAvailable() const;
     bool ModelAvailable() const;
+    bool HasMask() const;
     std::string DisplayModeName() const;
     // Returns the bounding box of the entity relative to its origin.
     BoundingBox Bounds() const;

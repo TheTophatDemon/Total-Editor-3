@@ -35,6 +35,7 @@ in vec4 vertexColor;
 uniform mat4 matModel;
 uniform mat4 matProj;
 uniform mat4 matView;
+uniform vec4 mask;
 
 // Output vertex attributes (to fragment shader)
 out vec2 fragTexCoord;
@@ -43,7 +44,15 @@ out vec4 fragColor;
 void main()
 {
     // Send vertex attributes to fragment shader
-    fragTexCoord = vertexTexCoord;
+    vec4 srcRect;
+    if (mask.x != 0.0 || mask.y != 0.0 || mask.z != 0.0 || mask.w != 0.0) {
+        srcRect = vec4(mask.x, mask.y, mask.z, mask.w);
+    } else {
+        srcRect = vec4(0.0, 1.0, 1.0, 1.0); 
+    }
+    float sOfs = vertexTexCoord.x * srcRect.z;
+    fragTexCoord = srcRect.xy + vec2(sOfs, vertexTexCoord.y * srcRect.w);
+
     fragColor = vertexColor;
 
     vec4 pos = matView * matModel * vec4(0.0, 0.0, 0.0, 1.0);

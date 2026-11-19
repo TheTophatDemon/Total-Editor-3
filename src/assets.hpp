@@ -32,6 +32,7 @@
 namespace fs = std::filesystem;
 
 #define SHADER_LOC_TIME 29
+#define SHADER_LOC_MASK 30
 
 // A repository that caches all loaded resources and their file paths.
 // It is implemented as a singleton with a static interface. 

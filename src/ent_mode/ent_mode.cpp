@@ -24,6 +24,7 @@
 
 #include "raylib.h"
 #include "imgui/imgui.h"
+#include "imgui/rlImGui.h"
 
 #include "../c_helpers.hpp"
 #include "../defer.hpp"
@@ -35,6 +36,7 @@ EntMode::EntMode()
     memset(_newKeyBuffer, 0, TEXT_FIELD_MAX * sizeof(char));
     memset(_newValBuffer, 0, TEXT_FIELD_MAX * sizeof(char));
     _justAddedProperty = false;
+    _selectedTexture = {};
 }
 
 EntMode::~EntMode()
@@ -45,11 +47,11 @@ void EntMode::OnEnter()
 {
     if (_ent.texture) 
     {
-        strcpy(_texturePathBuffer, _ent.texture->GetPath().string().c_str());
+        SetTexturePath(_ent.texture->GetPath().string());
     }
     else
     {
-        strcpy(_texturePathBuffer, "\0");
+        SetTexturePath("");
     }
     if (_ent.model) 
     {
@@ -83,7 +85,7 @@ void EntMode::OnExit()
         _ent.model = nullptr;
     }
 
-    if (strlen(_texturePathBuffer) > 0)
+    if (_selectedTexture)
     {
         _ent.texture = Assets::GetTexture(fs::path(std::string(_texturePathBuffer)));
     }
@@ -101,6 +103,25 @@ void EntMode::OnExit()
 void EntMode::Update()
 {
 
+}
+
+std::optional<Texture> EntMode::SetTexturePath(std::string str)
+{
+    if (str.size() > TEXT_FIELD_MAX)
+    {
+        str = str.substr(0, TEXT_FIELD_MAX);
+    }
+    strcpy(_texturePathBuffer, str.c_str());
+    fs::path path = fs::path(str);
+    if (fs::exists(path) && fs::is_regular_file(path))
+    {
+        _selectedTexture = LoadTexture(str.c_str());
+    }
+    else
+    {
+        _selectedTexture = {};
+    }
+    return _selectedTexture;
 }
 
 void EntMode::Draw()
@@ -139,8 +160,8 @@ void EntMode::Draw()
             }
             if (_ent.TextureAvailable())
             {
+                SetTexturePath("");
                 _ent.texture = nullptr;
-                memset(_texturePathBuffer, 0, TEXT_FIELD_MAX * sizeof(char));
             }
             if (_ent.AreaAvailable())
             {
@@ -154,61 +175,158 @@ void EntMode::Draw()
         ImGui::Separator();
 
         ImGui::PopStyleVar(1);
-        
-        // Color picker
-        float entColorf[3] = { _ent.color.r / 255.0f, _ent.color.g / 255.0f, _ent.color.b / 255.0f };
-        ImGui::SetNextItemWidth(256.0f);
-        ImGui::ColorPicker3("Color", entColorf, ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_InputRGB);
-        _ent.color = Color { 
-            (unsigned char)(entColorf[0] * 255.0f), 
-            (unsigned char)(entColorf[1] * 255.0f), 
-            (unsigned char)(entColorf[2] * 255.0f), 
-            255 
-        };
 
-        ImGui::SameLine();
-        ImGui::BeginGroup();
-        
-        // Display mode specific configuration
-        if (_ent.RadiusAvailable())
+        bool showImage = _ent.TextureAvailable() && _selectedTexture;
+
+        if (ImGui::BeginTable("Display Properties", showImage ? 3 : 2, ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
         {
-            ImGui::TextUnformatted("Radius");
+            DEFER(ImGui::EndTable());
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+
+            // Color picker
+            float entColorf[3] = { _ent.color.r / 255.0f, _ent.color.g / 255.0f, _ent.color.b / 255.0f };
             ImGui::SetNextItemWidth(256.0f);
-            ImGui::InputFloat("##Radius", &_ent.radius, 0.1f, 0.1f, "%.1f");
-        }
-        if (_ent.ModelAvailable())
-        {
-            ImGui::TextUnformatted("Model path");
-            if (ImGui::Button("Browse##Model"))
+            ImGui::ColorPicker3("Color", entColorf, ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_InputRGB);
+            _ent.color = Color { 
+                (unsigned char)(entColorf[0] * 255.0f), 
+                (unsigned char)(entColorf[1] * 255.0f), 
+                (unsigned char)(entColorf[2] * 255.0f), 
+                255 
+            };
+    
+            ImGui::TableNextColumn();
+            ImGui::BeginGroup();
+            
+            // Display mode specific configuration
+            if (_ent.RadiusAvailable())
             {
-                _fileDialog.reset(new FileDialog("Select model", { std::string(".obj") }, 
-                    [&](fs::path path) 
-                    {
-                        fs::path relativePath = fs::relative(path);
-                        strcpy(_modelPathBuffer, relativePath.string().c_str());
-                    }, 
-                false));
+                ImGui::TextUnformatted("Radius");
+                ImGui::SetNextItemWidth(256.0f);
+                ImGui::InputFloat("##Radius", &_ent.radius, 0.1f, 0.1f, "%.1f");
             }
-            ImGui::SameLine();
-            ImGui::InputText("##Model path", _modelPathBuffer, TEXT_FIELD_MAX);
-        }
-        if (_ent.TextureAvailable())
-        {
-            ImGui::TextUnformatted("Texture path");
-            if (ImGui::Button("Browse##Sprite"))
+            if (_ent.ModelAvailable())
             {
-                _fileDialog.reset(new FileDialog("Select texture", { std::string(".png") }, 
-                    [&](fs::path path) 
-                    {
-                        fs::path relativePath = fs::relative(path);
-                        strcpy(_texturePathBuffer, relativePath.string().c_str());
-                    },
-                false));
+                ImGui::TextUnformatted("Model path");
+                if (ImGui::Button("Browse##Model"))
+                {
+                    _fileDialog.reset(new FileDialog("Select model", { std::string(".obj") }, 
+                        [&](fs::path path) 
+                        {
+                            fs::path relativePath = fs::relative(path);
+                            strcpy(_modelPathBuffer, relativePath.string().c_str());
+                        }, 
+                    false));
+                }
+                ImGui::SameLine();
+                ImGui::InputText("##Model path", _modelPathBuffer, TEXT_FIELD_MAX);
             }
-            ImGui::SameLine();
-            ImGui::InputText("##Texture path", _texturePathBuffer, TEXT_FIELD_MAX);
+            if (_ent.TextureAvailable())
+            {
+                ImGui::TextUnformatted("Texture path");
+                if (ImGui::Button("Browse##Sprite"))
+                {
+                    _fileDialog.reset(new FileDialog("Select texture", { std::string(".png") }, 
+                        [&](fs::path path) 
+                        {
+                            fs::path relativePath = fs::relative(path);
+                            SetTexturePath(relativePath.string());
+                        },
+                    false));
+                }
+                ImGui::SameLine();
+                bool badTexture = !_selectedTexture && strlen(_texturePathBuffer) > 0;
+                if (badTexture)
+                {
+                    // Highlight red when file does not exist.
+                    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+                }
+                if (ImGui::InputText("##Texture path", _texturePathBuffer, TEXT_FIELD_MAX))
+                {
+                    SetTexturePath(_texturePathBuffer);
+                }
+                if (badTexture)
+                {
+                    ImGui::PopStyleColor(1);
+                }
+            }
+            if (_ent.display == Ent::DisplayMode::SPRITE)
+            {
+                // Show controls for masking a certain portion of the sprite.
+                bool showPortion = _ent.HasMask();
+                if (ImGui::Checkbox("Show only a portion of this texture", &showPortion))
+                {
+                    if (showPortion)
+                    {
+                        _ent.mask = Rectangle{
+                            .x = 0,
+                            .y = 0,
+                            .width = 1,
+                            .height = 1,
+                        };
+                        if (_selectedTexture)
+                        {
+                            _ent.mask.width = _selectedTexture->width;
+                            _ent.mask.height = _selectedTexture->height;
+                        }
+                    }
+                    else
+                    {
+                        _ent.mask = Rectangle{};
+                    }
+                }
+                if (_ent.HasMask())
+                {
+                    std::array<int, 4> mask = {
+                        (int)_ent.mask.x,
+                        (int)_ent.mask.y,
+                        (int)_ent.mask.width,
+                        (int)_ent.mask.height,
+                    };
+                    ImGui::Text("X, Y, Width, Height");
+                    ImGui::InputInt4("##Mask", mask.data());
+                    _ent.mask.x = (float)mask[0];
+                    _ent.mask.y = (float)mask[1];
+                    _ent.mask.width = (float)mask[2];
+                    _ent.mask.height = (float)mask[3];
+                }
+            }
+            ImGui::EndGroup();
+    
+            if (showImage && _selectedTexture)
+            {
+                // Show texture preview on the side
+                ImGui::TableNextColumn();
+                int previewWidth = 256;
+                int previewHeight = 256;
+                float aspectRatio = 1.0f;
+                if (_ent.HasMask())
+                {
+                    aspectRatio = _ent.mask.width / _ent.mask.height;
+                }
+                else
+                {
+                    aspectRatio = (float)_selectedTexture->width / (float)_selectedTexture->height;
+                }
+                if (aspectRatio > 1.0f) 
+                {
+                    previewHeight = (int)((float)previewHeight / aspectRatio);
+                } 
+                else 
+                {
+                    previewWidth = (int)((float)previewWidth * aspectRatio);
+                }
+                if (_ent.HasMask())
+                {
+                    rlImGuiImageRect(&_selectedTexture.value(), previewWidth, previewHeight, _ent.mask);
+                }
+                else
+                {
+                    rlImGuiImageSize(&_selectedTexture.value(), previewWidth, previewHeight);
+                }
+            }
         }
-        ImGui::EndGroup();
+
         ImGui::Separator();
 
         // Properties editor

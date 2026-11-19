@@ -26,6 +26,7 @@
 #include "../dialogs/dialogs.hpp"
 
 #include <memory>
+#include <optional>
 
 #define TEXT_FIELD_MAX 512
 
@@ -51,11 +52,17 @@ protected:
     char _texturePathBuffer[TEXT_FIELD_MAX];
     char _modelPathBuffer[TEXT_FIELD_MAX];
 
+    std::optional<Texture> _selectedTexture;
+
     char _newKeyBuffer[TEXT_FIELD_MAX];
     char _newValBuffer[TEXT_FIELD_MAX];
 
     // Character buffers for each property's value (indexed by the key)
     std::map<std::string, char*> _valBuffers;
+
+    // Updates the input field for the texture and loads it if it exists.
+    // Returns the texture loaded, or an empty optional if it doesn't exist.
+    std::optional<Texture> SetTexturePath(std::string str);
 };
 
 #endif

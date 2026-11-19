@@ -175,7 +175,7 @@ void App::Update()
     }
 
     // Preview hotkey
-    if (IsKeyPressed(KEY_P))
+    if (_editorMode == _tilePlaceMode.get() && IsKeyPressed(KEY_P))
     {
         _previewDraw = !_previewDraw;
     }
