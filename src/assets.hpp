@@ -85,10 +85,13 @@ public:
     static Texture GetMissingTexture();
     static const Model GetMissingModel(); // Returns the model used when a loading error occurs.
     static void SetShaderTime(float time);
+
+    // Converts a file path to a string and replaces back slashes with forward slashes.
+    static std::string NormalizePath(const fs::path path);
 protected:
     // Asset caches that hold weak references to all the loaded textures and models
-    std::map<fs::path, std::weak_ptr<TexHandle>>   _textures;
-    std::map<fs::path, std::weak_ptr<ModelHandle>> _models;
+    std::map<std::string, std::weak_ptr<TexHandle>>   _textures;
+    std::map<std::string, std::weak_ptr<ModelHandle>> _models;
 
     // Assets that are alive the whole application
     Font _font; // Default application font (dejavu.fnt)

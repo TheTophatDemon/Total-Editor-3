@@ -185,7 +185,7 @@ void Ent::Draw(const bool drawAxes, const Vector3 position)
         {
             if (App::Get()->IsPreviewing()) break;
 
-            float detailLevel = Minf(radius, 20.0f);
+            float detailLevel = Clampf(radius, 1.0f, 20.0f);
             DrawSphereWires(position, radius, (int)(detailLevel * 4.0f), (int)(detailLevel * 8.0f), color);
             break;
         }

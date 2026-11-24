@@ -35,6 +35,7 @@
 #include "c_helpers.hpp"
 
 #include <iostream>
+#include <algorithm>
 #include <assert.h>
 
 static Assets *_instance = nullptr;
@@ -232,15 +233,23 @@ Texture Assets::GetMissingTexture()
     return missingTexture;
 }
 
+std::string Assets::NormalizePath(const fs::path path)
+{
+    std::string str(path);
+    std::replace_if(str.begin(), str.end(), [](char c){ return c == '\\'; }, '/');
+    return str;
+}
+
 std::shared_ptr<Assets::TexHandle> Assets::GetTexture(fs::path texturePath)
 {
     Assets *a = _Get();
 
-    texturePath.make_preferred();
+    std::string pathString = Assets::NormalizePath(texturePath);
+
     // Attempt to find the texture in the cache
-    if (a->_textures.find(texturePath) != a->_textures.end())
+    if (a->_textures.find(pathString) != a->_textures.end())
     {
-        std::weak_ptr<TexHandle> weakHandle = a->_textures[texturePath];
+        std::weak_ptr<TexHandle> weakHandle = a->_textures[pathString];
         if (std::shared_ptr<TexHandle> handle = weakHandle.lock())
         {
             return handle;
@@ -248,16 +257,16 @@ std::shared_ptr<Assets::TexHandle> Assets::GetTexture(fs::path texturePath)
     }
 
     // Load the texture if it is no longer stored in the cache
-    Texture2D texture = LoadTexture(texturePath.string().c_str());
+    Texture2D texture = LoadTexture(pathString.c_str());
     // Replace with the checkerboard texture if the file didn't load
     if (texture.width == 0) 
     {
         texture = Assets::GetMissingTexture();
     }
 
-    auto sharedPtr = std::make_shared<TexHandle>(texture, texturePath);
+    auto sharedPtr = std::make_shared<TexHandle>(texture, pathString);
     // Cache the texture
-    a->_textures[texturePath] = std::weak_ptr<TexHandle>(sharedPtr);
+    a->_textures[pathString] = std::weak_ptr<TexHandle>(sharedPtr);
     return sharedPtr;
 }
 
@@ -265,11 +274,12 @@ std::shared_ptr<Assets::ModelHandle> Assets::GetModel(fs::path path)
 {
     Assets *a = _Get();
     
-    path.make_preferred();
+    std::string pathString = Assets::NormalizePath(path);
+
     //Attempt to find the model in the cache
-    if (a->_models.find(path) != a->_models.end())
+    if (a->_models.find(pathString) != a->_models.end())
     {
-        std::weak_ptr<ModelHandle> weakHandle = a->_models[path];
+        std::weak_ptr<ModelHandle> weakHandle = a->_models[pathString];
         if (std::shared_ptr<ModelHandle> handle = weakHandle.lock())
         {
             return handle;
@@ -277,14 +287,14 @@ std::shared_ptr<Assets::ModelHandle> Assets::GetModel(fs::path path)
     }
 
     //Load the model if it is no longer stored in the cache
-    auto sharedPtr = std::make_shared<ModelHandle>(path);
+    auto sharedPtr = std::make_shared<ModelHandle>(pathString);
     if (!IsModelValid(sharedPtr->GetModel()))
     {
         // An error has occured.
         return nullptr;
     }
     //Cache the model
-    a->_models[path] = std::weak_ptr<ModelHandle>(sharedPtr);
+    a->_models[pathString] = std::weak_ptr<ModelHandle>(sharedPtr);
     return sharedPtr;
 }
 

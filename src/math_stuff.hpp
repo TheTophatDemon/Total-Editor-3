@@ -37,6 +37,11 @@ inline float Maxf(float a, float b)
     return a < b ? b : a;
 }
 
+inline float Clampf(float a, float min, float max)
+{
+    return Maxf(min, Minf(max, a));
+}
+
 // Returns -1 if `a` is negative, 1 if `a` is positive, and 0 otherwise.
 inline int Sign(int a) 
 {
