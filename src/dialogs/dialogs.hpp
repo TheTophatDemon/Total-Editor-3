@@ -122,12 +122,6 @@ public:
     virtual bool Draw() override;
 };
 
-class InstructionsDialog : public Dialog
-{
-public:
-    virtual bool Draw() override;
-};
-
 class ExportDialog : public Dialog
 {
 public:

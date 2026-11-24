@@ -1,7 +1,6 @@
 # TODO
 - Add extra example map
 - Update docs
-- Add extra exit message
 - Add application icon?
 ## Considered future updates
 

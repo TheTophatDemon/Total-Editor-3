@@ -112,6 +112,27 @@ void MenuBar::SaveMap()
     }
 }
 
+// Open URL with default system browser (if available)
+// This is copied from Raylib's source code but with the safety check removed that prevents opening a document with file://
+static void OpenURLButForRealMen(const char *url)
+{
+    char *cmd = (char *)RL_CALLOC(strlen(url) + 16, sizeof(char));
+#if defined(_WIN32)
+    sprintf(cmd, "explorer \"%s\"", url);
+#endif
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+    sprintf(cmd, "xdg-open '%s'", url); // Alternatives: firefox, x-www-browser
+#endif
+#if defined(__APPLE__)
+    sprintf(cmd, "open '%s'", url);
+#endif
+    int result = system(cmd);
+
+    if (result == -1) TRACELOG(LOG_WARNING, "OpenURL() child process could not be created");
+    RL_FREE(cmd);
+}
+
+
 void MenuBar::Update()
 {
     if (_messageTimer > 0.0f)
@@ -140,7 +161,10 @@ void MenuBar::Update()
             "They told me the fancy new UI would make you stay...",
             "Support me today or I'll edit your face!",
             "Dame da ne...dame yo...dame na no yo...",
-            "So you've got better things to do, huh?"
+            "So you've got better things to do, huh?",
+            "Have you tried turning it off and on again?",
+            "It's not like I care about your unsaved progress or anything, baka!",
+            "Be a CTRL+S pilled save-maxxing gigabyte chad. Skibidi."
         };
         int messageIdx = GetRandomValue(0, (sizeof(QUIT_MESSAGES) / sizeof(char *)) - 1);
 
@@ -202,7 +226,12 @@ void MenuBar::Draw()
         {
             if (ImGui::MenuItem("ABOUT"))          _activeDialog.reset(new AboutDialog());
             if (ImGui::MenuItem("KEYS/SHORTCUTS")) _activeDialog.reset(new ShortcutsDialog());
-            if (ImGui::MenuItem("INSTRUCTIONS"))   _activeDialog.reset(new InstructionsDialog());
+            if (ImGui::MenuItem("INSTRUCTIONS"))
+            {
+                fs::path instructionsPath = fs::absolute(fs::path("instructions/instructions.html"));
+                std::string instructionsURL = std::string("file://") + std::string(instructionsPath);
+                OpenURLButForRealMen(instructionsURL.c_str());
+            }
             ImGui::EndMenu();
         }
         
