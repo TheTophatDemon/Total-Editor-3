@@ -66,6 +66,7 @@
             <li><a href="#file_format">Using .te3 Files</a></li>
             <li><a href="#custom_tiles">Advice on Custom Tile Shapes</a></li>
             <li><a href="#special_tiles">Special tiles</a></li>
+            <li><a href="#command_line">Command line usage</a></li>
         </ol>
         <h2 id="basic_usage">Basic Usage</h2>
         <img src="instr_map.png" />
@@ -143,7 +144,8 @@
             take all of the tiles inside of the rectangle and turn them into a "brush," putting the cursor into "brush mode." In this mode, the
             cursor will copy the entire structure of tiles into the grid using left click, instead of filling the area with a single tile type.
             This can be used to avoid rebuilding complex structures in multiple places.
-            The cursor cannot erase anything using right click in this mode.
+            Right clicking will erase tiles in the shape of the brush, and the Q and E keys will rotate the brush
+            around the Y axis. Due to technical issues, the brushes can't be rotated on other axes yet.
             Pressing ESCAPE or BACKSPACE will bring the cursor into its regular "tile mode." 
         </p>
         <h2 id="layer_isolation">Layer isolation</h2>
@@ -159,7 +161,7 @@
         <img src="instr_ent3.png" />
         <p>
             &emsp;Holding LEFT CONTROL and pressing E will bring the cursor into "entity mode." Entities represent dynamic objects in a game, such as
-            player spawn points, enemies, items, and whatnot. They can be displayed as colored spheres, models, or billboard sprites, and can be assigned name tags. The game code
+            player spawn points, enemies, items, and whatnot. They can be displayed as colored spheres, models, billboard sprites, or rectangular areas, and can be assigned name tags. The game code
             can replace these with whatever they're actually supposed to be when loading the map. 
         </p>
         <p>
@@ -181,8 +183,8 @@
             should stand still and wait for the player to appear instead of searching around.
         </p>
         <p>
-            &emsp;The text field below the property list is used to add properties. The text in the field will be used as the key, 
-            and pressing the add button will add that property to the list. 
+            &emsp;The text field below the property list is used to add properties. The text in the left field will be used as the key, 
+            and pressing the add button or pressing enter will add that property to the list. You can also use the tab key to jump to the next available text field down the list.
             The value of the property can be edited directly in the property list by clicking on its text field.
             Pressing the remove button will remove the property it's next to.
             Removing the "name" property will remove the name tag from the entity in the map editor, and it is otherwise nonessential.
@@ -200,12 +202,31 @@
             <img src="instr_ent6.png" />
         </span>
         <p>
-            &emsp;Since version 3.1, entities can be displayed as either spheres, billboard sprites, or textured models.
-            This can be changed by using the drop-down menu at the top of the entity menu. For models, the texture is optional.
-            Like the spheres, the sprites and models can be sized and colored individually.
-        </p>
-        <p>
-            &emsp;The model display mode is particularly useful for representing <i>dynamic tiles:</i> tiles that can be interacted with and move separately from the rest of the map's geometry, like doors, switches, or elevators.
+            &emsp;Entities can be displayed in various ways:
+            <ul>
+                <li>
+                    Sphere — A sphere that can be colored and resized.
+                </li>
+                <li>
+                    Model — A 3D model that may have a texture, color, and scale factor.
+                    <ul>
+                        <li>Useful for representing <i>dynamic tiles:</i> tiles that can be interacted with and move separately from the rest of the map's geometry, like doors, switches, or elevators.</li>
+                    </ul>
+                </li>
+                <li>
+                    Sprite — A 2D billboard that can show a portion of a texture and change its color & scale.
+                </li>
+                <li>
+                    Wireframe Sphere — Same as the 'Sphere' display mode but wireframe, so you can see through it.
+                </li>
+                <li>
+                    Area — This kind of entity represents a rectangular area of tiles that can be colored.
+                    <ul>
+                        <li>Click and drag while placing this entity type to extend its size like in the rectangle mode for tiles.</li>
+                        <li>This can be useful for marking off invisible zones in a level, like triggers for scripted events.</li>
+                    </ul>
+                </li>
+            </ul>
         </p>
         <h2 id="undo_redo">Undo/Redo</h2>
         <p>
@@ -269,7 +290,7 @@
 {
     "meta": {                                                // Information about the program used to make the file
         "editor": "Total Editor",
-        "version": "3.2"
+        "version": "3.3.0"
     },
     "editorCamera": {                                        // The orientation of the camera in the editor when it was last saved.
         "eulerAngles": [0.0, 0.0, 0.0],                      // Angles are in degrees.
@@ -280,10 +301,15 @@
             "position": [0.0, 12.0, 3.0],                    // Position in world coordinates
             "color": [255, 0, 0],                            // Red, green, blue color
             "angles": [0.0, 90.0, 0.0],                      // Euler angles (the Z angle is always 0)
-            "radius": 0.75,                                  // Radius of sphere (for models & sprites, this is the same as the scale)
-            "display": 1,                                    // Entity display mode (0 = sphere, 1 = model, 2 = sprite)
+            "radius": 0.75,                                  // Radius of sphere (for models & sprites, this is the same as the scale) (will not be present for area ents)
+            "area": {                                        // The bounding box for area ents in world space, relative to the ent's position.
+                "min": [-1, -1, -1],
+                "max": [11, 1, 15]
+            },
+            "display": 1,                                    // Entity display mode (0 = sphere, 1 = model, 2 = sprite, 3 = wire sphere, 4 = area)
             "model": "assets/models/geoffrey.obj",           // Path to model file (only when display mode == 1)
             "texture": "assets/textures/skins/geoffrey.png", // Path to texture file (only when display mode == 1 or 2)
+            "mask": [32, 64, 64, 64],                        // X, Y, Width, and Height of the portion within the texture being shown. Only available if "Show only a portion of this texture" is checked.
             "properties": [
                 "name": "geoffrey",
                 "age": "120",
@@ -316,11 +342,16 @@
             It converts binary data into something that can be compactly printed as characters in a text file.
             In binary, the data is laid out in the following structure:
             <pre>
+// This is what the bytes will look like when modelID >= 0
 struct Tile {
-    int16_t modelID,       // The index into the "shapes" JSON array. If less than 0, represents a run of blank tiles of length -modelID.
-    int16_t textureIDs[2], // The indices into the "textures" JSON array. Primary texture is first, then secondary.
-    uint8_t yaw,           // The yaw angle of the tile. Value is 0-3 for each 90 degree increment.
-    uint8_t pitch,         // The pitch angle. Value is 0-3 for each 90 degree increment.
+    int16_t modelID;       // The index into the "shapes" JSON array.
+    int16_t textureIDs[2]; // The indices into the "textures" JSON array. Primary texture is first, then secondary.
+    uint8_t yaw;           // The yaw angle of the tile. Value is 0-3 for each 90 degree increment.
+    uint8_t pitch;         // The pitch angle. Value is 0-3 for each 90 degree increment.
+};
+// This is what the bytes will look like when modelID < 0
+struct RunOfBlankTiles {
+    int16_t modelID;
 };
             </pre>
             The byte order / endianness will match that of the machine used to save the file. In most cases, this will be little endian.
@@ -341,8 +372,8 @@ struct Tile {
             actually spaced by 2 units in world space, because each tile model is 2 units wide.<br/>
             &emsp;<b>Since version 3.1, blank tiles are represented by "run length encoding"</b>. This means that when parsing a .te3 file,
             encountering a tile with a modelID less than 0 represents multiple successive blank tiles, the number of which is equal to
-            the absolute value of the modelID. For the code above to work, t would have to be increased by -modelID when modelID < 0.
-            <b>When modelID < 0, the remaining bytes of the tile data structure are not present.</b>
+            the absolute value of the modelID. For the code above to work, t would have to be increased by -modelID when modelID < 0, and the bytes immediately
+            after the modelID will be the start of the next tile instead.
         </p>
         <h3>Rendering the tiles in-game</h3>
         <p>
@@ -422,5 +453,22 @@ struct Tile {
             <img src="instr_corner1.png" />
             <img src="instr_corner2.png" />
         </span>
+
+        <h2 id="command_line">Command Line Usage</h2>
+        <p>
+            The editor can be launched from the command line to facilitate some automation:
+        </p>
+        <pre>
+            & ".\Total Editor 3.exe" ".\assets\maps\myLevel.te3" --camera-position="2.5, 10.25, 30.5" --camera-yaw-degrees=45 --camera-pitch-degrees=-45
+        </pre>
+        <p>
+            The first parameter will open the named map file as soon as the editor opens. 
+            The other arguments can be used to position the camera; for instance, this could be used to
+            launch the editor from inside a game and have the editor's camera be where the player was standing.
+        </p>
+        <p>
+            If a map is opened from the command line, modifying the map and saving will cause the program to return the status code 100, instead of the usual 0.
+            This can be used to indicate to the game that the map needs to be reloaded after an edit.
+        </p>
     </body>
 </html>
