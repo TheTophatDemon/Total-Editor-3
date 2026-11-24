@@ -235,7 +235,7 @@ Texture Assets::GetMissingTexture()
 
 std::string Assets::NormalizePath(const fs::path path)
 {
-    std::string str(path);
+    std::string str = path.string();
     std::replace_if(str.begin(), str.end(), [](char c){ return c == '\\'; }, '/');
     return str;
 }

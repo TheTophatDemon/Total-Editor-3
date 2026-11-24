@@ -229,7 +229,7 @@ void MenuBar::Draw()
             if (ImGui::MenuItem("INSTRUCTIONS"))
             {
                 fs::path instructionsPath = fs::absolute(fs::path("instructions/instructions.html"));
-                std::string instructionsURL = std::string("file://") + std::string(instructionsPath);
+                std::string instructionsURL = std::string("file://") + instructionsPath.string();
                 OpenURLButForRealMen(instructionsURL.c_str());
             }
             ImGui::EndMenu();
