@@ -11,3 +11,6 @@ libraries/lib/*
 *.glb
 *.ti
 imgui.ini
+*.zip
+*.tar.xz
+*.tar.gz
