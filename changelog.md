@@ -1,6 +1,7 @@
 ## Version 3.3.0
 - Added ability to open a map from a command line and return code 100 if that map is saved.
 - Enabled tab navigation on the entity editor
+- Added image preview on entity editor and allowed displaying rectangular sections of a texture.
 - Added wireframe sphere and area display modes for entities.
 - Erasing with a brush cursor now cuts out the shape of the brush
 - Can now rotate the brush cursor on the Y axis by increments of 90 degrees.

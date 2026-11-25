@@ -2,6 +2,7 @@
 bin
 obj
 .vscode
+*.o
 *.blend?
 settings.json
 te3_settings.json

@@ -1,6 +1,5 @@
 # TODO
 - Add extra example map
-- Add application icon?
 ## Considered future updates
 
 - Allow rotating brush on the pitch axis, flipping on x, y, and z

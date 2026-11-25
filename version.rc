@@ -1,0 +1,23 @@
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName", "Tophat Demon Productions"
+      VALUE "FileDescription", "Total Editor 3"
+      VALUE "FileVersion", "3.3.0"
+      VALUE "InternalName", "total_editor_3"
+      VALUE "LegalCopyright", "Alexander Lunsford"
+      VALUE "OriginalFilename", "Total Editor 3.exe"
+      VALUE "ProductName", "Total Editor 3"
+      VALUE "ProductVersion", "3.3.0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END
